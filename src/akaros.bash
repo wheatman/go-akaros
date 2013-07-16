@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# Copyright 2009 The Go Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+# Error out if any subcommand or pipeline returns a non-zero status
+set -e
+
+#Grab a reference to the command so we don't always just refer to it as $0
+COMMAND=$0
+
+# We are only using this script to build for Akaros
+export GOOS=akaros
+
+# Print the usage information for this script
+usage()
+{
+cat << EOF
+This script will build a cross compiler for Akaros on your local machine
+usage: $0 options
+OPTIONS:
+   -a      This is the default option
+           Build everything (same as '$COMMAND -b all')
+   -b      Pass one of the following arguments to build the following:
+           host   - the dist tool, go_bootstrap, runtime and other packages
+                    for your host machine
+           akaros - the runtime and other packages for akaros
+           all    - build both the host and the akaros packages
+   -v      Verbose mode
+   -e      Show the list of environment variables that can be set to control
+           this script
+   -h      Show this message
+EOF
+}
+
+# Print the environment variables that can be set to control this script
+environment()
+{
+cat << EOF
+Environment variables that control akaros.bash:
+
+GOROOT_FINAL: The expected final Go root, baked into binaries.
+The default is the location of the Go tree during the build.
+
+GOHOSTARCH: The architecture for host tools (compilers and
+binaries).  Binaries of this type must be executable on the current
+system, so the only common reason to set this is to set
+GOHOSTARCH=386 on an amd64 machine.
+
+GOARCH: The target architecture for installed packages and tools.
+
+GO_GCFLAGS: Additional 5g/6g/8g arguments to use when
+building the packages and commands.
+
+GO_LDFLAGS: Additional 5l/6l/8l arguments to use when
+building the commands.
+
+GO_CCFLAGS: Additional 5c/6c/8c arguments to use when
+building.
+
+CGO_ENABLED: Controls cgo usage during the build. Set it to 1
+to include all cgo related files, .c and .go file with "cgo"
+build directive, in the build. Set it to 0 to ignore them.
+
+GO_EXTLINK_ENABLED: Set to 1 to invoke the host linker when building
+packages that use cgo.  Set to 0 to do all linking internally.  This
+controls the default behavior of the linker's -linkmode option.  The
+default value depends on the system.
+
+CC: Command line to run to get at host C compiler.
+Default is "gcc". Also supported: "clang".
+EOF
+}
+
+# Check to make sure this script is being invoked from the proper location
+if [ ! -f make.bash ]; then
+	echo "$COMMAND must be run from \$GOROOT/src" 1>&2
+    usage
+	exit 1
+fi
+
+# Source a local.bash file in case the user wants to put his environment
+# variable setup in there
+if [ -f local.bash ]; then
+    source local.bash
+fi
+
+# Get the options from the command line
+BUILD="all"
+while getopts “ab:veh” OPTION
+do
+     case $OPTION in
+         a)
+             ;;
+         b)
+             BUILD=$OPTARG
+             ;;
+         v)
+             VERBOSE=1
+             ;;
+         e)
+             environment
+             exit 1
+             ;;
+         h)
+             usage
+             exit 1
+             ;;
+     esac
+done
+
+# Make sure that only valid build options have been passed
+if [[ "$BUILD" != "all" ]] &&
+   [[ "$BUILD" != "host" ]] &&
+   [[ "$BUILD" != "akaros" ]]
+then
+	echo "Illegal build option for $COMMAND: $BUILD" 1>&2
+    echo
+    usage
+	exit 1
+fi
+
+# Build the run helper differently depending on whether verbose was passed in
+if [[ "$VERBOSE" = "1" ]]; then
+  run_helper() { echo "$@"; "$@"; }
+else
+  run_helper() { "$@"; }
+fi
+
+# Clean old generated file that will cause problems in the build.
+rm -f ./pkg/runtime/runtime_defs.go
+  
+# Build the dist tool, compilers and go bootstrap tool for the host machine
+if [[ "$BUILD" = "all" ]] ||
+   [[ "$BUILD" = "host" ]] 
+then
+  # Build the dist tool
+  echo '# Building C bootstrap tool.'
+  echo cmd/dist
+  export GOROOT="$(cd .. && pwd)"
+  GOROOT_FINAL="${GOROOT_FINAL:-$GOROOT}"
+  DEFGOROOT='-DGOROOT_FINAL="'"$GOROOT_FINAL"'"'
+
+  mflag=""
+  case "$GOHOSTARCH" in
+    386) mflag=-m32;;
+    amd64) mflag=-m64;;
+  esac
+  if [ "$(uname)" == "Darwin" ]; then
+  	# golang.org/issue/5261
+  	mflag="$mflag -mmacosx-version-min=10.6"
+  fi
+  run_helper ${CC:-gcc} $mflag -O2 -Wall -Werror -o cmd/dist/dist -Icmd/dist "$DEFGOROOT" cmd/dist/*.c
+  run_helper eval $(./cmd/dist/dist env -p)
+  echo
+
+  # Build the compilers and go bootstrap tool
+  echo "# Building compilers and Go bootstrap tool for host, $GOHOSTOS/$GOHOSTARCH."
+  # Build go bootstrap
+  bflags="-a -v"
+  run_helper ./cmd/dist/dist bootstrap $bflags 
+
+  # Delay move of dist tool to now, because bootstrap may clear tool directory.
+  run_helper mkdir -p "$GOTOOLDIR"
+  run_helper mv cmd/dist/dist "$GOTOOLDIR"/dist
+  run_helper "$GOTOOLDIR"/go_bootstrap clean -i std
+  echo
+  
+  # Build the packages and commands for the host using the bootstrap tool
+  echo "# Building packages and commands for host, $GOHOSTOS/$GOHOSTARCH."
+  bflags=""
+  if [[ "$VERBOSE" = "1" ]]; then
+    bflags="-x"
+  fi
+  OLD_GOOS=$GOOS
+  OLD_GOARCH=$GOARCH
+  export GOOS=$GOHOSTOS
+  export GOARCH=$GOHOSTARCH
+  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
+             -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
+  export GOOS=$OLD_GOOS
+  export GOARCH=$OLD_GOARCH
+  echo
+fi
+
+# Building packages and commands for akaros 
+if [[ "$BUILD" = "all" ]] ||
+   [[ "$BUILD" = "akaros" ]] 
+then
+  echo "# Building packages and commands for $GOOS/$GOARCH."
+  if [[ "$VERBOSE" = "1" ]]; then
+    GO_FLAGS="$GO_FLAGS -x"
+  fi
+  run_helper eval $($GOBIN/go tool dist env -p)
+  run_helper "$GOTOOLDIR"/go_bootstrap install $GO_FLAGS -ccflags "$GO_CCFLAGS" \
+              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
+  run_helper "$GOTOOLDIR"/dist banner
+  echo
+fi
+
+
