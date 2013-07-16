@@ -40,6 +40,7 @@
 #define PADDR(a)	((uint32)(a) & ~0x80000000)
 
 char linuxdynld[] = "/lib64/ld-linux-x86-64.so.2";
+char akarosdynld[] = "/lib64/ld-linux-x86-64.so.2";
 char freebsddynld[] = "/libexec/ld-elf.so.1";
 char openbsddynld[] = "/usr/libexec/ld.so";
 char netbsddynld[] = "/libexec/ld.elf_so";
@@ -665,6 +666,7 @@ asmb(void)
 		debug['8'] = 1;	/* 64-bit addresses */
 		break;
 	case Hlinux:
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:
@@ -693,6 +695,7 @@ asmb(void)
 			symo = rnd(HEADR+segtext.len, INITRND)+rnd(segdata.filelen, INITRND)+machlink;
 			break;
 		case Hlinux:
+		case Hakaros:
 		case Hfreebsd:
 		case Hnetbsd:
 		case Hopenbsd:
@@ -783,6 +786,7 @@ asmb(void)
 		asmbmacho();
 		break;
 	case Hlinux:
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:

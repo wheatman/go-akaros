@@ -9,6 +9,7 @@ package cgotest
 /*
 #include <dlfcn.h>
 #cgo linux LDFLAGS: -ldl
+#cgo akaros LDFLAGS: -ldl
 */
 import "C"
 

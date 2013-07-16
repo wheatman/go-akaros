@@ -54,6 +54,7 @@ Header headers[] = {
 	"msdosexe", Hmsdosexe,
 	"darwin", Hdarwin,
 	"linux", Hlinux,
+	"akaros", Hakaros,
 	"freebsd", Hfreebsd,
 	"netbsd", Hnetbsd,
 	"openbsd", Hopenbsd,
@@ -70,6 +71,7 @@ Header headers[] = {
  *	-Hmsdosexe -Tx -Rx			is fake MS-DOS .EXE
  *	-Hdarwin -Tx -Rx			is Apple Mach-O
  *	-Hlinux -Tx -Rx				is Linux ELF32
+ *	-Hakaros -Tx -Rx			is Akaros ELF32
  *	-Hfreebsd -Tx -Rx			is FreeBSD ELF32
  *	-Hnetbsd -Tx -Rx			is NetBSD ELF32
  *	-Hopenbsd -Tx -Rx			is OpenBSD ELF32
@@ -156,6 +158,7 @@ main(int argc, char *argv[])
 	case Hdarwin:
 	case Hfreebsd:
 	case Hlinux:
+	case Hakaros:
 	case Hnetbsd:
 	case Hopenbsd:
 		break;
@@ -240,6 +243,7 @@ main(int argc, char *argv[])
 			INITRND = 4096;
 		break;
 	case Hlinux:	/* elf32 executable */
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:

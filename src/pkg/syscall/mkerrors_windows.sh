@@ -34,6 +34,18 @@ includes_Linux='
 #include <linux/wait.h>
 '
 
+includes_Akaros='
+#define _LARGEFILE_SOURCE
+#define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64
+#define _GNU_SOURCE
+
+#include <sys/types.h>
+#include <sys/epoll.h>
+#include <linux/ptrace.h>
+#include <linux/wait.h>
+'
+
 includes_Darwin='
 #define __DARWIN_UNIX03 0
 #define KERNEL

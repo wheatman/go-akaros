@@ -563,7 +563,7 @@ vaddr(Adr *a, Reloc *r)
 static int
 istls(Adr *a)
 {
-	if(HEADTYPE == Hlinux)
+	if(HEADTYPE == Hlinux || HEADTYPE == Hakaros)
 		return a->index == D_GS;
 	return a->type == D_INDIR+D_GS;
 }

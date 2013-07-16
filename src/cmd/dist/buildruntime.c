@@ -145,6 +145,11 @@ static struct {
 		"#define	g(r)	-8(r)(GS*1)\n"
 		"#define	m(r)	-4(r)(GS*1)\n"
 	},
+	{"386", "akaros", // Same as linux, see comment above
+		"#define	get_tls(r)	MOVL 8(GS), r\n"
+		"#define	g(r)	-8(r)(GS*1)\n"
+		"#define	m(r)	-4(r)(GS*1)\n"
+	},
 	{"386", "",
 		"#define	get_tls(r)\n"
 		"#define	g(r)	0(GS)\n"

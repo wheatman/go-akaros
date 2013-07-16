@@ -328,6 +328,7 @@ enum {
 	Hipaq,		// ipaq
 	Hdarwin,	// Apple Mach-O
 	Hlinux,		// Linux ELF
+	Hakaros,	// Akaros ELF
 	Hfreebsd,	// FreeBSD ELF
 	Hwindows,	// MS Windows PE
 	Hopenbsd,	// OpenBSD ELF

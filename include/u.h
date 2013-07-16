@@ -84,7 +84,7 @@ typedef jmp_buf sigjmp_buf;
 #endif
 typedef long p9jmp_buf[sizeof(sigjmp_buf)/sizeof(long)];
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__akaros__)
 #	include <sys/types.h>
 #	if defined(__Linux26__)
 #		include <pthread.h>

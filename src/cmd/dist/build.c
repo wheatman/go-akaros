@@ -48,6 +48,7 @@ static char *okgoarch[] = {
 static char *okgoos[] = {
 	"darwin",
 	"linux",
+	"akaros",
 	"freebsd",
 	"netbsd",
 	"openbsd",

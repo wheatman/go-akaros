@@ -309,9 +309,9 @@ patch(void)
 				p->from.offset = 0x28;
 			}
 		}
-		if(HEADTYPE == Hlinux || HEADTYPE == Hfreebsd
-		|| HEADTYPE == Hopenbsd || HEADTYPE == Hnetbsd
-		|| HEADTYPE == Hplan9x64) {
+		if(HEADTYPE == Hlinux || HEADTYPE == Hakaros
+		|| HEADTYPE == Hfreebsd || HEADTYPE == Hopenbsd
+		|| HEADTYPE == Hnetbsd || HEADTYPE == Hplan9x64) {
 			// ELF uses FS instead of GS.
 			if(p->from.type == D_INDIR+D_GS)
 				p->from.type = D_INDIR+D_FS;
@@ -444,9 +444,9 @@ dostkoff(void)
 		if(!(p->from.scale & NOSPLIT)) {
 			p = appendp(p);	// load g into CX
 			p->as = AMOVQ;
-			if(HEADTYPE == Hlinux || HEADTYPE == Hfreebsd
-			|| HEADTYPE == Hopenbsd || HEADTYPE == Hnetbsd
-			|| HEADTYPE == Hplan9x64)	// ELF uses FS
+			if(HEADTYPE == Hlinux || HEADTYPE == Hakaros
+			|| HEADTYPE == Hfreebsd || HEADTYPE == Hopenbsd
+			|| HEADTYPE == Hnetbsd || HEADTYPE == Hplan9x64)	// ELF uses FS
 				p->from.type = D_INDIR+D_FS;
 			else
 				p->from.type = D_INDIR+D_GS;

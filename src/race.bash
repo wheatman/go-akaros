@@ -9,7 +9,7 @@
 set -e
 
 function usage {
-	echo 'race detector is only supported on linux/amd64 and darwin/amd64' 1>&2
+	echo 'race detector is only supported on linux/amd64, akaros/amd64, and darwin/amd64' 1>&2
 	exit 1
 }
 
@@ -21,6 +21,11 @@ case $(uname) in
 	fi 
 	;;
 "Linux")
+	if [ $(uname -m) != "x86_64" ]; then
+		usage
+	fi
+	;;
+"Akaros")
 	if [ $(uname -m) != "x86_64" ]; then
 		usage
 	fi

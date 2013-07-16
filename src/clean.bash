@@ -12,5 +12,9 @@ if [ ! -x $GOTOOLDIR/dist ]; then
 	exit 1
 fi
 
+if [ -f local.bash ]; then
+    source local.bash
+fi
+
 "$GOBIN/go" clean -i std
 $GOTOOLDIR/dist clean

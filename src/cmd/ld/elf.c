@@ -56,7 +56,7 @@ elfinit(void)
 	// 32-bit architectures
 	case '5':
 		// we only use EABI on linux/arm
-		if(HEADTYPE == Hlinux)
+		if(HEADTYPE == Hlinux || HEADTYPE == Hakaros)
 			hdr.flags = 0x5000002; // has entry point, Version5 EABI
 		// fallthrough
 	default:
@@ -1177,6 +1177,9 @@ asmbelf(vlong symo)
 			case Hlinux:
 				interpreter = linuxdynld;
 				break;
+			case Hakaros:
+				interpreter = akarosdynld;
+				break;
 			case Hfreebsd:
 				interpreter = freebsddynld;
 				break;
@@ -1370,7 +1373,7 @@ asmbelf(vlong symo)
 		}
 	}
 
-	if(HEADTYPE == Hlinux) {
+	if(HEADTYPE == Hlinux || HEADTYPE == Hakaros) {
 		ph = newElfPhdr();
 		ph->type = PT_GNU_STACK;
 		ph->flags = PF_W+PF_R;

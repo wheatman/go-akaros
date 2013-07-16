@@ -291,7 +291,7 @@ patch(void)
 					p->from.offset = 0x14;
 				}
 			}
-			if(HEADTYPE == Hlinux) {
+			if(HEADTYPE == Hlinux || HEADTYPE == Hakaros) {
 				// Running binaries under Xen requires using
 				//	MOVL 0(GS), reg
 				// and then off(reg) instead of saying off(GS) directly
@@ -457,6 +457,7 @@ dostkoff(void)
 				break;
 			
 			case Hlinux:
+			case Hakaros:
 				if(linkmode != LinkExternal) {
 					p->as = AMOVL;
 					p->from.type = D_INDIR+D_GS;

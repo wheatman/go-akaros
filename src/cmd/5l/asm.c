@@ -38,6 +38,7 @@
 static Prog *PP;
 
 char linuxdynld[] = "/lib/ld-linux.so.3"; // 2 for OABI, 3 for EABI
+char akarosdynld[] = "/lib/ld-linux.so.3";
 char freebsddynld[] = "/usr/libexec/ld-elf.so.1";
 char openbsddynld[] = "XXX";
 char netbsddynld[] = "/libexec/ld.elf_so";
@@ -683,6 +684,7 @@ asmb(void)
 		lputl(0xe3300000);		/* nop */
 		break;
 	case Hlinux:
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:

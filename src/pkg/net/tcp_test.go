@@ -249,7 +249,7 @@ func TestIPv6LinkLocalUnicastTCP(t *testing.T) {
 			{"tcp", "[localhost%" + ifi.Name + "]:0", true},
 			{"tcp6", "[localhost%" + ifi.Name + "]:0", true},
 		}...)
-	case "linux":
+	case "linux", "akaros":
 		tests = append(tests, []test{
 			{"tcp", "[ip6-localhost%" + ifi.Name + "]:0", true},
 			{"tcp6", "[ip6-localhost%" + ifi.Name + "]:0", true},

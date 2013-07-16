@@ -293,7 +293,7 @@ A major addition to the tools is a <em>race detector</em>, a way to
 find bugs in programs caused by concurrent access of the same
 variable, where at least one of the accesses is a write.
 This new facility is built into the <code>go</code> tool.
-For now, it is only available on Linux, Mac OS X, and Windows systems with
+For now, it is only available on Linux, Akaros, Mac OS X, and Windows systems with
 64-bit x86 processors.
 To enable it, set the <code>-race</code> flag when building or testing your program
 (for instance, <code>go test -race</code>).
@@ -438,7 +438,7 @@ An ARMv6 or later processor is required for <code>freebsd/arm</code> or
 </p>
 
 <p>
-Go 1.1 adds experimental support for <code>cgo</code> on <code>linux/arm</code>.
+Go 1.1 adds experimental support for <code>cgo</code> on <code>linux/arm</code> and <code>akaros/arm</code>.
 </p>
 
 <h3 id="crosscompile">Cross compilation</h3>
@@ -622,7 +622,7 @@ only <code>T</code>.
 
 <h3 id="time">time</h3>
 <p>
-On FreeBSD, Linux, NetBSD, OS X and OpenBSD, previous versions of the
+On FreeBSD, Linux, Akaros, NetBSD, OS X and OpenBSD, previous versions of the
 <a href="/pkg/time/"><code>time</code></a> package
 returned times with microsecond precision.
 The Go 1.1 implementation on these

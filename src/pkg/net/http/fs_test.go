@@ -679,8 +679,8 @@ func TestServeContent(t *testing.T) {
 // verifies that sendfile is being used on Linux
 func TestLinuxSendfile(t *testing.T) {
 	defer afterTest(t)
-	if runtime.GOOS != "linux" {
-		t.Skip("skipping; linux-only test")
+	if runtime.GOOS != "linux" && runtime.GOOS != "akaros" {
+		t.Skip("skipping; linux-and-akaros-only test")
 	}
 	if _, err := exec.LookPath("strace"); err != nil {
 		t.Skip("skipping; strace not found in path")

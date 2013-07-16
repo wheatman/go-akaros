@@ -86,6 +86,7 @@ var tourContent = []string{
 var raceAvailable = []string{
 	"darwin-amd64",
 	"linux-amd64",
+	"akaros-amd64",
 	"windows-amd64",
 }
 
@@ -279,7 +280,7 @@ func (b *Build) Do() error {
 	}
 	var targs []string
 	switch b.OS {
-	case "linux", "freebsd", "netbsd", "":
+	case "linux", "akaros", "freebsd", "netbsd", "":
 		// build tarball
 		targ := base
 		if b.Source {
@@ -516,6 +517,12 @@ func (b *Build) Upload(version string, filename string) error {
 	case "linux":
 		os_ = "Linux"
 		opsys = "Linux"
+	case "linux":
+		os_ = "Linux"
+		opsys = "Linux"
+	case "akaros":
+		os_ = "Akaros"
+		opsys = "Akaros"
 	case "freebsd":
 		os_ = "FreeBSD"
 		opsys = "FreeBSD"

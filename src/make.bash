@@ -44,6 +44,10 @@ if [ ! -f run.bash ]; then
 	exit 1
 fi
 
+if [ -f local.bash ]; then
+    source local.bash
+fi
+
 # Test for Windows.
 case "$(uname)" in
 *MINGW* | *WIN32* | *CYGWIN*)

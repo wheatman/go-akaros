@@ -160,7 +160,7 @@ func multicastRIBContains(ip IP) (bool, error) {
 	switch runtime.GOOS {
 	case "netbsd", "openbsd", "plan9", "solaris", "windows":
 		return true, nil // not implemented yet
-	case "linux":
+	case "linux", "akaros":
 		if runtime.GOARCH == "arm" || runtime.GOARCH == "alpha" {
 			return true, nil // not implemented yet
 		}

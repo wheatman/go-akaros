@@ -49,6 +49,7 @@ Header headers[] = {
 	"elf", Helf,
 	"darwin", Hdarwin,
 	"linux", Hlinux,
+	"akaros", Hakaros,
 	"freebsd", Hfreebsd,
 	"netbsd", Hnetbsd,
 	"openbsd", Hopenbsd,
@@ -63,6 +64,7 @@ Header headers[] = {
  *	-Helf -T0x80110000 -R4096	is ELF32
  *	-Hdarwin -Tx -Rx		is apple MH-exec
  *	-Hlinux -Tx -Rx			is linux elf-exec
+ *	-Hakaros -Tx -Rx		is akaros elf-exec
  *	-Hfreebsd -Tx -Rx		is FreeBSD elf-exec
  *	-Hnetbsd -Tx -Rx		is NetBSD elf-exec
  *	-Hopenbsd -Tx -Rx		is OpenBSD elf-exec
@@ -150,6 +152,7 @@ main(int argc, char *argv[])
 	case Hdarwin:
 	case Hfreebsd:
 	case Hlinux:
+	case Hakaros:
 	case Hnetbsd:
 	case Hopenbsd:
 		break;
@@ -211,6 +214,7 @@ main(int argc, char *argv[])
 			INITDAT = 0;
 		break;
 	case Hlinux:	/* elf64 executable */
+	case Hakaros:	/* akaros */
 	case Hfreebsd:	/* freebsd */
 	case Hnetbsd:	/* netbsd */
 	case Hopenbsd:	/* openbsd */

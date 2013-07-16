@@ -1,4 +1,4 @@
-// +build darwin linux
+// +build darwin linux akaros
 // run
 
 // Copyright 2013 The Go Authors. All rights reserved.

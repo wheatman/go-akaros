@@ -23,7 +23,7 @@ var (
 
 func dotest() bool {
 	// For now, only works on ELF platforms.
-	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
+	if (runtime.GOOS != "linux" && runtime.GOOS != "akaros") || runtime.GOARCH != "amd64" {
 		return false
 	}
 	if pclinetestBinary != "" {

@@ -57,7 +57,7 @@ architectures.
 	<code>arm</code> (a.k.a. <code>ARM</code>); <code>5g,5l,5c,5a</code>
 </dt>
 <dd>
-	Supports Linux, FreeBSD and NetBSD binaries. Less widely used than the other ports.
+	Supports Linux, Akaros, FreeBSD and NetBSD binaries. Less widely used than the other ports.
 </dd>
 </dl>
 
@@ -69,7 +69,7 @@ goroutines, such as stacks that grow and shrink on demand.
 </p>
 
 <p>
-The compilers can target the FreeBSD, Linux, NetBSD, OpenBSD, OS X (Darwin), Plan 9,
+The compilers can target the FreeBSD, Linux, Akaros, NetBSD, OpenBSD, OS X (Darwin), Plan 9,
 and Windows operating systems.
 The full set of supported combinations is listed in the discussion of
 <a href="#environment">environment variables</a> below.
@@ -303,7 +303,7 @@ These default to the values of <code>$GOHOSTOS</code> and
 Choices for <code>$GOOS</code> are
 <code>darwin</code> (Mac OS X 10.6 and above), <code>freebsd</code>,
 <code>linux</code>, <code>netbsd</code>, <code>openbsd</code>, 
-<code>plan9</code>, and <code>windows</code>.
+<code>plan9</code>, <code>akaros</code>, and <code>windows</code>.
 Choices for <code>$GOARCH</code> are
 <code>amd64</code> (64-bit x86, the most mature port),
 <code>386</code> (32-bit x86), and <code>arm</code> (32-bit ARM).
@@ -335,6 +335,15 @@ The valid combinations of <code>$GOOS</code> and <code>$GOARCH</code> are:
 </tr>
 <tr>
 <td></td><td><code>linux</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>akaros</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>akaros</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>akaros</code></td> <td><code>arm</code></td>
 </tr>
 <tr>
 <td></td><td><code>netbsd</code></td> <td><code>386</code></td>

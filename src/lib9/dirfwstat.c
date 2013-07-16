@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__linux__) || defined(__akaros__)
 /* do nothing -- futimes exists and is fine */
 
 #elif defined(__SunOS5_9__)

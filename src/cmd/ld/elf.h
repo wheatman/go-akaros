@@ -1004,6 +1004,7 @@ void	dwarfaddelfheaders(void);
 void	asmbelf(vlong symo);
 void	asmbelfsetup(void);
 extern char linuxdynld[];
+extern char akarosdynld[];
 extern char freebsddynld[];
 extern char netbsddynld[];
 extern char openbsddynld[];

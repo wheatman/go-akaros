@@ -108,8 +108,8 @@ func TestReadUnixgramWithZeroBytesBuffer(t *testing.T) {
 }
 
 func TestUnixAutobind(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("skipping: autobind is linux only")
+	if runtime.GOOS != "linux" && runtime.GOOS != "akaros" {
+		t.Skip("skipping: autobind is linux and akaros only")
 	}
 
 	laddr := &UnixAddr{Name: "", Net: "unixgram"}
@@ -176,7 +176,7 @@ func TestUnixConnLocalAndRemoteNames(t *testing.T) {
 			t.Fatalf("UnixConn.Write failed: %v", err)
 		}
 
-		if runtime.GOOS == "linux" && laddr == "" {
+		if (runtime.GOOS == "linux" || runtime.GOOS == "akaros") && laddr == "" {
 			laddr = "@" // autobind feature
 		}
 		var connAddrs = [3]struct{ got, want Addr }{
@@ -228,7 +228,7 @@ func TestUnixgramConnLocalAndRemoteNames(t *testing.T) {
 			}
 		}()
 
-		if runtime.GOOS == "linux" && laddr == "" {
+		if (runtime.GOOS == "linux" || runtime.GOOS == "akaros") && laddr == "" {
 			laddr = "@" // autobind feature
 		}
 		var connAddrs = [4]struct{ got, want Addr }{

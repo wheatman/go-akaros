@@ -229,7 +229,7 @@ func TestIPv6LinkLocalUnicastUDP(t *testing.T) {
 			{"udp", "[localhost%" + ifi.Name + "]:0", true},
 			{"udp6", "[localhost%" + ifi.Name + "]:0", true},
 		}...)
-	case "linux":
+	case "linux", "akaros":
 		tests = append(tests, []test{
 			{"udp", "[ip6-localhost%" + ifi.Name + "]:0", true},
 			{"udp6", "[ip6-localhost%" + ifi.Name + "]:0", true},

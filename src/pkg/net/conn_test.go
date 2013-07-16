@@ -36,7 +36,7 @@ func TestConnAndListener(t *testing.T) {
 			case "plan9", "windows":
 				continue
 			}
-			if tt.net == "unixpacket" && runtime.GOOS != "linux" {
+			if tt.net == "unixpacket" && (runtime.GOOS != "linux" && runtime.GOOS != "akaros") {
 				continue
 			}
 		}

@@ -51,6 +51,7 @@ Header headers[] = {
    "ixp1200", Hixp1200,
    "ipaq", Hipaq,
    "linux", Hlinux,
+   "akaros", Hakaros,
    "freebsd", Hfreebsd,
    "netbsd", Hnetbsd,
    0, 0
@@ -62,6 +63,7 @@ Header headers[] = {
  *	-Hixp1200			is IXP1200 (raw)
  *	-Hipaq -T0xC0008010 -R1024	is ipaq
  *	-Hlinux -Tx -Rx			is linux elf
+ *	-Hakaros -Tx -Rx		is akaros elf
  *	-Hfreebsd			is freebsd elf
  *	-Hnetbsd			is netbsd elf
  */
@@ -204,6 +206,7 @@ main(int argc, char *argv[])
 			INITRND = 1024;
 		break;
 	case Hlinux:	/* arm elf */
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 		debug['d'] = 0;	// with dynamic linking

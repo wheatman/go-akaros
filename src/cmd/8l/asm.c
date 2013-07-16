@@ -38,6 +38,7 @@
 #include	"../ld/pe.h"
 
 char linuxdynld[] = "/lib/ld-linux.so.2";
+char akarosdynld[] = "/lib/ld-linux.so.2";
 char freebsddynld[] = "/usr/libexec/ld-elf.so.1";
 char openbsddynld[] = "/usr/libexec/ld.so";
 char netbsddynld[] = "/usr/libexec/ld.elf_so";
@@ -840,6 +841,7 @@ asmb(void)
 		asmbmacho();
 		break;
 	case Hlinux:
+	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:

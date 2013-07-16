@@ -60,7 +60,7 @@ The build flags are shared by the build, install, run, and test commands:
 		The default is the number of CPUs available.
 	-race
 		enable data race detection.
-		Supported only on linux/amd64, darwin/amd64 and windows/amd64.
+		Supported only on linux/amd64, akaros/amd64, darwin/amd64 and windows/amd64.
 	-v
 		print the names of packages as they are compiled.
 	-work
@@ -1665,7 +1665,7 @@ func (tools gccgoToolchain) ld(b *builder, p *Package, out string, allactions []
 		ldflags = append(ldflags, sfiles...)
 	}
 	ldflags = append(ldflags, cgoldflags...)
-	if usesCgo && goos == "linux" {
+	if usesCgo && (goos == "linux" || goos == "akaros") {
 		ldflags = append(ldflags, "-Wl,-E")
 	}
 	return b.run(".", p.ImportPath, nil, "gccgo", "-o", out, ofiles, "-Wl,-(", ldflags, "-Wl,-)", buildGccgoflags)
@@ -2009,13 +2009,13 @@ func (b *builder) cgo(p *Package, cgoExe, obj string, gccfiles []string, gxxfile
 
 	linkobj = append(linkobj, p.SysoFiles...)
 	dynobj := obj + "_cgo_.o"
-	if goarch == "arm" && goos == "linux" { // we need to use -pie for Linux/ARM to get accurate imported sym
+	if goarch == "arm" && (goos == "linux" || goos == "akaros") { // we need to use -pie for Linux/ARM to get accurate imported sym
 		cgoLDFLAGS = append(cgoLDFLAGS, "-pie")
 	}
 	if err := b.gccld(p, dynobj, cgoLDFLAGS, linkobj); err != nil {
 		return nil, nil, err
 	}
-	if goarch == "arm" && goos == "linux" { // but we don't need -pie for normal cgo programs
+	if goarch == "arm" && (goos == "linux" || goos == "akaros") { // but we don't need -pie for normal cgo programs
 		cgoLDFLAGS = cgoLDFLAGS[0 : len(cgoLDFLAGS)-1]
 	}
 
@@ -2184,6 +2184,7 @@ func (b *builder) swigOne(p *Package, file, obj string, cxx bool, intgosize stri
 		"darwin":  {"-dynamiclib", "-Wl,-undefined,dynamic_lookup"},
 		"freebsd": {"-shared", "-lpthread", "-lm"},
 		"linux":   {"-shared", "-lpthread", "-lm"},
+		"akaros":  {"-shared", "-lpthread", "-lm"},
 		"windows": {"-shared", "-lm", "-mthreads"},
 	}
 	var cxxlib []string
@@ -2223,7 +2224,7 @@ func raceInit() {
 	if !buildRace {
 		return
 	}
-	if goarch != "amd64" || goos != "linux" && goos != "darwin" && goos != "windows" {
+	if goarch != "amd64" || goos != "linux" && goos != "akaros" && goos != "darwin" && goos != "windows" {
 		fmt.Fprintf(os.Stderr, "go %s: -race is only supported on linux/amd64, darwin/amd64 and windows/amd64\n", flag.Args()[0])
 		os.Exit(2)
 	}

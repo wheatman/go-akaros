@@ -3,6 +3,10 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
+if [ -f local.bash ]; then
+    source local.bash
+fi
+
 set -e
 
 eval $(go env)
@@ -58,7 +62,7 @@ go test sync -short -timeout=$(expr 120 \* $timeout_scale)s -cpu=10
 # Race detector only supported on Linux and OS X,
 # and only on amd64, and only when cgo is enabled.
 case "$GOHOSTOS-$GOOS-$GOARCH-$CGO_ENABLED" in
-linux-linux-amd64-1 | darwin-darwin-amd64-1)
+linux-linux-amd64-1 | akaros-akaros-amd64-1 | darwin-darwin-amd64-1)
 	echo
 	echo '# Testing race detector.'
 	go test -race -i flag
@@ -100,10 +104,10 @@ darwin-386 | darwin-amd64)
 	*) go test -ldflags '-linkmode=external' ;;
 	esac
 	;;
-freebsd-386 | freebsd-amd64 | linux-386 | linux-amd64 | netbsd-386 | netbsd-amd64)
-	go test -ldflags '-linkmode=external'
-	go test -ldflags '-linkmode=auto' ../testtls
-	go test -ldflags '-linkmode=external' ../testtls
+freebsd-386 | freebsd-amd64 | linux-386 | linux-amd64 | akaros-386 | akaros-amd64 | netbsd-386 | netbsd-amd64)
+	go test -ldflags '-linkmode=external' || exit 1
+	go test -ldflags '-linkmode=auto' ../testtls || exit 1
+	go test -ldflags '-linkmode=external' ../testtls || exit 1
 esac
 ) || exit $?
 
@@ -115,6 +119,12 @@ esac
 
 [ "$CGO_ENABLED" != 1 ] ||
 [ "$GOHOSTOS-$GOARCH" != linux-amd64 ] ||
+(xcd ../misc/cgo/testasan
+go run main.go
+) || exit $?
+
+[ "$CGO_ENABLED" != 1 ] ||
+[ "$GOHOSTOS-$GOARCH" != akaros-amd64 ] ||
 (xcd ../misc/cgo/testasan
 go run main.go
 ) || exit $?
