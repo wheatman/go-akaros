@@ -59,8 +59,6 @@ var contexts = []*build.Context{
 	{GOOS: "akaros", GOARCH: "386"},
 	{GOOS: "akaros", GOARCH: "amd64", CgoEnabled: true},
 	{GOOS: "akaros", GOARCH: "amd64"},
-	{GOOS: "akaros", GOARCH: "arm", CgoEnabled: true},
-	{GOOS: "akaros", GOARCH: "arm"},
 	{GOOS: "darwin", GOARCH: "386", CgoEnabled: true},
 	{GOOS: "darwin", GOARCH: "386"},
 	{GOOS: "darwin", GOARCH: "amd64", CgoEnabled: true},
