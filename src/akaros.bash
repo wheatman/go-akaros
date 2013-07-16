@@ -225,7 +225,7 @@ then
   run_helper eval $($GOBIN/go tool dist env -p)
   prepare_target_env
   run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
+              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v std
   restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo
@@ -235,7 +235,7 @@ export GOARCH=$GOARCH
 export CGO_ENABLED=1
 export CC=$TARGETCC
 export CXX=$TARGETCXX
-export GO_LDFLAGS="-extld=$TARGETCC"
+export GO_LDFLAGS="\$GO_LDFLAGS -extld=$TARGETCC"
 
 ARGS=\$@
 if [[ "\$1" = "build" ]] &&
@@ -247,9 +247,4 @@ $GOBIN/go \$ARGS
 EOF
   chmod a+x $GOBIN/go-$GOOS-$GOARCH
 fi
-
-# Command to generate original pkg_akaros
-# for i in `./akaros.bash -b akaros 2>&1 | grep "cannot find package" | awk '{print $5}' | tr -d '"'`; do mkdir -p pkg/$i; cp -r pkg_orig/$i/* pkg/$i/; done
-
-
 
