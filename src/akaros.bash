@@ -12,6 +12,9 @@ COMMAND=$0
 # We are only using this script to build for Akaros
 export GOOS=akaros
 
+# Always build with cgo support
+export CGO_ENABLED=1
+
 # Print the usage information for this script
 usage()
 {
@@ -57,10 +60,6 @@ building the commands.
 
 GO_CCFLAGS: Additional 5c/6c/8c arguments to use when
 building.
-
-CGO_ENABLED: Controls cgo usage during the build. Set it to 1
-to include all cgo related files, .c and .go file with "cgo"
-build directive, in the build. Set it to 0 to ignore them.
 
 GO_EXTLINK_ENABLED: Set to 1 to invoke the host linker when building
 packages that use cgo.  Set to 0 to do all linking internally.  This
@@ -127,6 +126,41 @@ else
   run_helper() { "$@"; }
 fi
 
+# Pepare for building host tools by saving off some environment variables
+prepare_host_env()
+{
+  OLD_GOOS=$GOOS
+  OLD_GOARCH=$GOARCH
+  OLD_CC=$CC
+  OLD_CXX=$CXX
+  export GOOS=$GOHOSTOS
+  export GOARCH=$GOHOSTARCH
+  export CC=$CC
+  export CXX=$CXX
+}
+
+# Pepare for building target tools by saving off some environment variables
+prepare_target_env()
+{
+  OLD_GOOS=$GOOS
+  OLD_GOARCH=$GOARCH
+  OLD_CC=$CC
+  OLD_CXX=$CXX
+  export GOOS=$GOOS
+  export GOARCH=$GOARCH
+  export CC=$TARGETCC
+  export CXX=$TARGETCXX
+}
+
+# Restore the environment variables saved by prepare_{host,target}_env
+restore_env()
+{
+  export GOOS=$OLD_GOOS
+  export GOARCH=$OLD_GOARCH
+  export CC=$OLD_CC
+  export CXX=$OLD_CXX
+}
+
 # Clean old generated file that will cause problems in the build.
 rm -f ./pkg/runtime/runtime_defs.go
   
@@ -170,16 +204,12 @@ then
   echo "# Building packages and commands for host, $GOHOSTOS/$GOHOSTARCH."
   bflags=""
   if [[ "$VERBOSE" = "1" ]]; then
-    bflags="-x"
+    bflags="-x -p 1"
   fi
-  OLD_GOOS=$GOOS
-  OLD_GOARCH=$GOARCH
-  export GOOS=$GOHOSTOS
-  export GOARCH=$GOHOSTARCH
+  prepare_host_env
   run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
-  export GOOS=$OLD_GOOS
-  export GOARCH=$OLD_GOARCH
+  restore_env
   echo
 fi
 
@@ -188,14 +218,38 @@ if [[ "$BUILD" = "all" ]] ||
    [[ "$BUILD" = "akaros" ]] 
 then
   echo "# Building packages and commands for $GOOS/$GOARCH."
+  bflags=""
   if [[ "$VERBOSE" = "1" ]]; then
-    GO_FLAGS="$GO_FLAGS -x"
+    bflags="-x -work -p 1"
   fi
   run_helper eval $($GOBIN/go tool dist env -p)
-  run_helper "$GOTOOLDIR"/go_bootstrap install $GO_FLAGS -ccflags "$GO_CCFLAGS" \
+  prepare_target_env
+  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
               -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
+  restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo
+cat > $GOBIN/go-$GOOS-$GOARCH << EOF
+export GOOS=$GOOS
+export GOARCH=$GOARCH
+export CGO_ENABLED=1
+export CC=$TARGETCC
+export CXX=$TARGETCXX
+export GO_LDFLAGS="-extld=$TARGETCC"
+
+ARGS=\$@
+if [[ "\$1" = "build" ]] &&
+   [[ "\$CC" != "" ]]
+then
+  ARGS="\$1 -ldflags \$GO_LDFLAGS \${@:2}"
 fi
+$GOBIN/go \$ARGS
+EOF
+  chmod a+x $GOBIN/go-$GOOS-$GOARCH
+fi
+
+# Command to generate original pkg_akaros
+# for i in `./akaros.bash -b akaros 2>&1 | grep "cannot find package" | awk '{print $5}' | tr -d '"'`; do mkdir -p pkg/$i; cp -r pkg_orig/$i/* pkg/$i/; done
+
 
 

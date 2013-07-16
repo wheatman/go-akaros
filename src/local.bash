@@ -1,9 +1,9 @@
-#GOOS=linux
-#GOARCH=amd64
-GOOS=akaros
-GOARCH=amd64
-GOBIN="$HOME/install/$GOARCH-$GOOS-go-install"
+export GOOS=akaros
+export GOARCH=386
+export TARGETCC=i686-ros-gcc
+export TARGETCXX=i686-ros-g++
+#export GOARCH=amd64
+#export TARGETCC=x86_64-ros-gcc
+#export TARGETCXX=x86_64-ros-g++
+export GOBIN="$HOME/install/go-install"
 
-export GOOS
-export GOARCH
-export GOBIN

@@ -1848,7 +1848,7 @@ var (
 )
 
 func (b *builder) cgo(p *Package, cgoExe, obj string, gccfiles []string, gxxfiles []string) (outGo, outObj []string, err error) {
-	if goos != toolGOOS {
+	if goos != toolGOOS && !buildContext.CgoEnabled {
 		return nil, nil, errors.New("cannot use cgo when compiling for a different operating system")
 	}
 
