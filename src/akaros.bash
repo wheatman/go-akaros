@@ -125,6 +125,12 @@ if [[ "$VERBOSE" = "1" ]]; then
 else
   run_helper() { "$@"; }
 fi
+if [[ "$VERBOSE" = "1" ]]; then
+  run_helper_eval() { echo "$@"; eval "$@"; }
+else
+  run_helper_eval() { eval "$@"; }
+fi
+
 
 # Pepare for building host tools by saving off some environment variables
 prepare_host_env()
@@ -224,8 +230,17 @@ then
   fi
   run_helper eval $($GOBIN/go tool dist env -p)
   prepare_target_env
+
+  # Copy in the Akaros sycall header and generate kenc-style C defs from it
+  run_helper cd "$GOROOT"/src/pkg/runtime/parlib
+  run_helper cp "$ROSROOT"/kern/include/ros/bits/syscall.h syscall_${GOOS}.h
+  run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -cdefs types_${GOOS}.go > types_${GOOS}.h"
+  run_helper rm -rf _obj
+  run_helper_eval "cd - > /dev/null"
+
+  # Run the actual bootstrapping code
   run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v std
+              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v os
   restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo

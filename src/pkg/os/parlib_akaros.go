@@ -1,5 +1,5 @@
 package os
-import "parlib"
+import "runtime/parlib"
 
 func force_parlib_import() {
 	parlib.Init()

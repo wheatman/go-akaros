@@ -1,6 +1,7 @@
 // Created by cgo -cdefs - DO NOT EDIT
 // cgo -cdefs defs2_linux.go
 
+#include "parlib/goparlib.h"
 
 enum {
 	EINTR	= 0x4,
@@ -93,8 +94,6 @@ typedef struct Fpreg Fpreg;
 typedef struct Fpxreg Fpxreg;
 typedef struct Xmmreg Xmmreg;
 typedef struct Fpstate Fpstate;
-typedef struct Timespec Timespec;
-typedef struct Timeval Timeval;
 typedef struct Sigaction Sigaction;
 typedef struct Siginfo Siginfo;
 typedef struct Sigaltstack Sigaltstack;
@@ -135,14 +134,6 @@ struct Fpstate {
 	Xmmreg	_xmm[8];
 	uint32	padding1[44];
 	byte	anon0[48];
-};
-struct Timespec {
-	int32	tv_sec;
-	int32	tv_nsec;
-};
-struct Timeval {
-	int32	tv_sec;
-	int32	tv_usec;
 };
 struct Sigaction {
 	void	*k_sa_handler;

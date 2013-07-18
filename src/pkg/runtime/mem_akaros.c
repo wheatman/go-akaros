@@ -16,20 +16,8 @@ enum
 static int32
 addrspace_free(void *v, uintptr n)
 {
-	int32 errval;
-	uintptr chunk;
-	uintptr off;
-	static byte vec[4096];
-
-	for(off = 0; off < n; off += chunk) {
-		chunk = _PAGE_SIZE * sizeof vec;
-		if(chunk > (n - off))
-			chunk = n - off;
-		errval = runtime·mincore((int8*)v + off, chunk, vec);
-		// errval is 0 if success, or -(error_code) if error.
-		if (errval == 0 || errval != -ENOMEM)
-			return 0;
-	}
+	// Always report as free for now...
+	USED(v, n);
 	return 1;
 }
 
@@ -74,7 +62,10 @@ runtime·SysAlloc(uintptr n)
 void
 runtime·SysUnused(void *v, uintptr n)
 {
-	runtime·madvise(v, n, MADV_DONTNEED);
+	USED(v, n);
+	// Eventually we will want to use something like madvise if we ever support
+	// it on Akaros.
+	// runtime·madvise(v, n, MADV_DONTNEED);
 }
 
 void
