@@ -11,9 +11,9 @@ unset LANG
 export LC_ALL=C
 export LC_CTYPE=C
 
-GCC=gcc
+: "${GCC:=gcc}"
 
-uname=$(uname)
+: "${uname:=$(uname)}"
 
 includes_Darwin='
 #define _DARWIN_C_SOURCE
@@ -98,36 +98,23 @@ includes_Akaros='
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
 #define _GNU_SOURCE
+#define PATH_MAX 1024
 
-#include <bits/sockaddr.h>
-#include <sys/epoll.h>
-#include <sys/inotify.h>
-#include <sys/ioctl.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/icmp6.h>
+#include <sys/un.h>
 #include <sys/mman.h>
-#include <sys/mount.h>
-#include <sys/prctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <linux/if_addr.h>
-#include <linux/if_ether.h>
-#include <linux/if_tun.h>
-#include <linux/filter.h>
-#include <linux/netlink.h>
-#include <linux/reboot.h>
-#include <linux/rtnetlink.h>
-#include <linux/ptrace.h>
-#include <linux/wait.h>
-#include <linux/icmpv6.h>
-#include <net/if.h>
-#include <net/if_arp.h>
-#include <net/route.h>
-#include <netpacket/packet.h>
-
-#ifndef MSG_FASTOPEN
-#define MSG_FASTOPEN    0x20000000
-#endif
+#include <sys/resource.h> 
+#include <bits/sockaddr.h>
+#include <ros/glibc-asm/ioctls.h>
 '
 
 includes_NetBSD='
@@ -199,7 +186,7 @@ ccflags="$@"
 	echo package syscall
 	echo
 	echo '/*'
-	indirect="includes_$(uname)"
+	indirect="includes_${uname}"
 	echo "${!indirect} $includes"
 	echo '*/'
 	echo 'import "C"'

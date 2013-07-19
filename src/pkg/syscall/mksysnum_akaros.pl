@@ -24,12 +24,9 @@ sub fmt {
 
 my $prev;
 while(<>){
-	if(/^#define __NR_(\w+)\s+([0-9]+)/){
+	if(/^#define SYS_(\w+)\s+([0-9]+)/){
 		$prev = $2;
 		fmt($1, $2);
-	}
-	elsif(/^#define __NR_(\w+)\s+\(\w+\+\s*([0-9]+)\)/){
-		fmt($1, $prev+$2)
 	}
 }
 

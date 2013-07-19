@@ -238,9 +238,15 @@ then
   run_helper rm -rf _obj
   run_helper_eval "cd - > /dev/null"
 
+  # Regenerate all of the files needed by the syscall package
+  run_helper cd "$GOROOT"/src/pkg/syscall
+  run_helper ./mkall_${GOOS}.sh > /dev/null 2>&1 
+  run_helper_eval "cd - > /dev/null"
+
   # Run the actual bootstrapping code
   run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
               -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v os
+
   restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo

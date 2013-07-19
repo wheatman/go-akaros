@@ -112,10 +112,10 @@ runtime·cgocall(void (*fn)(void*), void *arg)
 {
 	Defer d;
 
-//	if(m->racecall) {
+	if(m->racecall || m->p == nil) {
 		runtime·asmcgocall(fn, arg);
 		return;
-//	}
+	}
 
 	if(!runtime·iscgo && !Windows)
 		runtime·throw("cgocall unavailable");

@@ -161,10 +161,10 @@ linux_arm)
 	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
 	;;
 akaros_386)
-	mkerrors="$mkerrors -m32"
+	mkerrors="./mkerrors_akaros.sh -m32"
 	mksyscall="./mksyscall.pl -l32"
-	mksysnum="./mksysnum_linux.pl /usr/include/asm/unistd_32.h"
-	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
+	mksysnum="./mksysnum_akaros.pl $ROSROOT/kern/include/ros/bits/syscall.h"
+	mktypes="go-akaros-386 tool cgo -godefs"
 	;;
 akaros_amd64)
 	unistd_h=$(ls -1 /usr/include/asm/unistd_64.h /usr/include/x86_64-linux-gnu/asm/unistd_64.h 2>/dev/null | head -1)

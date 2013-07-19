@@ -1900,7 +1900,7 @@ func (b *builder) cgo(p *Package, cgoExe, obj string, gccfiles []string, gxxfile
 	if p.Standard && p.ImportPath == "runtime/cgo" {
 		cgoflags = append(cgoflags, "-import_runtime_cgo=false")
 	}
-	if p.Standard && (p.ImportPath == "runtime/race" || p.ImportPath == "runtime/cgo") {
+	if p.Standard && (p.ImportPath == "runtime/race" || p.ImportPath == "runtime/cgo" || p.ImportPath == "runtime/parlib") {
 		cgoflags = append(cgoflags, "-import_syscall=false")
 	}
 
