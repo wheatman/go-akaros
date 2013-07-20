@@ -238,18 +238,11 @@ then
   run_helper rm -rf _obj
   run_helper_eval "cd - > /dev/null"
 
-  # Regenerate all of the files needed by the syscall package
-  run_helper cd "$GOROOT"/src/pkg/syscall
-  run_helper ./mkall_${GOOS}.sh > /dev/null 2>&1 
-  run_helper_eval "cd - > /dev/null"
-
-  # Run the actual bootstrapping code
+  # Run the bootstrapping code to build the runtime
   run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v os
+              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v runtime
 
-  restore_env
-  run_helper "$GOTOOLDIR"/dist banner
-  echo
+# Install a wrapper script for building Go applications for Akaros on $GOARCH
 cat > $GOBIN/go-$GOOS-$GOARCH << EOF
 export GOOS=$GOOS
 export GOARCH=$GOARCH
@@ -267,5 +260,18 @@ fi
 $GOBIN/go \$ARGS
 EOF
   chmod a+x $GOBIN/go-$GOOS-$GOARCH
+
+  # Regenerate all of the files needed by the syscall package
+  run_helper cd "$GOROOT"/src/pkg/syscall
+  run_helper ./mkall_${GOOS}.sh > /dev/null 2>&1 
+  run_helper_eval "cd - > /dev/null"
+
+  # Run the bootstrapping code to build the rest of the Go packages
+  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
+              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v os
+
+  restore_env
+  run_helper "$GOTOOLDIR"/dist banner
+  echo
 fi
 
