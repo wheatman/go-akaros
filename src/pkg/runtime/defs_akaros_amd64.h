@@ -1,6 +1,7 @@
 // Created by cgo -cdefs - DO NOT EDIT
 // cgo -cdefs defs_linux.go defs1_linux.go
 
+#include "parlib/goparlib.h"
 
 enum {
 	EINTR	= 0x4,
@@ -86,8 +87,6 @@ enum {
 	EPOLL_CTL_MOD	= 0x3,
 };
 
-typedef struct Timespec Timespec;
-typedef struct Timeval Timeval;
 typedef struct Sigaction Sigaction;
 typedef struct Siginfo Siginfo;
 typedef struct Itimerval Itimerval;
@@ -95,14 +94,6 @@ typedef struct EpollEvent EpollEvent;
 
 #pragma pack on
 
-struct Timespec {
-	int64	tv_sec;
-	int64	tv_nsec;
-};
-struct Timeval {
-	int64	tv_sec;
-	int64	tv_usec;
-};
 struct Sigaction {
 	void	*sa_handler;
 	uint64	sa_flags;

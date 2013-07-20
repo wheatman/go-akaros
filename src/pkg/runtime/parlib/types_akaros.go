@@ -20,9 +20,6 @@ const (
 	FUTEX_WAIT = C.FUTEX_WAIT
 	FUTEX_WAKE = C.FUTEX_WAKE
 )
-const (
-	UINFO = C.UINFO
-)
 type Vcore C.struct_vcore
 type Pcore C.struct_pcore
 type Procinfo C.procinfo_t

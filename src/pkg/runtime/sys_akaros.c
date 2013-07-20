@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 //
-// System calls and other sys.stuff for 386, Akaros
+// System calls and other sys stuff for Akaros
 //
 
 #include "runtime.h"

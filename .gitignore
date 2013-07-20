@@ -41,6 +41,7 @@ src/pkg/go/doc/headscan
 src/pkg/runtime/goc2c
 src/pkg/runtime/mkversion
 src/pkg/runtime/z*
+src/pkg/runtime/parlib/z*
 src/pkg/syscall/z*akaros*
 src/pkg/unicode/maketables
 src/pkg/*.*/

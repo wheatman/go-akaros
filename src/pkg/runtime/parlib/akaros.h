@@ -4,7 +4,16 @@
 
 #ifndef PARLIB_AKAROS_H
 #include <parlib/syscall_akaros.h>
-#include <parlib/types_akaros.h>
+#include <parlib/ztypes_akaros.h>
+
+// I wanted to pass UINFO through cgo -cdefs, but it turns all #defines into
+// enums, which can only be 32-bit
+#ifdef _32BIT
+#define UINFO 0x7f800000
+#else
+//#define UINFO 0x7f7fffe00000ULL
+static const uint64 UINFO = 0x7f7fffe00000ULL;
+#endif
 
 #define __procinfo (*(Procinfo*)UINFO)
 #define akaros_syscall(num, a0, a1, a2, a3, a4, a5, perrno, pret) \

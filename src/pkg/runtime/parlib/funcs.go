@@ -32,4 +32,6 @@ func Futex(uaddr *int32, op int32, val int32,
 		*ret = __ret
 	}
 }
-
+func Set_tls_desc(addr *uintptr, vcoreid int32) {
+	C.set_tls_desc(unsafe.Pointer(addr), C.int(vcoreid))
+}
