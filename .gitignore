@@ -43,6 +43,7 @@ src/pkg/runtime/mkversion
 src/pkg/runtime/z*
 src/pkg/runtime/parlib/z*
 src/pkg/syscall/z*akaros*
+!src/pkg/syscall/zerrorstrings_akaros_*.go
 src/pkg/unicode/maketables
 src/pkg/*.*/
 test/pass.out
