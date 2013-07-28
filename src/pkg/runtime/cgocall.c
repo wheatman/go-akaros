@@ -112,7 +112,7 @@ runtime·cgocall(void (*fn)(void*), void *arg)
 {
 	Defer d;
 
-	if(m->racecall || m->p == nil) {
+	if(m->racecall) {
 		runtime·asmcgocall(fn, arg);
 		return;
 	}
