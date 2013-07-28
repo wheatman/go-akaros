@@ -16,22 +16,16 @@ package parlib
 import "C"
 import "unsafe"
 
-func Max_vcores(n *uint32) {
-	*n = uint32(C.max_vcores())
+func Futex(uaddr *int32, op int32, val int32,
+           timeout *Timespec, uaddr2 *int32, val3 int32) (ret int32) {
+	// For now, akaros futexes don't support timeout, uaddr2 or val3, so we
+	// just 0 them out.
+	timeout = nil
+	uaddr2 = nil
+	val3 = 0
+	return int32(C.futex((*C.int)(unsafe.Pointer(uaddr)),
+	                     C.int(op), C.int(val),
+	                     (*C.struct_timespec)(unsafe.Pointer(timeout)),
+	                     (*C.int)(unsafe.Pointer(uaddr2)), C.int(val3)))
 }
 
-func Futex(uaddr *int32, op int32, val int32,
-           timeout *Timespec, uaddr2 *int32, val3 int32, ret *int32) {
-	// For now, just ignore the timeout since Akaros doesn't support it
-	timeout = nil
-	__ret := int32(C.futex((*C.int)(unsafe.Pointer(uaddr)),
-	                       C.int(op), C.int(val),
-	                       (*C.struct_timespec)(unsafe.Pointer(timeout)),
-	                       (*C.int)(unsafe.Pointer(uaddr2)), C.int(val3)))
-	if ret != nil {
-		*ret = __ret
-	}
-}
-func Set_tls_desc(addr *uintptr, vcoreid int32) {
-	C.set_tls_desc(unsafe.Pointer(addr), C.int(vcoreid))
-}

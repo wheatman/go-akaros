@@ -10,16 +10,19 @@ package parlib
 #include <stdint.h>
 #include <stdio.h>
 
-void checkpoint(uint32_t arg)
+void checkpoint(long long unsigned arg, char c)
 {
-	printf("checkpoint: %d\n", arg);
+	if (c == 'x')
+		printf("checkpoint: 0x%llx\n", arg);
+	else
+		printf("checkpoint: %llu\n", arg);
 }
 */
 import "C"
 
 // Checkpoint function that I can sprinkle into the code to mark checkpoints
 // during my porting effort
-func Checkpoint( arg uint32 ) {
-	C.checkpoint((C.uint32_t)(arg))
+func Checkpoint( arg uint64, c int8 ) {
+	C.checkpoint((C.ulonglong)(arg), (C.char)(c))
 }
 
