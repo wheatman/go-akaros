@@ -9,14 +9,13 @@
 #include "runtime.h"
 #include "defs_GOOS_GOARCH.h"
 
+// Helper strlen function
 static intgo strlen(int8 *string)
 {
-	intgo count = 0;
-	while(*string != '\0') {
-		count++;
-		string++;
-	}
-	return count;
+	int8 *temp = string;
+	while(*temp != '\0')
+		temp++;
+	return temp-string;
 }
 
 int32 runtime·getpid(void)
