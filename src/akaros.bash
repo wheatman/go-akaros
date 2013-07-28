@@ -139,10 +139,12 @@ prepare_host_env()
   OLD_GOARCH=$GOARCH
   OLD_CC=$CC
   OLD_CXX=$CXX
+  OLD_GO_LDFLAGS="$GO_LDFLAGS"
   export GOOS=$GOHOSTOS
   export GOARCH=$GOHOSTARCH
   export CC=$CC
   export CXX=$CXX
+  export GO_LDFLAGS="$GO_LDFLAGS"
 }
 
 # Pepare for building target tools by saving off some environment variables
@@ -152,10 +154,12 @@ prepare_target_env()
   OLD_GOARCH=$GOARCH
   OLD_CC=$CC
   OLD_CXX=$CXX
+  OLD_GO_LDFLAGS="$GO_LDFLAGS"
   export GOOS=$GOOS
   export GOARCH=$GOARCH
   export CC=$TARGETCC
   export CXX=$TARGETCXX
+  export GO_LDFLAGS="-extld=$TARGETCC $GO_LDFLAGS"
 }
 
 # Restore the environment variables saved by prepare_{host,target}_env
@@ -165,6 +169,8 @@ restore_env()
   export GOARCH=$OLD_GOARCH
   export CC=$OLD_CC
   export CXX=$OLD_CXX
+  export GO_LDFLAGS="$OLD_GO_LDFLAGS"
+  export CGO_LDFLAGS="$OLD_CGO_LDFLAGS"
 }
 
 # Clean old generated file that will cause problems in the build.
@@ -213,8 +219,12 @@ then
     bflags="-x -p 1"
   fi
   prepare_host_env
-  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-             -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
+  run_helper "$GOTOOLDIR"/go_bootstrap install \
+              $bflags \
+              -ccflags "$GO_CCFLAGS" \
+              -gcflags "$GO_GCFLAGS" \
+              -ldflags "$GO_LDFLAGS" \
+              -v std
   restore_env
   echo
 fi
@@ -239,8 +249,12 @@ then
   run_helper_eval "cd - > /dev/null"
 
   # Run the bootstrapping code to build the runtime
-  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v runtime
+  run_helper $GOTOOLDIR/go_bootstrap install \
+             $bflags \
+             -ccflags "$GO_CCFLAGS" \
+             -gcflags "$GO_GCFLAGS" \
+             -ldflags "$GO_LDFLAGS" \
+              -v runtime
 
 # Install a wrapper script for building Go applications for Akaros on $GOARCH
 cat > $GOBIN/go-$GOOS-$GOARCH << EOF
@@ -249,27 +263,30 @@ export GOARCH=$GOARCH
 export CGO_ENABLED=1
 export CC=$TARGETCC
 export CXX=$TARGETCXX
-export GO_LDFLAGS="\$GO_LDFLAGS -extld=$TARGETCC"
+export GO_LDFLAGS=$GO_LDFLAGS
 
 ARGS=\$@
 if [[ "\$1" = "build" ]] &&
    [[ "\$CC" != "" ]]
 then
-  ARGS="\$1 -ldflags \$GO_LDFLAGS \${@:2}"
+  ARGS="\$1 -ldflags $GO_LDFLAGS \${@:2}"
 fi
 $GOBIN/go \$ARGS
 EOF
   chmod a+x $GOBIN/go-$GOOS-$GOARCH
 
   # Regenerate all of the files needed by the syscall package
-  run_helper cd "$GOROOT"/src/pkg/syscall
+  run_helper cd $GOROOT/src/pkg/syscall
   run_helper ./mkall_${GOOS}.sh > /dev/null 2>&1 
   run_helper_eval "cd - > /dev/null"
 
   # Run the bootstrapping code to build the rest of the Go packages
-  run_helper "$GOTOOLDIR"/go_bootstrap install $bflags -ccflags "$GO_CCFLAGS" \
-              -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS -extld=$CC" -v os
-
+  run_helper $GOTOOLDIR/go_bootstrap install \
+              $bflags \
+              -ccflags "$GO_CCFLAGS" \
+              -gcflags "$GO_GCFLAGS" \
+              -ldflags "$GO_LDFLAGS" \
+              -v os
   restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo
