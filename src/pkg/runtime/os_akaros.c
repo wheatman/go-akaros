@@ -28,14 +28,13 @@ runtime·futexsleep(uint32 *addr, uint32 val, int64 ns)
 		ts.tv_nsec = ns%1000000000LL;
 		tsp = &ts;
 	}
-	runtime∕parlib·Futex((int32*)addr, FUTEX_WAIT, val, tsp, nil, 0, nil);
+	runtime·futex(addr, FUTEX_WAIT, val, tsp, nil, 0);
 }
 
 void
 runtime·futexwakeup(uint32 *addr, uint32 cnt)
 {
-	int32 ret;
-	runtime∕parlib·Futex((int32*)addr, FUTEX_WAKE, cnt, nil, nil, 0, &ret);
+	int32 ret = runtime·futex(addr, FUTEX_WAKE, cnt, nil, nil, 0);
 	if(ret >= 0)
 		return;
 
@@ -56,9 +55,7 @@ runtime·newosproc(M *mp, void *stk)
 void
 runtime·osinit(void)
 {
-	uint32 n;
-	runtime∕parlib·Max_vcores(&n);
-	runtime·ncpu = n;
+	runtime·ncpu = MIN(__procinfo.max_vcores, MAX_VCORES);
 }
 
 void

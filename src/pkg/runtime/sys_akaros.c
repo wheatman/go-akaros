@@ -7,7 +7,17 @@
 //
 
 #include "runtime.h"
+#include "cgocall.h"
 #include "defs_GOOS_GOARCH.h"
+
+// We extern these libc functions here, so we don't have to reimplement the logic
+// they entails just for compilation in the kenc world.
+// We use asmcgocall() to call them.
+#pragma cgo_import_static gcc_syscall
+#pragma cgo_import_static gcc_futex
+typedef void (*gcc_call_t)(void *arg);
+extern gcc_call_t gcc_syscall;
+extern gcc_call_t gcc_futex;
 
 // Helper strlen function
 static intgo strlen(int8 *string)
@@ -18,6 +28,35 @@ static intgo strlen(int8 *string)
 	return temp-string;
 }
 
+// Wrapper for making an akaros syscall through gcc
+static inline intgo __akaros_syscall(uint32 num,
+                                     intgo a0, intgo a1, intgo a2,
+                                     intgo a3, intgo a4, intgo a5,
+                                     int32 *perrno)
+    
+{
+	SyscallArg sysc = {0};
+	sysc.num = num;
+	sysc.ev_q = 0;
+	sysc.arg0 = a0;
+	sysc.arg1 = a1;
+	sysc.arg2 = a2;
+	sysc.arg3 = a3;
+	sysc.arg4 = a4;
+	sysc.arg5 = a5;
+	runtime·asmcgocall(gcc_syscall, &sysc);
+	if(perrno != nil)
+    	*perrno = sysc.err;
+	return sysc.retval;
+}
+#define akaros_syscall(num, a0, a1, a2, a3, a4, a5, perrno) \
+	__akaros_syscall((uint32)(num),                         \
+	                 (intgo)(a0), (intgo)(a1),              \
+	                 (intgo)(a2), (intgo)(a3),              \
+	                 (intgo)(a4), (intgo)(a5),              \
+	                 (int32*)(perrno))
+
+// Runtime functions themselves
 int32 runtime·getpid(void)
 {
 	return 	__procinfo.pid;
@@ -25,75 +64,66 @@ int32 runtime·getpid(void)
 
 int32 runtime·read(int32 fd, void* buf, int32 count)
 {
-	intgo ret;
 	int32 errno;
-	akaros_syscall(SYS_read, fd, buf, count, 0, 0, 0, &errno, &ret);
-	return ret;
+	return akaros_syscall(SYS_read, fd, buf, count, 0, 0, 0, &errno);
 }
 
 int32 runtime·write(int32 fd, void* buf, int32 count)
 {
-	intgo ret;
 	int32 errno;
-	akaros_syscall(SYS_write, fd, buf, count, 0, 0, 0, &errno, &ret);
-	return ret;
+	return akaros_syscall(SYS_write, fd, buf, count, 0, 0, 0, &errno);
 }
 
 int32 runtime·open(int8* pathname, int32 flags, int32 mode)
 {
-	intgo ret;
 	int32 errno;
 	intgo len = strlen(pathname);
-	akaros_syscall(SYS_open, pathname, len, flags, mode, 0, 0, &errno, &ret);
-	return ret;
+	return akaros_syscall(SYS_open, pathname, len, flags, mode, 0, 0, &errno);
 }
 
 int32 runtime·close(int32 fd)
 {
-	intgo ret;
 	int32 errno;
-	akaros_syscall(SYS_close, fd, 0, 0, 0, 0, 0, &errno, &ret);
-	return ret;
+	return akaros_syscall(SYS_close, fd, 0, 0, 0, 0, 0, &errno);
 }
 
-uint8* runtime·mmap(byte* addr, uintptr len, int32 prot, int32 flags, int32 fd, uint32 offset)
+uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
+                    int32 flags, int32 fd, uint32 offset)
 {
-	intgo ret;
 	int32 errno;
-	akaros_syscall(SYS_mmap, addr, len, prot, flags, fd, offset, &errno, &ret);
-	return (uint8*)ret;
+	return (uint8*)akaros_syscall(SYS_mmap, addr, len, prot,
+	                              flags, fd, offset, &errno);
 }
 
 void runtime·munmap(byte* addr, uintptr len)
 {
-	akaros_syscall(SYS_mmap, addr, len, 0, 0, 0, 0, nil, nil);
+	akaros_syscall(SYS_mmap, addr, len, 0, 0, 0, 0, nil);
 }
 
 void runtime·osyield(void)
 {
-	akaros_syscall(SYS_yield, false, 0, 0, 0, 0, 0, nil, nil);
+	akaros_syscall(SYS_yield, false, 0, 0, 0, 0, 0, nil);
 }
 
 void runtime·usleep(uint32 usec)
 {
-	akaros_syscall(SYS_block, usec, 0, 0, 0, 0, 0, nil, nil);
+	akaros_syscall(SYS_block, usec, 0, 0, 0, 0, 0, nil);
 }
 
 int64 runtime·nanotime(void)
 {
-	// We need something like what's below that will give us the time in
-	// nanoseconds, not microseconds like Timespec
-	return 0;
-//	int64 time;
-//	Timespec ts;
-//	akaros_syscall(SYS_getnanotime, &ts, 0, 0, 0, 0, 0, nil, nil);
-//	return time;
+	// TODO: We should think about doing something smarter here to get a more
+	// accurate nonotime e.g. SYS_getnanotime.
+	int64 time;
+	Timeval tv;
+	akaros_syscall(SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
+	time = ((tv.tv_sec * 1000000LLU) + tv.tv_usec)*1000LLU;
+	return time;
 }
 
 void time·now(int64 sec, int32 nsec)
 {
 	int64 ns;
-
 	ns = runtime·nanotime();
 	sec = ns / 1000000000LL;
 	nsec = ns - sec * 1000000000LL;
@@ -104,8 +134,22 @@ void time·now(int64 sec, int32 nsec)
 void runtime·exit(int32 status)
 {
 	intgo pid = runtime·getpid();
-	akaros_syscall(SYS_proc_destroy, pid, status, 0, 0, 0, 0, nil, nil);
+	akaros_syscall(SYS_proc_destroy, pid, status, 0, 0, 0, 0, nil);
 	while(1); // We should never get here!!!!!
+}
+
+int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
+                    Timespec *timeout, uint32 *uaddr2, uint32 val3)
+{
+	FutexArg a;
+	a.uaddr = (int32*)uaddr;
+	a.op = op;
+	a.val = val;
+	a.timeout = timeout;
+	a.uaddr2 = (int32*)uaddr2;
+	a.val3 = val3;
+	runtime·asmcgocall(gcc_futex, &a);
+	return a.retval;
 }
 
 //TEXT runtime·exit1(SB),7,$0
@@ -238,19 +282,6 @@ void runtime·exit(int32 status)
 //	MOVL	12(SP), DX
 //	CALL	*runtime·_vdso(SB)
 //	// ignore failure - maybe pages are locked
-//	RET
-//
-//// int32 futex(int32 *uaddr, int32 op, int32 val,
-////	struct timespec *timeout, int32 *uaddr2, int32 val2);
-//TEXT runtime·futex(SB),7,$0
-//	MOVL	$240, AX	// futex
-//	MOVL	4(SP), BX
-//	MOVL	8(SP), CX
-//	MOVL	12(SP), DX
-//	MOVL	16(SP), SI
-//	MOVL	20(SP), DI
-//	MOVL	24(SP), BP
-//	CALL	*runtime·_vdso(SB)
 //	RET
 //
 //// int32 clone(int32 flags, void *stack, M *mp, G *gp, void (*fn)(void));
