@@ -13,9 +13,13 @@ package parlib
 #include <mcs.h>
 #include <futex.h>
 #include <ros/memlayout.h>
+#include "gcc_akaros.h"
 */
 import "C"
 
+const (
+	MAX_VCORES = C.MAX_VCORES
+)
 const (
 	FUTEX_WAIT = C.FUTEX_WAIT
 	FUTEX_WAKE = C.FUTEX_WAKE
@@ -25,4 +29,9 @@ type Pcore C.struct_pcore
 type Procinfo C.procinfo_t
 type Timespec C.struct_timespec
 type Timeval C.struct_timeval
+type Ucq C.struct_ucq
+type EventQueue C.struct_event_queue
+type EventMbox C.struct_event_mbox
+type SyscallArg C.gcc_syscall_arg_t
+type FutexArg C.gcc_futex_arg_t
 
