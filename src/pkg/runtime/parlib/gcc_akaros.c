@@ -4,6 +4,7 @@
 
 #include <sys/syscall.h>
 #include <futex.h>
+#include <pthread.h>
 #include "gcc_akaros.h"
 
 // Akaros syscalls
@@ -27,4 +28,12 @@ static void __gcc_futex(void *__arg)
 	a->retval = futex(a->uaddr, a->op, a->val, a->timeout, a->uaddr2, a->val3);
 }
 const gcc_call_t gcc_futex = __gcc_futex;
+
+static void __gcc_myield(void *__arg)
+{
+	// We should never pass an argument here
+	assert(__arg == NULL);
+	pthread_yield();
+}
+const gcc_call_t gcc_myield = __gcc_myield;
 

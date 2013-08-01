@@ -15,9 +15,11 @@
 // We use asmcgocall() to call them.
 #pragma cgo_import_static gcc_syscall
 #pragma cgo_import_static gcc_futex
+#pragma cgo_import_static gcc_myield
 typedef void (*gcc_call_t)(void *arg);
 extern gcc_call_t gcc_syscall;
 extern gcc_call_t gcc_futex;
+extern gcc_call_t gcc_myield;
 
 // Helper strlen function
 static intgo strlen(int8 *string)
@@ -102,7 +104,7 @@ void runtime·munmap(byte* addr, uintptr len)
 
 void runtime·osyield(void)
 {
-	akaros_syscall(SYS_yield, false, 0, 0, 0, 0, 0, nil);
+	runtime·asmcgocall(gcc_myield, nil);
 }
 
 void runtime·usleep(uint32 usec)
