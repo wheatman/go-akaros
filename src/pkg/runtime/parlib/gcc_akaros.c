@@ -18,6 +18,12 @@ static void __gcc_futex(void *__arg)
 	gcc_futex_arg_t *a = (gcc_futex_arg_t*)__arg;
 	a->uaddr2 = NULL;
 	a->val3 = 0;
+	// Also, the minimum timout is 1ms, so up it to that if it's too small
+	if(a->timeout != NULL) {
+		if(a->timeout->tv_sec == 0)
+			if(a->timeout->tv_nsec < 1000000L)
+				a->timeout->tv_nsec = 1000000L;
+    }
 	a->retval = futex(a->uaddr, a->op, a->val, a->timeout, a->uaddr2, a->val3);
 }
 const gcc_call_t gcc_futex = __gcc_futex;
