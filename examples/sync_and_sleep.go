@@ -11,6 +11,7 @@ var m sync.Mutex
 var w sync.WaitGroup
 const NUM_GS = 0x100
 const NUM_LOOPS = 0x200
+var done int32
 
 func test(id int) {
 	for i := 0; i < NUM_LOOPS; i++ {
