@@ -40,6 +40,8 @@ const (
 	PTRACE_DETACH                    = 0x11
 	LINUX_REBOOT_MAGIC1              = 0xfee1dead
 	LINUX_REBOOT_MAGIC2              = 0x28121969
+	RTM_GETLINK                      = 0x12
+	RTM_GETADDR                      = 0x16
 )
 // AF_ALG                           = 0x26
 // AF_APPLETALK                     = 0x5
@@ -856,11 +858,9 @@ const (
 // RTM_F_NOTIFY                     = 0x100
 // RTM_F_PREFIX                     = 0x800
 // RTM_GETACTION                    = 0x32
-// RTM_GETADDR                      = 0x16
 // RTM_GETADDRLABEL                 = 0x4a
 // RTM_GETANYCAST                   = 0x3e
 // RTM_GETDCB                       = 0x4e
-// RTM_GETLINK                      = 0x12
 // RTM_GETMULTICAST                 = 0x3a
 // RTM_GETNEIGH                     = 0x1e
 // RTM_GETNEIGHTBL                  = 0x42

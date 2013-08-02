@@ -407,21 +407,24 @@ int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// int32 runtime·epollcreate(int32 size);
+int32 runtime·epollcreate(int32 size)
+{ USED(size); return -1; }
 //TEXT runtime·epollcreate(SB),7,$0
 //	MOVL    $254, AX
 //	MOVL	4(SP), BX
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// int32 runtime·epollcreate1(int32 flags);
+int32 runtime·epollcreate1(int32 flags)
+{ USED(flags); return -1; }
 //TEXT runtime·epollcreate1(SB),7,$0
 //	MOVL    $329, AX
 //	MOVL	4(SP), BX
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// int32 runtime·epollctl(int32 epfd, int32 op, int32 fd, EpollEvent *ev);
+int32 runtime·epollctl(int32 epfd, int32 op, int32 fd, EpollEvent *ev)
+{ USED(epfd); USED(op); USED(fd); USED(ev); return -1; }
 //TEXT runtime·epollctl(SB),7,$0
 //	MOVL	$255, AX
 //	MOVL	4(SP), BX
@@ -431,7 +434,8 @@ int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// int32 runtime·epollwait(int32 epfd, EpollEvent *ev, int32 nev, int32 timeout);
+int32 runtime·epollwait(int32 epfd, EpollEvent *ev, int32 nev, int32 timeout)
+{ USED(epfd); USED(ev); USED(nev); USED(timeout); return -1; }
 //TEXT runtime·epollwait(SB),7,$0
 //	MOVL	$256, AX
 //	MOVL	4(SP), BX
@@ -441,7 +445,8 @@ int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// void runtime·closeonexec(int32 fd);
+void runtime·closeonexec(int32 fd)
+{ USED(fd); }
 //TEXT runtime·closeonexec(SB),7,$0
 //	MOVL	$55, AX  // fcntl
 //	MOVL	4(SP), BX  // fd

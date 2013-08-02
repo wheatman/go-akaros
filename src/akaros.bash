@@ -286,7 +286,7 @@ EOF
               -ccflags "$GO_CCFLAGS" \
               -gcflags "$GO_GCFLAGS" \
               -ldflags "$GO_LDFLAGS" \
-              -v os
+              -v std
   restore_env
   run_helper "$GOTOOLDIR"/dist banner
   echo
