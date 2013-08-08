@@ -265,12 +265,19 @@ export CC=$TARGETCC
 export CXX=$TARGETCXX
 export GO_LDFLAGS=$GO_LDFLAGS
 
-ARGS=\$@
+ARGS=\$1
 if [[ "\$1" = "build" ]] &&
    [[ "\$CC" != "" ]]
 then
-  ARGS="\$1 -ldflags $GO_LDFLAGS \${@:2}"
+  ARGS="\$ARGS -ldflags $GO_LDFLAGS"
 fi
+if [[ "\$1" = "test" ]] &&
+   [[ "\$CC" != "" ]]
+then
+  ARGS="\$ARGS -c -ldflags $GO_LDFLAGS"
+fi
+ARGS="\$ARGS \${@:2}"
+
 $GOBIN/go \$ARGS
 EOF
   chmod a+x $GOBIN/go-$GOOS-$GOARCH

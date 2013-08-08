@@ -6,6 +6,8 @@
 # Trap and exit script if ^C sent
 trap "exit 1" INT TERM
 
+BINDIR="bin"
+
 # Print the usage information for this script
 usage()
 {
@@ -21,6 +23,8 @@ OPTIONS:
    -b      Build and install the list of *.go files that follow this option.
            If you have more than one go file, wrap the list in double quotes
            (e.g. $0 -b "file1.go file2.go file3.go").
+   -t      Build and install all tests from \$GOROOT/src/pkg
+   -c      Clean (i.e. remove all non *.go files and known scripts)
    -v      Verbose mode
 EOF
 }
@@ -33,7 +37,10 @@ fi
 
 # Get the options from the command line
 GOPROGS=""
-while getopts “hab:v” OPTION
+TEST=""
+CLEAN=""
+VERBOSE=""
+while getopts “hab:tcv” OPTION
 do
      case $OPTION in
          h)
@@ -46,6 +53,12 @@ do
          b)
              GOPROGS="$OPTARG"
              ;;
+         c)
+             CLEAN=1
+             ;;
+         t)
+             TEST=1
+             ;;
          v)
              VERBOSE=1
              ;;
@@ -54,8 +67,17 @@ done
 
 # If we didn't pass any go files to build, then print our usage message and
 # exit the script
-if [[ "$GOPROGS" = "" ]]; then
+if [[ "$GOPROGS" = "" ]] &&
+   [[ "$TEST" != "1" ]]    &&
+   [[ "$CLEAN" != "1" ]]
+then
   usage
+  exit 1
+fi
+
+# If cleaning, cleanup then exit
+if [[ "$CLEAN" = "1" ]]; then
+  rm -rf ${BINDIR}
   exit 1
 fi
 
@@ -69,11 +91,33 @@ fi
 
 # Loop over all the arguments and assume they are standalone go files we want
 # to build and install into akaros
-for i in ${GOPROGS}
-do
-	run_helper go-${GOOS}-${GOARCH} build $i
-	i=${i##*/}
-	i=${i%.go}
-	run_helper cp $i ${ROSROOT}/kern/kfs/bin/
-done
+if [[ "$GOPROGS" != "" ]]; then
+  mkdir -p ${BINDIR}
+  for i in ${GOPROGS}; do
+    run_helper go-${GOOS}-${GOARCH} build $i
+    i=${i##*/}
+    i=${i%.go}
+    run_helper cp $i ${ROSROOT}/kern/kfs/bin/
+    mv $i ${BINDIR}
+  done
+fi
+
+# Build and install all of the tests
+if [[ "$TEST" != "" ]]; then
+  cd ../src
+  TESTS=$(find pkg -name "*_test.go" \
+         | sed 's#\(.*\)/.*#\1#' \
+         | sed 's/^pkg\///' \
+         | grep -v 'runtime/race' \
+         | sort -u)
+  cd - > /dev/null
+  
+  mkdir -p ${BINDIR}
+  for t in ${TESTS}; do
+    run_helper go-${GOOS}-${GOARCH} test $t
+    t="${t##*/}.test"
+    run_helper cp $t ${ROSROOT}/kern/kfs/bin/
+    mv $t ${BINDIR}
+  done
+fi
 
