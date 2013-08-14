@@ -17,12 +17,21 @@ void checkpoint(long long unsigned arg, char c)
 	else
 		printf("checkpoint: %llu\n", arg);
 }
+void syscallError(long num)
+{
+	printf("Error: Syscall %ld not yet supported!\n", num);
+}
 */
 import "C"
 
 // Checkpoint function that I can sprinkle into the code to mark checkpoints
 // during my porting effort
-func Checkpoint( arg uint64, c int8 ) {
+func Checkpoint(arg uint64, c int8) {
 	C.checkpoint((C.ulonglong)(arg), (C.char)(c))
+}
+
+// Print out an error related to the syscall specified
+func SyscallError(num uintptr) {
+	C.syscallError(C.long(num))
 }
 

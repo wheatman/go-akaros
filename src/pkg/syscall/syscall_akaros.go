@@ -20,6 +20,15 @@ func SyscallWrapper(trap, a1, a2, a3 uintptr) (r1, r2 uintptr, err Errno) {
 	return Syscall6Wrapper(trap, a1, a2, a3, 0, 0, 0)
 }
 func Syscall6Wrapper(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err Errno) {
+	// I have syscall numbers >=300 stubbed out since they are not yet
+	// implemented.  If we are trying to call one of those, print out a warning
+	// and return an error.
+	if(trap >= 300) {
+		parlib.SyscallError(trap);
+		return r1, r2, Errno(EINVAL)
+	}
+
+	// Otherwise, run the syscall!
 	__r1, __err, _ := parlib.Syscall(uint32(trap), int(a1), int(a2),
 	                                 int(a3), int(a4), int(a5), int(a6))
 	return uintptr(__r1), r2, Errno(__err)
