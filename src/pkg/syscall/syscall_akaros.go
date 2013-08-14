@@ -70,6 +70,10 @@ func Seek(fd int, offset int64, whence int) (newoffset int64, err error) {
 	return newoffset, err
 }
 
+//sys	proc_destroy(pid int32, exitcode int)
+func Exit(exitcode int) {
+	proc_destroy(parlib.Procinfo.Pid(), exitcode)
+}
 
 /*****************************************************************************/
 /****************** Stuff below hasn't been ported yet ***********************/
@@ -968,7 +972,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sysnb	EpollCreate1(flag int) (fd int, err error)
 //sysnb	EpollCtl(epfd int, op int, fd int, event *EpollEvent) (err error)
 //sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
-//sys	Exit(code int) = SYS_EXIT_GROUP
 //sys	Faccessat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fallocate(fd int, mode uint32, off int64, len int64) (err error)
 //sys	Fchdir(fd int) (err error)

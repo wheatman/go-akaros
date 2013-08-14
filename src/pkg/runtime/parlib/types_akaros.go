@@ -26,7 +26,7 @@ const (
 )
 type Vcore C.struct_vcore
 type Pcore C.struct_pcore
-type Procinfo C.procinfo_t
+type ProcinfoType C.procinfo_t
 type Timespec C.struct_timespec
 type Timeval C.struct_timeval
 type Ucq C.struct_ucq

@@ -16,6 +16,9 @@ package parlib
 import "C"
 import "unsafe"
 
+var Procinfo *ProcinfoType = (*ProcinfoType)(unsafe.Pointer(uintptr(C.UINFO)))
+func (p *ProcinfoType) Pid() int32 { return int32(p.pid) }
+
 func Futex(uaddr *int32, op int32, val int32,
            timeout *Timespec, uaddr2 *int32, val3 int32) (ret int32) {
 	// For now, akaros futexes don't support uaddr2 or val3, so we

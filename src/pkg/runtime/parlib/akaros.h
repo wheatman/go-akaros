@@ -15,4 +15,4 @@ static const uint64 UINFO = 0x7f7fffe00000ULL;
 static const uint32 UINFO = 0x7f800000UL;
 #endif
 
-#define __procinfo (*(Procinfo*)UINFO)
+#define __procinfo (*(ProcinfoType*)UINFO)
