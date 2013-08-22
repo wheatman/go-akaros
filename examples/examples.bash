@@ -119,9 +119,10 @@ append_test_script()
 {
 (cat << EOF
 
-# Testing pkg${2#gotests/}
+# Testing pkg${2#/gotests}
+echo ""; echo "Testing pkg${2#/gotests}"
 cd $2
-./$3
+./$3 -test.short -test.timeout=120s
 cd - > /dev/null
 EOF
 ) >> $1
@@ -135,6 +136,13 @@ if [[ "$TESTS" != "" ]]; then
            | sed 's#\(.*\)/.*#\1#' \
            | sed 's/^pkg\///' \
            | grep -v 'runtime/race' \
+           | grep -v 'net' \
+           | grep -v 'os/exec' \
+           | grep -v 'archive/zip' \
+           | grep -v 'crypto/dsa' \
+           | grep -v 'crypto/rsa' \
+           | grep -v 'crypto/tls' \
+           | grep -v 'crypto/x509' \
            | sort -u)
     cd - > /dev/null
   fi
@@ -146,14 +154,22 @@ if [[ "$TESTS" != "" ]]; then
     run_helper go-${GOOS}-${GOARCH} test $t
     bin="${t##*/}.test"
 
-    SUBTESTSDIR="${TESTSDIR}/$t"
-    run_helper mkdir -p ${SUBTESTSDIR}
-    run_helper mv $bin ${SUBTESTSDIR}
-    append_test_script $TESTSSCRIPT /${SUBTESTSDIR#kfs/} $bin
+    PKGTESTDIR="../src/pkg/$t"
+    SUBTESTDIR="${TESTSDIR}/$t"
+    run_helper mkdir -p ${SUBTESTDIR}
+    run_helper mv $bin ${SUBTESTDIR}
+    run_helper cp ${PKGTESTDIR}/*_test.go ${SUBTESTDIR}
+    append_test_script $TESTSSCRIPT /${SUBTESTDIR#kfs/} $bin
 
-    TESTDATADIR="../src/pkg/$t/testdata"
+    TESTDATADIR="${PKGTESTDIR}/testdata"
     if [ -d ${TESTDATADIR} ]; then
-      run_helper cp -R ${TESTDATADIR} ${SUBTESTSDIR}
+      run_helper cp -R ${TESTDATADIR} ${SUBTESTDIR}
+    fi
+    TESTDATADIR="${PKGTESTDIR}/../testdata"
+    if [ -d ${TESTDATADIR} ]; then
+      if [ ! -d "${SUBTESTDIR}/../testdata" ]; then
+        run_helper cp -R ${TESTDATADIR} "${SUBTESTDIR}/.."
+      fi
     fi
   done
 fi
