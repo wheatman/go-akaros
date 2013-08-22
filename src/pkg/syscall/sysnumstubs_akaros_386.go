@@ -22,8 +22,6 @@ const (
 	SYS_FSTATFS64              = 312
 	SYS_STATFS64               = 313
 	SYS_OPENAT                 = 314
-	SYS_PIPE                   = 315
-	SYS_PIPE2                  = 316
 	SYS_UTIMES                 = 317
 	SYS_UTIMENSAT              = 318
 	SYS_FUTIMESAT              = 319
