@@ -108,6 +108,72 @@ func Pipe(p []int, flags int) (err error) {
 	return
 }
 
+func Pread(fd int, p []byte, offset int64) (n int, err error) {
+	/* Saved offset */
+	var o_offset int64
+
+	/* Save the current offset so we can restore it later */
+	o_offset, err = Seek(fd, 0, SEEK_CUR)
+	if err != nil {
+		return
+	}
+
+	/* Seek to wanted position.  */
+	_, err = Seek(fd, offset, SEEK_SET)
+	if err != nil {
+		return
+	}
+
+	/* Read in the data.  */
+	n, err = Read(fd, p);
+
+	/* Seek back to the original position. If this fails, we return its error,
+	 * only if the read before succedded. Otherwise we bypass this error and
+	 * return the error from the read below. */
+	_, __err := Seek(fd, o_offset, SEEK_SET)
+	if __err != nil {
+		if err == nil {
+			return n, __err
+		}
+	}
+
+	/* Return the result of the read */
+	return
+}
+
+func Pwrite(fd int, p []byte, offset int64) (n int, err error) {
+	/* Saved offset */
+	var o_offset int64
+
+	/* Save the current offset so we can restore it later */
+	o_offset, err = Seek(fd, 0, SEEK_CUR)
+	if err != nil {
+		return
+	}
+
+	/* Seek to wanted position.  */
+	_, err = Seek(fd, offset, SEEK_SET)
+	if err != nil {
+		return
+	}
+
+	/* Write out the data.  */
+	n, err = Write(fd, p);
+
+	/* Seek back to the original position. If this fails, we return its error,
+	 * only if the read before succedded. Otherwise we bypass this error and
+	 * return the error from the write below. */
+	_, __err := Seek(fd, o_offset, SEEK_SET)
+	if __err != nil {
+		if err == nil {
+			return n, __err
+		}
+	}
+
+	/* Return the result of the write */
+	return
+}
+
 /*****************************************************************************/
 /****************** Stuff below hasn't been ported yet ***********************/
 /*****************************************************************************/

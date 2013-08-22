@@ -101,8 +101,6 @@ const (
 	SYS_IOPL                   = 393
 	SYS_LCHOWN32               = 394
 	SYS_LSTAT64                = 395
-	SYS_PREAD64                = 396
-	SYS_PWRITE64               = 397
 	SYS_SENDFILE64             = 398
 	SYS_SETFSGID32             = 399
 	SYS_SETFSUID32             = 400

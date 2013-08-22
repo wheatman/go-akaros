@@ -99,8 +99,6 @@ const (
 	SYS_IOPERM                       = 391
 	SYS_IOPL                         = 392
 	SYS_LCHOWN                       = 393
-	SYS_PREAD64                      = 394
-	SYS_PWRITE64                     = 395
 	SYS_SENDFILE                     = 396
 	SYS_SETFSGID                     = 397
 	SYS_SETFSUID                     = 398
