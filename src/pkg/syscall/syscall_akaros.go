@@ -174,6 +174,22 @@ func Pwrite(fd int, p []byte, offset int64) (n int, err error) {
 	return
 }
 
+func ReadDirent(fd int, buf []byte) (n int, err error) {
+	dsize := int(unsafe.Sizeof(Dirent{}))
+	return Read(fd, buf[0:dsize])
+}
+
+func ParseDirent(buf []byte, max int, names []string) (consumed int, count int, newnames []string) {
+	dirent := (*Dirent)(unsafe.Pointer(&buf[0]))
+	bytes := (*[256]byte)(unsafe.Pointer(&dirent.Name[0]))
+
+	var name = string(bytes[0:clen(bytes[:])])
+	if name == "." || name == ".." { // Useless names
+		return len(buf), 0, names
+	}
+	return len(buf), 1, append(names, name)
+}
+
 /*****************************************************************************/
 /****************** Stuff below hasn't been ported yet ***********************/
 /*****************************************************************************/
@@ -985,31 +1001,6 @@ func clen(n []byte) int {
 	return len(n)
 }
 
-func ReadDirent(fd int, buf []byte) (n int, err error) {
-	return Getdents(fd, buf)
-}
-
-func ParseDirent(buf []byte, max int, names []string) (consumed int, count int, newnames []string) {
-	origlen := len(buf)
-	count = 0
-	for max != 0 && len(buf) > 0 {
-		dirent := (*Dirent)(unsafe.Pointer(&buf[0]))
-		buf = buf[dirent.Reclen:]
-		if dirent.Ino == 0 { // File absent in directory.
-			continue
-		}
-		bytes := (*[10000]byte)(unsafe.Pointer(&dirent.Name[0]))
-		var name = string(bytes[0:clen(bytes[:])])
-		if name == "." || name == ".." { // Useless names
-			continue
-		}
-		max--
-		count++
-		names = append(names, name)
-	}
-	return origlen - len(buf), count, names
-}
-
 //sys	mount(source string, target string, fstype string, flags uintptr, data *byte) (err error)
 
 func Mount(source string, target string, fstype string, flags uintptr, data string) (err error) {
@@ -1055,7 +1046,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Fdatasync(fd int) (err error)
 //sys	Flock(fd int, how int) (err error)
 //sys	Fsync(fd int) (err error)
-//sys	Getdents(fd int, buf []byte) (n int, err error) = SYS_GETDENTS64
 //sysnb	Getpgid(pid int) (pgid int, err error)
 //sysnb	Getpgrp() (pid int)
 //sysnb	Getpid() (pid int)
