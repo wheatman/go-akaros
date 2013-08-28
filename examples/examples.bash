@@ -138,7 +138,6 @@ if [[ "$TESTS" != "" ]]; then
            | grep -v 'runtime/race' \
            | grep -v 'net' \
            | grep -v 'os/exec' \
-           | grep -v 'archive/zip' \
            | grep -v 'crypto/dsa' \
            | grep -v 'crypto/rsa' \
            | grep -v 'crypto/tls' \
@@ -161,6 +160,9 @@ if [[ "$TESTS" != "" ]]; then
     run_helper cp ${PKGTESTDIR}/*_test.go ${SUBTESTDIR}
     append_test_script $TESTSSCRIPT /${SUBTESTDIR#kfs/} $bin
 
+    if [ $t = 'io/ioutil' ]; then
+      run_helper cp ${PKGTESTDIR}/../*_test.go ${SUBTESTDIR}/..
+    fi
     TESTDATADIR="${PKGTESTDIR}/testdata"
     if [ -d ${TESTDATADIR} ]; then
       run_helper cp -R ${TESTDATADIR} ${SUBTESTDIR}
