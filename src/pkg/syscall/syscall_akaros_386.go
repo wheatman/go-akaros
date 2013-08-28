@@ -38,7 +38,6 @@ func NsecToTimeval(nsec int64) (tv Timeval) {
 //sys	Ioperm(from int, num int, on int) (err error)
 //sys	Iopl(level int) (err error)
 //sys	Lchown(path string, uid int, gid int) (err error) = SYS_LCHOWN32
-//sys	Lstat(path string, stat *Stat_t) (err error) = SYS_LSTAT64
 //sys	sendfile(outfd int, infd int, offset *int64, count int) (written int, err error) = SYS_SENDFILE64
 //sys	Setfsgid(gid int) (err error) = SYS_SETFSGID32
 //sys	Setfsuid(uid int) (err error) = SYS_SETFSUID32
@@ -48,7 +47,6 @@ func NsecToTimeval(nsec int64) (tv Timeval) {
 //sysnb	Setresuid(ruid int, euid int, suid int) (err error) = SYS_SETRESUID32
 //sysnb	Setreuid(ruid int, euid int) (err error) = SYS_SETREUID32
 //sys	Splice(rfd int, roff *int64, wfd int, woff *int64, len int, flags int) (n int, err error)
-//sys	Stat(path string, stat *Stat_t) (err error) = SYS_STAT64
 //sys	SyncFileRange(fd int, off int64, n int64, flags int) (err error)
 //sys	Truncate(path string, length int64) (err error) = SYS_TRUNCATE64
 //sysnb	getgroups(n int, list *_Gid_t) (nn int, err error) = SYS_GETGROUPS32

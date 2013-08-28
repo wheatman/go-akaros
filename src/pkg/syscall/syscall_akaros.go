@@ -60,12 +60,12 @@ func read(fd int, p []byte) (n int, err error) {
 	}
 }
 
-//sys	open(path string, flags int, mode uint32) (fd int, err error)
+//sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
 func Open(path string, flags int, mode ...uint32) (fd int, err error) {
 	if len(path) == 0 {
 		return -1, EINVAL
 	}
-	fd, err = open(path, flags, mode[0])
+	fd, err = open(path, len(path), flags, mode[0])
 	if err == nil && path == "/dev/urandom" {
 		dev_urandom_fd = fd
 	}
@@ -106,6 +106,16 @@ func Pipe(p []int, flags int) (err error) {
 	p[0] = int(pp[0])
 	p[1] = int(pp[1])
 	return
+}
+
+//sys	stat(path string, pathlen int, stat *Stat_t) (err error)
+func Stat(path string, s *Stat_t) (err error) {
+	return stat(path, len(path), s)
+}
+
+//sys	lstat(path string, pathlen int, stat *Stat_t) (err error)
+func Lstat(path string, s *Stat_t) (err error) {
+	return lstat(path, len(path), s)
 }
 
 func Pread(fd int, p []byte, offset int64) (n int, err error) {
@@ -176,7 +186,11 @@ func Pwrite(fd int, p []byte, offset int64) (n int, err error) {
 
 func ReadDirent(fd int, buf []byte) (n int, err error) {
 	dsize := int(unsafe.Sizeof(Dirent{}))
-	return Read(fd, buf[0:dsize])
+	n, err = Read(fd, buf[0:dsize])
+	if n == 0 && err == ENOENT {
+		err = nil
+	}
+	return n, err
 }
 
 func ParseDirent(buf []byte, max int, names []string) (consumed int, count int, newnames []string) {
