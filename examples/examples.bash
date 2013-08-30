@@ -9,6 +9,7 @@ trap "exit 1" INT TERM
 KFSROOT="kfs"
 BINDIR="${KFSROOT}/bin"
 TESTSDIR="${KFSROOT}/gotests"
+eval $(go tool dist env)
 
 # Print the usage information for this script
 usage()
@@ -149,6 +150,8 @@ if [[ "$TESTS" != "" ]]; then
   mkdir -p ${BINDIR}
   TESTSSCRIPT="${BINDIR}/gotests.sh"
   gen_test_script ${TESTSSCRIPT}
+  mkdir -p ${KFSROOT}/dev
+  touch ${KFSROOT}/dev/urandom
   for t in ${TESTS}; do
     run_helper go-${GOOS}-${GOARCH} test $t
     bin="${t##*/}.test"
@@ -160,9 +163,6 @@ if [[ "$TESTS" != "" ]]; then
     run_helper cp ${PKGTESTDIR}/*_test.go ${SUBTESTDIR}
     append_test_script $TESTSSCRIPT /${SUBTESTDIR#kfs/} $bin
 
-    if [ $t = 'io/ioutil' ]; then
-      run_helper cp ${PKGTESTDIR}/../*_test.go ${SUBTESTDIR}/..
-    fi
     TESTDATADIR="${PKGTESTDIR}/testdata"
     if [ -d ${TESTDATADIR} ]; then
       run_helper cp -R ${TESTDATADIR} ${SUBTESTDIR}
@@ -172,6 +172,21 @@ if [[ "$TESTS" != "" ]]; then
       if [ ! -d "${SUBTESTDIR}/../testdata" ]; then
         run_helper cp -R ${TESTDATADIR} "${SUBTESTDIR}/.."
       fi
+    fi
+
+    if [ $t = 'io/ioutil' ]; then
+      run_helper cp ${PKGTESTDIR}/../*_test.go ${SUBTESTDIR}/..
+    fi
+    if [ $t = 'go/parser' ]; then
+      run_helper cp ${PKGTESTDIR}/parser.go ${SUBTESTDIR}
+    fi
+    if [ $t = 'go/printer' ]; then
+      run_helper cp ${PKGTESTDIR}/printer.go ${SUBTESTDIR}
+    fi
+    if [ $t = 'time' ]; then
+      TIMEZONEDIR="${GOROOT}/lib/time"
+      mkdir -p ${KFSROOT}/${TIMEZONEDIR}
+      run_helper cp ${TIMEZONEDIR}/zoneinfo.zip ${KFSROOT}/${TIMEZONEDIR}
     fi
   done
 fi
