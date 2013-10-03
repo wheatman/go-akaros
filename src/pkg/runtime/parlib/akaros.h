@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <parlib/syscall_akaros.h>
+#include <parlib/zsyscall_akaros.h>
 #include <parlib/ztypes_akaros.h>
 
 // I wanted to pass UINFO through cgo -cdefs, but it turns all #defines into

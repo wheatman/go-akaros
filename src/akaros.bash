@@ -243,7 +243,7 @@ then
 
   # Copy in the Akaros sycall header and generate kenc-style C defs from it
   run_helper cd "$GOROOT"/src/pkg/runtime/parlib
-  run_helper cp "$ROSROOT"/kern/include/ros/bits/syscall.h syscall_${GOOS}.h
+  run_helper cp "$ROSROOT"/kern/include/ros/bits/syscall.h zsyscall_${GOOS}.h
   run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -cdefs types_${GOOS}.go > ztypes_${GOOS}.h"
   run_helper rm -rf _obj
   run_helper_eval "cd - > /dev/null"
