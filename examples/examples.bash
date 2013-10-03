@@ -86,6 +86,12 @@ fi
 if [[ "$CLEAN" = "1" ]]; then
   rm -rf ${BINDIR}
   rm -rf ${TESTSDIR}
+  if [[ -d ${KFSROOT}/${GOROOT} ]]; then
+    rm -rf ${KFSROOT}/${GOROOT}
+    cd ${KFSROOT}
+    rmdir -p $(dirname ${GOROOT##/})
+    cd ..
+  fi
   exit 1
 fi
 
