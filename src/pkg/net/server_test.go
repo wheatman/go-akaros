@@ -16,8 +16,8 @@ import (
 
 func skipServerTest(net, unixsotype, addr string, ipv6, ipv4map, linuxonly bool) bool {
 	switch runtime.GOOS {
-	case "linux", "akaros":
-	case "plan9", "windows":
+	case "linux":
+	case "plan9", "akaros", "windows":
 		// "unix" sockets are not supported on Windows and Plan 9.
 		if net == unixsotype {
 			return true
@@ -147,7 +147,7 @@ var seqpacketConnServerTests = []struct {
 }
 
 func TestSeqpacketConnServer(t *testing.T) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "akaros" {
+	if runtime.GOOS != "linux" {
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 

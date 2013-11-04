@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Linux-specific
+// Akaros-specific
 
 package os
+
+var Nsprefix string = "/9"
 
 func hostname() (name string, err error) {
 	f, err := Open("/proc/sys/kernel/hostname")

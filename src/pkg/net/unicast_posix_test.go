@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !plan9
+// +build !plan9,!akaros
 
 package net
 
@@ -45,7 +45,7 @@ var listenerTests = []struct {
 // same port.
 func TestTCPListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -69,7 +69,7 @@ func TestTCPListener(t *testing.T) {
 // same port.
 func TestUDPListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -170,7 +170,7 @@ var dualStackListenerTests = []struct {
 // listening address and same port.
 func TestDualStackTCPListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	if !supportsIPv6 {
@@ -202,7 +202,7 @@ func TestDualStackTCPListener(t *testing.T) {
 // listening address and same port.
 func TestDualStackUDPListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	if !supportsIPv6 {
@@ -405,7 +405,7 @@ var prohibitionaryDialArgTests = []struct {
 
 func TestProhibitionaryDialArgs(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	// This test requires both IPv6 and IPv6 IPv4-mapping functionality.
@@ -427,7 +427,7 @@ func TestProhibitionaryDialArgs(t *testing.T) {
 
 func TestWildWildcardListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 

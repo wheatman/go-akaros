@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !plan9,!windows
+// +build !plan9,!windows,!akaros
 
 package net
 
@@ -108,8 +108,8 @@ func TestReadUnixgramWithZeroBytesBuffer(t *testing.T) {
 }
 
 func TestUnixAutobind(t *testing.T) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "akaros" {
-		t.Skip("skipping: autobind is linux and akaros only")
+	if runtime.GOOS != "linux" {
+		t.Skip("skipping: autobind is linux only")
 	}
 
 	laddr := &UnixAddr{Name: "", Net: "unixgram"}
@@ -176,7 +176,7 @@ func TestUnixConnLocalAndRemoteNames(t *testing.T) {
 			t.Fatalf("UnixConn.Write failed: %v", err)
 		}
 
-		if (runtime.GOOS == "linux" || runtime.GOOS == "akaros") && laddr == "" {
+		if (runtime.GOOS == "linux") && laddr == "" {
 			laddr = "@" // autobind feature
 		}
 		var connAddrs = [3]struct{ got, want Addr }{
@@ -228,7 +228,7 @@ func TestUnixgramConnLocalAndRemoteNames(t *testing.T) {
 			}
 		}()
 
-		if (runtime.GOOS == "linux" || runtime.GOOS == "akaros") && laddr == "" {
+		if (runtime.GOOS == "linux") && laddr == "" {
 			laddr = "@" // autobind feature
 		}
 		var connAddrs = [4]struct{ got, want Addr }{

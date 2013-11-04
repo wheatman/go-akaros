@@ -30,10 +30,6 @@ func NsecToTimeval(nsec int64) (tv Timeval) {
 //sys	Chown(path string, uid int, gid int) (err error) = SYS_CHOWN32
 //sys	Fchown(fd int, uid int, gid int) (err error) = SYS_FCHOWN32
 //sys	Ftruncate(fd int, length int64) (err error) = SYS_FTRUNCATE64
-//sysnb	Getegid() (egid int) = SYS_GETEGID32
-//sysnb	Geteuid() (euid int) = SYS_GETEUID32
-//sysnb	Getgid() (gid int) = SYS_GETGID32
-//sysnb	Getuid() (uid int) = SYS_GETUID32
 //sys	Ioperm(from int, num int, on int) (err error)
 //sys	Iopl(level int) (err error)
 //sys	Lchown(path string, uid int, gid int) (err error) = SYS_LCHOWN32
@@ -48,7 +44,6 @@ func NsecToTimeval(nsec int64) (tv Timeval) {
 //sys	Splice(rfd int, roff *int64, wfd int, woff *int64, len int, flags int) (n int, err error)
 //sys	SyncFileRange(fd int, off int64, n int64, flags int) (err error)
 //sys	Truncate(path string, length int64) (err error) = SYS_TRUNCATE64
-//sysnb	getgroups(n int, list *_Gid_t) (nn int, err error) = SYS_GETGROUPS32
 //sysnb	setgroups(n int, list *_Gid_t) (err error) = SYS_SETGROUPS32
 //sys	Select(nfd int, r *FdSet, w *FdSet, e *FdSet, timeout *Timeval) (n int, err error) = SYS__NEWSELECT
 

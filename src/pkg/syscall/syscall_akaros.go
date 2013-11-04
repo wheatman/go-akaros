@@ -16,6 +16,15 @@ import (
 	"unsafe"
 )
 
+func cstring(s []byte) string {
+	for i := range s {
+		if s[i] == 0 {
+			return string(s[0:i])
+		}
+	}
+	return string(s)
+}
+
 func SyscallWrapper(trap, a1, a2, a3 uintptr) (r1, r2 uintptr, err Errno) {
 	return Syscall6Wrapper(trap, a1, a2, a3, 0, 0, 0)
 }
@@ -205,6 +214,35 @@ func ParseDirent(buf []byte, max int, names []string) (consumed int, count int, 
 	return len(buf), 1, append(names, name)
 }
 
+//sys	fcntl(fd int, cmd int, arg int) (val int, err error)
+func Fcntl(fd int, cmd int, arg int) (val int, err error) {
+	return fcntl(fd, cmd, arg)
+}
+
+func Dup(oldfd int) (fd int, err error) {
+  return fcntl(fd, F_DUPFD, 0)
+}
+
+//sys	fd2path(fd int, buf []byte) (err error)
+func Fd2path(fd int) (path string, err error) {
+	var buf [512]byte
+
+	e := fd2path(fd, buf[:])
+	if e != nil {
+		return "", e
+	}
+	return cstring(buf[:]), nil
+}
+
+func Getegid() (egid int) { return -1 }
+func Geteuid() (euid int) { return -1 }
+func Getgid() (gid int)   { return -1 }
+func Getuid() (uid int)   { return -1 }
+
+func Getgroups() (gids []int, err error) {
+    return make([]int, 0), nil
+}
+
 /*****************************************************************************/
 /****************** Stuff below hasn't been ported yet ***********************/
 /*****************************************************************************/
@@ -285,32 +323,6 @@ func Getwd() (wd string, err error) {
 		return "", EINVAL
 	}
 	return string(buf[0 : n-1]), nil
-}
-
-func Getgroups() (gids []int, err error) {
-	n, err := getgroups(0, nil)
-	if err != nil {
-		return nil, err
-	}
-	if n == 0 {
-		return nil, nil
-	}
-
-	// Sanity check group count.  Max is 1<<16 on Linux.
-	if n < 0 || n > 1<<20 {
-		return nil, EINVAL
-	}
-
-	a := make([]_Gid_t, n)
-	n, err = getgroups(n, &a[0])
-	if err != nil {
-		return nil, err
-	}
-	gids = make([]int, n)
-	for i, v := range a[0:n] {
-		gids[i] = int(v)
-	}
-	return
 }
 
 func Setgroups(gids []int) (err error) {
@@ -1045,7 +1057,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Chmod(path string, mode uint32) (err error)
 //sys	Chroot(path string) (err error)
 //sys	Creat(path string, mode uint32) (fd int, err error)
-//sysnb	Dup(oldfd int) (fd int, err error)
 //sysnb	Dup2(oldfd int, newfd int) (err error)
 //sysnb	EpollCreate(size int) (fd int, err error)
 //sysnb	EpollCreate1(flag int) (fd int, err error)
@@ -1057,7 +1068,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Fchmod(fd int, mode uint32) (err error)
 //sys	Fchmodat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fchownat(dirfd int, path string, uid int, gid int, flags int) (err error)
-//sys	fcntl(fd int, cmd int, arg int) (val int, err error)
 //sys	Fdatasync(fd int) (err error)
 //sys	Flock(fd int, how int) (err error)
 //sys	Fsync(fd int) (err error)

@@ -25,7 +25,7 @@ var ipv4MulticastListenerTests = []struct {
 // port.
 func TestIPv4MulticastListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -93,7 +93,7 @@ var ipv6MulticastListenerTests = []struct {
 // port.
 func TestIPv6MulticastListener(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "solaris":
+	case "plan9", "akaros", "solaris":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	if !supportsIPv6 {
@@ -158,9 +158,9 @@ func checkMulticastListener(c *UDPConn, ip IP) error {
 
 func multicastRIBContains(ip IP) (bool, error) {
 	switch runtime.GOOS {
-	case "netbsd", "openbsd", "plan9", "solaris", "windows":
+	case "netbsd", "openbsd", "plan9", "akaros", "solaris", "windows":
 		return true, nil // not implemented yet
-	case "linux", "akaros":
+	case "linux":
 		if runtime.GOARCH == "arm" || runtime.GOARCH == "alpha" {
 			return true, nil // not implemented yet
 		}

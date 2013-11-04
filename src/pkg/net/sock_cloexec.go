@@ -5,7 +5,7 @@
 // This file implements sysSocket and accept for platforms that
 // provide a fast path for setting SetNonblock and CloseOnExec.
 
-// +build linux akaros
+// +build linux
 
 package net
 

@@ -14,7 +14,7 @@ import (
 )
 
 func TestShutdown(t *testing.T) {
-	if runtime.GOOS == "plan9" {
+	if runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	ln, err := Listen("tcp", "127.0.0.1:0")
@@ -61,7 +61,7 @@ func TestShutdown(t *testing.T) {
 
 func TestShutdownUnix(t *testing.T) {
 	switch runtime.GOOS {
-	case "windows", "plan9":
+	case "windows", "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	f, err := ioutil.TempFile("", "go_net_unixtest")
@@ -142,7 +142,7 @@ func TestTCPListenClose(t *testing.T) {
 
 func TestUDPListenClose(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	ln, err := ListenPacket("udp", "127.0.0.1:0")
@@ -174,7 +174,7 @@ func TestUDPListenClose(t *testing.T) {
 
 func TestTCPClose(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	l, err := Listen("tcp", "127.0.0.1:0")

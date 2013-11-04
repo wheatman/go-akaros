@@ -26,7 +26,7 @@ type copyRes struct {
 
 func TestAcceptTimeout(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -73,7 +73,7 @@ func TestAcceptTimeout(t *testing.T) {
 
 func TestReadTimeout(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -128,7 +128,7 @@ func TestReadTimeout(t *testing.T) {
 
 func TestWriteTimeout(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -234,7 +234,7 @@ func testTimeout(t *testing.T, net, addr string, readFrom bool) {
 
 func TestTimeoutUDP(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -251,7 +251,7 @@ func TestTimeoutUDP(t *testing.T) {
 
 func TestTimeoutTCP(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -267,7 +267,7 @@ func TestTimeoutTCP(t *testing.T) {
 
 func TestDeadlineReset(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	ln, err := Listen("tcp", "127.0.0.1:0")
@@ -295,7 +295,7 @@ func TestDeadlineReset(t *testing.T) {
 
 func TestTimeoutAccept(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	ln, err := Listen("tcp", "127.0.0.1:0")
@@ -321,7 +321,7 @@ func TestTimeoutAccept(t *testing.T) {
 
 func TestReadWriteDeadline(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -421,7 +421,7 @@ func TestVariousDeadlines4Proc(t *testing.T) {
 
 func testVariousDeadlines(t *testing.T, maxProcs int) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -524,7 +524,7 @@ func testVariousDeadlines(t *testing.T, maxProcs int) {
 // if there's data ready to be read.
 func TestReadDeadlineDataAvailable(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -563,7 +563,7 @@ func TestReadDeadlineDataAvailable(t *testing.T) {
 // if there's buffer space available to write.
 func TestWriteDeadlineBufferAvailable(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -600,7 +600,7 @@ func TestWriteDeadlineBufferAvailable(t *testing.T) {
 // if there's incoming connections available.
 func TestAcceptDeadlineConnectionAvailable(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -631,7 +631,7 @@ func TestAcceptDeadlineConnectionAvailable(t *testing.T) {
 // if the connection can be established w/o blocking.
 func TestConnectDeadlineInThePast(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -658,7 +658,7 @@ func TestConnectDeadlineInThePast(t *testing.T) {
 // Known to cause data races in the past.
 func TestProlongTimeout(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 

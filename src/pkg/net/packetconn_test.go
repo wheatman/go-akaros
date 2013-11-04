@@ -49,7 +49,7 @@ func TestPacketConn(t *testing.T) {
 			wb = []byte("UDP PACKETCONN TEST")
 		case "ip":
 			switch runtime.GOOS {
-			case "plan9":
+			case "plan9", "akaros":
 				continue
 			}
 			if os.Getuid() != 0 {
@@ -68,7 +68,7 @@ func TestPacketConn(t *testing.T) {
 			}
 		case "unixgram":
 			switch runtime.GOOS {
-			case "plan9", "windows":
+			case "plan9", "akaros", "windows":
 				continue
 			}
 			wb = []byte("UNIXGRAM PACKETCONN TEST")
@@ -132,7 +132,7 @@ func TestConnAndPacketConn(t *testing.T) {
 			wb = []byte("UDP PACKETCONN TEST")
 		case "ip":
 			switch runtime.GOOS {
-			case "plan9":
+			case "plan9", "akaros":
 				continue
 			}
 			if os.Getuid() != 0 {
@@ -151,7 +151,7 @@ func TestConnAndPacketConn(t *testing.T) {
 			}
 		case "unixgram":
 			switch runtime.GOOS {
-			case "plan9", "windows":
+			case "plan9", "akaros", "windows":
 				continue
 			}
 			wb = []byte("UNIXGRAM PACKETCONN TEST")

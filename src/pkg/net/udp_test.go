@@ -58,7 +58,7 @@ func TestResolveUDPAddr(t *testing.T) {
 
 func TestWriteToUDP(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -229,7 +229,7 @@ func TestIPv6LinkLocalUnicastUDP(t *testing.T) {
 			{"udp", "[localhost%" + ifi.Name + "]:0", true},
 			{"udp6", "[localhost%" + ifi.Name + "]:0", true},
 		}...)
-	case "linux", "akaros":
+	case "linux":
 		tests = append(tests, []test{
 			{"udp", "[ip6-localhost%" + ifi.Name + "]:0", true},
 			{"udp6", "[ip6-localhost%" + ifi.Name + "]:0", true},

@@ -32,7 +32,7 @@ func testUnixAddr() string {
 var condFatalf = func() func(*testing.T, string, ...interface{}) {
 	// A few APIs are not implemented yet on both Plan 9 and Windows.
 	switch runtime.GOOS {
-	case "plan9", "windows":
+	case "plan9", "akaros", "windows":
 		return (*testing.T).Logf
 	}
 	return (*testing.T).Fatalf
@@ -40,7 +40,7 @@ var condFatalf = func() func(*testing.T, string, ...interface{}) {
 
 func TestTCPListenerSpecificMethods(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -164,7 +164,7 @@ func TestUDPConnSpecificMethods(t *testing.T) {
 
 func TestIPConnSpecificMethods(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	if os.Getuid() != 0 {
@@ -221,7 +221,7 @@ func TestIPConnSpecificMethods(t *testing.T) {
 
 func TestUnixListenerSpecificMethods(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "windows":
+	case "plan9", "akaros", "windows":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
@@ -263,7 +263,7 @@ func TestUnixListenerSpecificMethods(t *testing.T) {
 
 func TestUnixConnSpecificMethods(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "windows":
+	case "plan9", "akaros", "windows":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 

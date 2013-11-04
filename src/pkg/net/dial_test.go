@@ -44,7 +44,7 @@ func TestDialTimeout(t *testing.T) {
 	// TODO(bradfitz): It's hard to test this in a portable
 	// way. This is unfortunate, but works for now.
 	switch runtime.GOOS {
-	case "linux", "akaros":
+	case "linux":
 		// The kernel will start accepting TCP connections before userspace
 		// gets a chance to not accept them, so fire off a bunch to fill up
 		// the kernel's backlog.  Then we test we get a failure after that.
@@ -137,7 +137,7 @@ func TestSelfConnect(t *testing.T) {
 		n = 1000
 	}
 	switch runtime.GOOS {
-	case "darwin", "freebsd", "netbsd", "openbsd", "plan9", "windows":
+	case "darwin", "freebsd", "netbsd", "openbsd", "plan9", "akaros", "windows":
 		// Non-Linux systems take a long time to figure
 		// out that there is nothing listening on localhost.
 		n = 100
@@ -256,7 +256,7 @@ func TestInvalidDialAndListenArgs(t *testing.T) {
 }
 
 func TestDialTimeoutFDLeak(t *testing.T) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "akaros" {
+	if runtime.GOOS != "linux" {
 		// TODO(bradfitz): test on other platforms
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
@@ -315,7 +315,7 @@ func TestDialTimeoutFDLeak(t *testing.T) {
 }
 
 func numFD() int {
-	if runtime.GOOS == "linux" || runtime.GOOS == "akaros" {
+	if runtime.GOOS == "linux" {
 		f, err := os.Open("/proc/self/fd")
 		if err != nil {
 			panic(err)
