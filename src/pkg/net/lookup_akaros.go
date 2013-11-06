@@ -45,7 +45,10 @@ func queryCS(net, host, service string) (res []string, err error) {
 	if host == "" {
 		host = "*"
 	}
-	return query(os.Nsprefix+"/net/cs", net+"!"+host+"!"+service, 128)
+	//return query(os.Nsprefix+"/net/cs", net+"!"+host+"!"+service, 128)
+	res = []string{os.Nsprefix+"/net/"+net+"/clone"+" "+host+"!"+service}
+	err = nil
+	return
 }
 
 func queryCS1(net string, ip IP, port int) (clone, dest string, err error) {
