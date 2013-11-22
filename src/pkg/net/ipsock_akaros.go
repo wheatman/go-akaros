@@ -54,7 +54,7 @@ func readPlan9Addr(proto, filename string) (addr Addr, err error) {
 	if err != nil {
 		return
 	}
-	ip, port, err := parsePlan9Addr(string(buf[:n]))
+	ip, port, err := parsePlan9Addr(os.KernelString(buf[:n]))
 	if err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func startPlan9(net string, addr Addr) (ctl *os.File, dest, proto, name string, 
 		f.Close()
 		return
 	}
-	return f, dest, proto, string(buf[:n]), nil
+	return f, dest, proto, os.KernelString(buf[:n]), nil
 }
 
 func netErr(e error) {
@@ -177,7 +177,7 @@ func (l *netFD) acceptPlan9() (fd *netFD, err error) {
 		f.Close()
 		return nil, &OpError{"accept", l.dir + "/listen", l.laddr, err}
 	}
-	name := string(buf[:n])
+	name := os.KernelString(buf[:n])
 	data, err := os.OpenFile(os.Nsprefix+"/net/"+l.proto+"/"+name+"/data", os.O_RDWR, 0)
 	if err != nil {
 		f.Close()

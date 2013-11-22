@@ -26,7 +26,7 @@ func (fd *netFD) status(ln int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(buf[:n]), nil
+	return os.KernelString(buf[:n]), nil
 }
 
 func newFileFD(f *os.File) (net *netFD, err error) {
@@ -66,7 +66,7 @@ func newFileFD(f *os.File) (net *netFD, err error) {
 		if err != nil {
 			return nil, err
 		}
-		name = string(buf[:n])
+		name = os.KernelString(buf[:n])
 	default:
 		if len(comp) < 4 {
 			return nil, errors.New("could not find control file for connection")

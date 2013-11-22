@@ -30,7 +30,7 @@ func query(filename, query string, bufSize int) (res []string, err error) {
 		if n <= 0 {
 			break
 		}
-		res = append(res, string(buf[:n]))
+		res = append(res, os.KernelString(buf[:n]))
 	}
 	return
 }
