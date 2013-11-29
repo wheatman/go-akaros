@@ -25,6 +25,7 @@ my $cmdline = "mksyscall.pl " . join(' ', @ARGV);
 my $errors = 0;
 my $_32bit = "";
 my $plan9 = 0;
+my $akaros = 0;
 my $openbsd = 0;
 my $netbsd = 0;
 my $arm = 0; # 64-bit value should use (even, odd)-pair
@@ -34,6 +35,10 @@ if($ARGV[0] eq "-b32") {
 	shift;
 } elsif($ARGV[0] eq "-l32") {
 	$_32bit = "little-endian";
+	shift;
+}
+if($ARGV[0] eq "-akaros") {
+	$akaros = 1;
 	shift;
 }
 if($ARGV[0] eq "-plan9") {
@@ -258,6 +263,10 @@ while(<>) {
 	
 	if ($plan9 && $ret[2] eq "e1") {
 		$text .= "\tif int32(r0) == -1 {\n";
+		$text .= "\t\terr = e1\n";
+		$text .= "\t}\n";
+	} elsif ($akaros && $do_errno) {
+		$text .= "\tif e1 != nil {\n";
 		$text .= "\t\terr = e1\n";
 		$text .= "\t}\n";
 	} elsif ($do_errno) {

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin freebsd linux netbsd openbsd
-
 // Fork, exec, wait, etc.
 
 package syscall
@@ -130,7 +128,7 @@ var zeroSysProcAttr SysProcAttr
 func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) {
 	var p [2]int
 	var n int
-	var err1 Errno
+	var err1 error
 	var wstatus WaitStatus
 
 	if attr == nil {
@@ -189,8 +187,8 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 
 	// Kick off child.
 	pid, err1 = forkAndExecInChild(argv0p, argvp, envvp, chroot, dir, attr, sys, p[1])
-	if err1 != 0 {
-		err = Errno(err1)
+	if err1 != nil {
+		err = err1
 		goto error
 	}
 	ForkLock.Unlock()
@@ -201,7 +199,7 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	Close(p[0])
 	if err != nil || n != 0 {
 		if n == int(unsafe.Sizeof(err1)) {
-			err = Errno(err1)
+			err = err1
 		}
 		if err == nil {
 			err = EPIPE
@@ -257,5 +255,5 @@ func Exec(argv0 string, argv []string, envv []string) (err error) {
 		uintptr(unsafe.Pointer(argv0p)),
 		uintptr(unsafe.Pointer(&argvp[0])),
 		uintptr(unsafe.Pointer(&envvp[0])))
-	return Errno(err1)
+	return err1
 }

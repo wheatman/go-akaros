@@ -30,12 +30,12 @@ type SysProcAttr struct {
 // no rescheduling, no malloc calls, and no new stack segments.
 // The calls to RawSyscall are okay because they are assembly
 // functions that do not grow the stack.
-func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err Errno) {
+func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
 	// Declare all variables at top in case any
 	// declarations require heap allocation (e.g., err1).
 	var (
 		r1     uintptr
-		err1   Errno
+		err1   error
 		nextfd int
 		i      int
 	)
@@ -56,13 +56,13 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// About to call fork.
 	// No more allocation or calls of non-assembly functions.
 	r1, _, err1 = RawSyscall(SYS_FORK, 0, 0, 0)
-	if err1 != 0 {
+	if err1 != nil {
 		return 0, err1
 	}
 
 	if r1 != 0 {
 		// parent; return PID
-		return int(r1), 0
+		return int(r1), nil
 	}
 
 	// Fork succeeded, now in child.
@@ -70,7 +70,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Parent death signal
 	if sys.Pdeathsig != 0 {
 		_, _, err1 = RawSyscall6(SYS_PRCTL, PR_SET_PDEATHSIG, uintptr(sys.Pdeathsig), 0, 0, 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 
@@ -81,7 +81,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		if r1 == 1 {
 			pid, _, _ := RawSyscall(SYS_GETPID, 0, 0, 0)
 			_, _, err1 := RawSyscall(SYS_KILL, pid, uintptr(sys.Pdeathsig), 0)
-			if err1 != 0 {
+			if err1 != nil {
 				goto childerror
 			}
 		}
@@ -90,7 +90,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Enable tracing if requested.
 	if sys.Ptrace {
 		_, _, err1 = RawSyscall(SYS_PTRACE, uintptr(PTRACE_TRACEME), 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -98,7 +98,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Session ID
 	if sys.Setsid {
 		_, _, err1 = RawSyscall(SYS_SETSID, 0, 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -106,7 +106,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Set process group
 	if sys.Setpgid {
 		_, _, err1 = RawSyscall(SYS_SETPGID, 0, 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -114,7 +114,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Chroot
 	if chroot != nil {
 		_, _, err1 = RawSyscall(SYS_CHROOT, uintptr(unsafe.Pointer(chroot)), 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -127,15 +127,15 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 			groups = uintptr(unsafe.Pointer(&cred.Groups[0]))
 		}
 		_, _, err1 = RawSyscall(SYS_SETGROUPS, ngroups, groups, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 		_, _, err1 = RawSyscall(SYS_SETGID, uintptr(cred.Gid), 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 		_, _, err1 = RawSyscall(SYS_SETUID, uintptr(cred.Uid), 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -143,7 +143,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Chdir
 	if dir != nil {
 		_, _, err1 = RawSyscall(SYS_CHDIR, uintptr(unsafe.Pointer(dir)), 0, 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -152,7 +152,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// so that pass 2 won't stomp on an fd it needs later.
 	if pipe < nextfd {
 		_, _, err1 = RawSyscall(SYS_DUP2, uintptr(pipe), uintptr(nextfd), 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 		RawSyscall(SYS_FCNTL, uintptr(nextfd), F_SETFD, FD_CLOEXEC)
@@ -162,7 +162,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	for i = 0; i < len(fd); i++ {
 		if fd[i] >= 0 && fd[i] < int(i) {
 			_, _, err1 = RawSyscall(SYS_DUP2, uintptr(fd[i]), uintptr(nextfd), 0)
-			if err1 != 0 {
+			if err1 != nil {
 				goto childerror
 			}
 			RawSyscall(SYS_FCNTL, uintptr(nextfd), F_SETFD, FD_CLOEXEC)
@@ -184,7 +184,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 			// dup2(i, i) won't clear close-on-exec flag on Linux,
 			// probably not elsewhere either.
 			_, _, err1 = RawSyscall(SYS_FCNTL, uintptr(fd[i]), F_SETFD, 0)
-			if err1 != 0 {
+			if err1 != nil {
 				goto childerror
 			}
 			continue
@@ -192,7 +192,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		// The new fd is created NOT close-on-exec,
 		// which is exactly what we want.
 		_, _, err1 = RawSyscall(SYS_DUP2, uintptr(fd[i]), uintptr(i), 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -208,7 +208,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Detach fd 0 from tty
 	if sys.Noctty {
 		_, _, err1 = RawSyscall(SYS_IOCTL, 0, uintptr(TIOCNOTTY), 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}
@@ -216,7 +216,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Set the controlling TTY to Ctty
 	if sys.Setctty && sys.Ctty >= 0 {
 		_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(sys.Ctty), uintptr(TIOCSCTTY), 0)
-		if err1 != 0 {
+		if err1 != nil {
 			goto childerror
 		}
 	}

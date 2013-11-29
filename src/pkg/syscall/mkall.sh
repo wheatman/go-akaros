@@ -162,13 +162,13 @@ linux_arm)
 	;;
 akaros_386)
 	mkerrors="./mkerrors_akaros.sh -m32"
-	mksyscall="./mksyscall.pl -l32"
+	mksyscall="./mksyscall.pl -l32 -akaros"
 	mksysnum="./mksysnum_akaros.pl $ROSROOT/kern/include/ros/bits/syscall.h"
 	mktypes="go-akaros-386 tool cgo -godefs"
 	;;
 akaros_amd64)
 	mkerrors="./mkerrors_akaros.sh -m64"
-	mksysnum="./mksysnum_linux.pl $unistd_h"
+	mksyscall="./mksyscall.pl -akaros"
 	mksysnum="./mksysnum_akaros.pl $ROSROOT/kern/include/ros/bits/syscall.h"
 	mktypes="go-akaros-amd64 tool cgo -godefs"
 	;;
