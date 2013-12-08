@@ -286,6 +286,7 @@ func TestReaddirnamesOneAtATime(t *testing.T) {
 	case "windows":
 		dir = Getenv("SystemRoot") + "\\system32"
 	case "plan9":
+	case "akaros":
 		dir = "/bin"
 	}
 	file, err := Open(dir)
@@ -384,8 +385,8 @@ func TestReaddirNValues(t *testing.T) {
 }
 
 func TestHardLink(t *testing.T) {
-	// Hardlinks are not supported under windows or Plan 9.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	// Hardlinks are not supported under windows or Plan 9 or akaros.
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return
 	}
 	from, to := "hardlinktestfrom", "hardlinktestto"
@@ -417,8 +418,8 @@ func TestHardLink(t *testing.T) {
 }
 
 func TestSymLink(t *testing.T) {
-	// Symlinks are not supported under windows or Plan 9.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	// Symlinks are not supported under windows or Plan 9 or akaros.
+	if runtime.GOOS == "windows"|| runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return
 	}
 	from, to := "symlinktestfrom", "symlinktestto"
@@ -479,8 +480,8 @@ func TestSymLink(t *testing.T) {
 }
 
 func TestLongSymlink(t *testing.T) {
-	// Symlinks are not supported under windows or Plan 9.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	// Symlinks are not supported under windows or Plan 9 or akaros.
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return
 	}
 	s := "0123456789abcdef"
@@ -682,7 +683,7 @@ func TestChtimes(t *testing.T) {
 	*/
 	pat := Atime(postStat)
 	pmt := postStat.ModTime()
-	if !pat.Before(at) && runtime.GOOS != "plan9" {
+	if !pat.Before(at) && runtime.GOOS != "plan9" && runtime.GOOS != "akaros" {
 		t.Errorf("AccessTime didn't go backwards; was=%d, after=%d", at, pat)
 	}
 
@@ -703,8 +704,8 @@ func TestChdirAndGetwd(t *testing.T) {
 	// These are chosen carefully not to be symlinks on a Mac
 	// (unlike, say, /var, /etc, and /tmp).
 	dirs := []string{"/", "/usr/bin"}
-	// /usr/bin does not usually exist on Plan 9.
-	if runtime.GOOS == "plan9" {
+	// /usr/bin does not usually exist on Plan 9 or akaros.
+	if runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		dirs = []string{"/", "/usr"}
 	}
 	for mode := 0; mode < 2; mode++ {
@@ -819,7 +820,7 @@ func TestOpenError(t *testing.T) {
 			t.Errorf("Open(%q, %d) returns error of %T type; want *PathError", tt.path, tt.mode, err)
 		}
 		if perr.Err != tt.error {
-			if runtime.GOOS == "plan9" {
+			if runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 				syscallErrStr := perr.Err.Error()
 				expectedErrStr := strings.Replace(tt.error.Error(), "file ", "", 1)
 				if !strings.HasSuffix(syscallErrStr, expectedErrStr) {
@@ -876,7 +877,7 @@ func run(t *testing.T, cmd []string) string {
 func TestHostname(t *testing.T) {
 	// There is no other way to fetch hostname on windows, but via winapi.
 	// On Plan 9 it is can be taken from #c/sysname as Hostname() does.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return
 	}
 
