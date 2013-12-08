@@ -31,7 +31,7 @@ func TestMemmoveOverflow(t *testing.T) {
 	// Set up mappings.
 	base, _, errno := syscall.Syscall6(syscall.SYS_MMAP,
 		0xa0<<32, 3<<30, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_PRIVATE|syscall.MAP_ANONYMOUS, ^uintptr(0), 0)
-	if errno != 0 {
+	if errno != nil {
 		t.Skipf("could not create memory mapping: %s", errno)
 	}
 	syscall.Syscall(syscall.SYS_MUNMAP, base, 3<<30, 0)
@@ -39,7 +39,7 @@ func TestMemmoveOverflow(t *testing.T) {
 	for off := uintptr(0); off < 3<<30; off += 65536 {
 		_, _, errno := syscall.Syscall6(syscall.SYS_MMAP,
 			base+off, 65536, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED|syscall.MAP_FIXED, tmp.Fd(), 0)
-		if errno != 0 {
+		if errno != nil {
 			t.Fatalf("could not map a page at requested 0x%x: %s", base+off, errno)
 		}
 		defer syscall.Syscall(syscall.SYS_MUNMAP, base+off, 65536, 0)

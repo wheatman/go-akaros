@@ -50,6 +50,7 @@ var sysdir = func() (sd *sysDir) {
 			},
 		}
 	case "plan9":
+	case "akaros":
 		sd = &sysDir{
 			"/lib/ndb",
 			[]string{
