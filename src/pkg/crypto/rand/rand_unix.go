@@ -26,6 +26,8 @@ import (
 func init() {
 	if runtime.GOOS == "plan9" {
 		Reader = newReader(nil)
+	} else if runtime.GOOS == "akaros" {
+		Reader = newReader(&devReader{name: "#c/random"})
 	} else {
 		Reader = &devReader{name: "/dev/urandom"}
 	}
@@ -47,6 +49,8 @@ func (r *devReader) Read(b []byte) (n int, err error) {
 			return 0, err
 		}
 		if runtime.GOOS == "plan9" {
+			r.f = f
+		} else if runtime.GOOS == "akaros" {
 			r.f = f
 		} else {
 			r.f = bufio.NewReader(f)
