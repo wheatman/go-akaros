@@ -274,7 +274,7 @@ func Pwrite(fd int, p []byte, offset int64) (n int, err error) {
 func ReadDirent(fd int, buf []byte) (n int, err error) {
 	dsize := int(unsafe.Sizeof(Dirent{}))
 	n, err = Read(fd, buf[0:dsize])
-	if n == 0 && err == ENOENT {
+	if n == 0 && err.(*AkaError).errno == ENOENT {
 		err = nil
 	}
 	return n, err
