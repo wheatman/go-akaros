@@ -154,8 +154,6 @@ struct	Sym
 	int32	elfsym;
 	int32	locals;	// size of stack frame locals area
 	int32	args;	// size of stack frame incoming arguments area
-	int32	nptrs;	// number of bits in the pointer map
-	uint32*	ptrs;	// pointer map data
 	uchar	special;
 	uchar	fnptr;	// used as fn ptr
 	uchar	stkcheck;
@@ -172,6 +170,7 @@ struct	Sym
 	char*	dynimplib;
 	char*	dynimpvers;
 	struct Section*	sect;
+	struct Hist*	hist;
 	
 	// STEXT
 	Auto*	autom;
@@ -184,7 +183,6 @@ struct	Sym
 	Reloc*	r;
 	int32	nr;
 	int32	maxr;
-	int 	rel_ro;
 };
 
 #define SIGNINTERN	(1729*325*1729)
@@ -282,7 +280,7 @@ enum
 	MINSIZ		= 64,
 	NENT		= 100,
 	MAXIO		= 8192,
-	MAXHIST		= 20,	/* limit of path elements for history symbols */
+	MAXHIST		= 40,	/* limit of path elements for history symbols */
 	MINLC	= 4,
 };
 
@@ -294,7 +292,6 @@ EXTERN	int32	INITDAT;		/* data location */
 EXTERN	int32	INITRND;		/* data round above text location */
 EXTERN	int32	INITTEXT;		/* text location */
 EXTERN	char*	INITENTRY;		/* entry point */
-EXTERN	char*	LIBINITENTRY;		/* shared library entry point */
 EXTERN	int32	autosize;
 EXTERN	Auto*	curauto;
 EXTERN	Auto*	curhist;
@@ -319,7 +316,6 @@ EXTERN	char*	rpath;
 EXTERN	uint32	stroffset;
 EXTERN	int32	symsize;
 EXTERN	Sym*	textp;
-EXTERN	int	version;
 EXTERN	char	xcmp[C_GOK+1][C_GOK+1];
 EXTERN	Prog	zprg;
 EXTERN	int	dtype;
@@ -366,7 +362,7 @@ int	aclass(Adr*);
 void	addhist(int32, int);
 Prog*	appendp(Prog*);
 void	asmb(void);
-void	asmout(Prog*, Optab*, int32*);
+void	asmout(Prog*, Optab*, int32*, Sym*);
 int32	atolwhex(char*);
 Prog*	brloop(Prog*);
 void	buildop(void);
@@ -436,7 +432,6 @@ int32	immaddr(int32);
 int32	opbra(int, int);
 int	brextra(Prog*);
 int	isbranch(Prog*);
-void	fnptrs(void);
 void	doelf(void);
 void	dozerostk(void); // used by -Z
 

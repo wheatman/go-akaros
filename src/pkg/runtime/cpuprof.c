@@ -127,7 +127,7 @@ runtime·SetCPUProfileRate(intgo hz)
 {
 	uintptr *p;
 	uintptr n;
-	
+
 	// Clamp hz to something reasonable.
 	if(hz < 0)
 		hz = 0;
@@ -137,7 +137,7 @@ runtime·SetCPUProfileRate(intgo hz)
 	runtime·lock(&lk);
 	if(hz > 0) {
 		if(prof == nil) {
-			prof = runtime·SysAlloc(sizeof *prof);
+			prof = runtime·SysAlloc(sizeof *prof, &mstats.other_sys);
 			if(prof == nil) {
 				runtime·printf("runtime: cpu profiling cannot allocate memory\n");
 				runtime·unlock(&lk);
@@ -331,7 +331,7 @@ getprofile(Profile *p)
 
 	if(p->wholding) {
 		// Release previous log to signal handling side.
-		// Loop because we are racing against setprofile(off).
+		// Loop because we are racing against SetCPUProfileRate(0).
 		for(;;) {
 			n = p->handoff;
 			if(n == 0) {
@@ -358,9 +358,7 @@ getprofile(Profile *p)
 		return ret;
 
 	// Wait for new log.
-	runtime·entersyscallblock();
-	runtime·notesleep(&p->wait);
-	runtime·exitsyscall();
+	runtime·notetsleepg(&p->wait, -1);
 	runtime·noteclear(&p->wait);
 
 	n = p->handoff;

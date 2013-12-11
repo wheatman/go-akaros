@@ -83,8 +83,7 @@ main(int argc, char *argv[])
 	INITDAT = -1;
 	INITRND = -1;
 	INITENTRY = 0;
-	LIBINITENTRY = 0;
-	linkmode = LinkInternal; // TODO: LinkAuto once everything works.
+	linkmode = LinkAuto;
 	nuxiinit();
 	
 	p = getgoarm();
@@ -120,6 +119,7 @@ main(int argc, char *argv[])
 	flagstr("extldflags", "flags for external linker", &extldflags);
 	flagcount("f", "ignore version mismatch", &debug['f']);
 	flagcount("g", "disable go package data checks", &debug['g']);
+	flagstr("installsuffix", "pkg directory suffix", &flag_installsuffix);
 	flagstr("k", "sym: set field tracking symbol", &tracksym);
 	flagfn1("linkmode", "mode: set link mode (internal, external, auto)", setlinkmode);
 	flagcount("n", "dump symbol table", &debug['n']);
@@ -128,34 +128,43 @@ main(int argc, char *argv[])
 	flagstr("r", "dir1:dir2:...: set ELF dynamic linker search path", &rpath);
 	flagcount("race", "enable race detector", &flag_race);
 	flagcount("s", "disable symbol table", &debug['s']);
+	flagcount("shared", "generate shared object (implies -linkmode external)", &flag_shared);
 	flagstr("tmpdir", "leave temporary files in this directory", &tmpdir);
 	flagcount("u", "reject unsafe packages", &debug['u']);
 	flagcount("v", "print link trace", &debug['v']);
 	flagcount("w", "disable DWARF generation", &debug['w']);
-	flagcount("shared", "generate shared object", &flag_shared);
-	// TODO: link mode flag
 	
 	flagparse(&argc, &argv, usage);
 
 	if(argc != 1)
 		usage();
 
+	if(flag_shared)
+		linkmode = LinkExternal;
+
+	mywhatsys();
+
+	if(HEADTYPE == -1)
+		HEADTYPE = headtype(goos);
+
 	// getgoextlinkenabled is based on GO_EXTLINK_ENABLED when
 	// Go was built; see ../../make.bash.
 	if(linkmode == LinkAuto && strcmp(getgoextlinkenabled(), "0") == 0)
 		linkmode = LinkInternal;
 
-	if(linkmode == LinkExternal) {
-		diag("only -linkmode=internal is supported");
-		errorexit();
-	} else if(linkmode == LinkAuto) {
-		linkmode = LinkInternal;
+	switch(HEADTYPE) {
+	default:
+		if(linkmode == LinkAuto)
+			linkmode = LinkInternal;
+		if(linkmode == LinkExternal && strcmp(getgoextlinkenabled(), "1") != 0)
+			sysfatal("cannot use -linkmode=external with -H %s", headstr(HEADTYPE));
+		break;
+	case Hlinux:
+		break;
 	}
 
 	libinit();
 
-	if(HEADTYPE == -1)
-		HEADTYPE = headtype(goos);
 	switch(HEADTYPE) {
 	default:
 		diag("unknown -H option");
@@ -211,7 +220,7 @@ main(int argc, char *argv[])
 	case Hnetbsd:
 		debug['d'] = 0;	// with dynamic linking
 		tlsoffset = -8; // hardcoded number, first 4-byte word for g, and then 4-byte word for m
-		                // this number is known to ../../pkg/runtime/cgo/gcc_linux_arm.c
+		                // this number is known to ../../pkg/runtime/rt0_*_arm.s
 		elfinit();
 		HEADR = ELFRESERVE;
 		if(INITTEXT == -1)
@@ -256,6 +265,7 @@ main(int argc, char *argv[])
 	// mark some functions that are only referenced after linker code editing
 	if(debug['F'])
 		mark(rlookup("_sfloat", 0));
+	mark(lookup("runtime.read_tls_fallback", 0));
 	deadcode();
 	if(textp == nil) {
 		diag("no code");
@@ -328,7 +338,7 @@ zaddr(char *pn, Biobuf *f, Adr *a, Sym *h[])
 	c = BGETC(f);
 	if(c < 0 || c > NSYM){
 		print("sym out of range: %d\n", c);
-		Bputc(f, ALAST+1);
+		BPUTC(f, ALAST+1);
 		return;
 	}
 	a->sym = h[c];
@@ -337,7 +347,7 @@ zaddr(char *pn, Biobuf *f, Adr *a, Sym *h[])
 
 	if((schar)a->reg < 0 || a->reg > NREG) {
 		print("register out of range %d\n", a->reg);
-		Bputc(f, ALAST+1);
+		BPUTC(f, ALAST+1);
 		return;	/*  force real diagnostic */
 	}
 
@@ -355,7 +365,7 @@ zaddr(char *pn, Biobuf *f, Adr *a, Sym *h[])
 	switch(a->type) {
 	default:
 		print("unknown type %d\n", a->type);
-		Bputc(f, ALAST+1);
+		BPUTC(f, ALAST+1);
 		return;	/*  force real diagnostic */
 
 	case D_NONE:
@@ -371,13 +381,13 @@ zaddr(char *pn, Biobuf *f, Adr *a, Sym *h[])
 		break;
 
 	case D_CONST2:
-		a->offset2 = Bget4(f);	// fall through
+		a->offset2 = BGETLE4(f);	// fall through
 	case D_BRANCH:
 	case D_OREG:
 	case D_CONST:
 	case D_OCONST:
 	case D_SHIFT:
-		a->offset = Bget4(f);
+		a->offset = BGETLE4(f);
 		break;
 
 	case D_SCONST:
@@ -386,8 +396,8 @@ zaddr(char *pn, Biobuf *f, Adr *a, Sym *h[])
 		break;
 
 	case D_FCONST:
-		a->ieee.l = Bget4(f);
-		a->ieee.h = Bget4(f);
+		a->ieee.l = BGETLE4(f);
+		a->ieee.h = BGETLE4(f);
 		break;
 	}
 	s = a->sym;
@@ -470,7 +480,7 @@ loop:
 	if(o == ANAME || o == ASIGNAME) {
 		sig = 0;
 		if(o == ASIGNAME)
-			sig = Bget4(f);
+			sig = BGETLE4(f);
 		v = BGETC(f); /* type */
 		o = BGETC(f); /* sym */
 		r = 0;
@@ -525,7 +535,7 @@ loop:
 	p->as = o;
 	p->scond = BGETC(f);
 	p->reg = BGETC(f);
-	p->line = Bget4(f);
+	p->line = BGETLE4(f);
 
 	zaddr(pn, f, &p->from, h);
 	fromgotype = adrgotype;
@@ -552,6 +562,7 @@ loop:
 		addhist(p->line, D_FILE);		/* 'z' */
 		if(p->to.offset)
 			addhist(p->to.offset, D_FILE1);	/* 'Z' */
+		savehist(p->line, p->to.offset);
 		histfrogp = 0;
 		goto loop;
 
@@ -617,48 +628,9 @@ loop:
 		pc++;
 		break;
 
-	case ALOCALS:
-		if(skip)
-			goto casedef;
-		cursym->locals = p->to.offset;
-		pc++;
-		break;
-
 	case ATYPE:
 		if(skip)
 			goto casedef;
-		pc++;
-		goto loop;
-
-	case ANPTRS:
-		if(skip)
-			goto casedef;
-		if(cursym->nptrs != -1) {
-			diag("ldobj1: multiple pointer maps defined for %s", cursym->name);
-			errorexit();
-		}
-		if(p->to.offset > cursym->args/PtrSize) {
-			diag("ldobj1: pointer map definition for %s exceeds its argument size", cursym->name);
-			errorexit();
-		}
-		cursym->nptrs = p->to.offset;
-		if(cursym->nptrs != 0)
-			cursym->ptrs = mal((rnd(cursym->nptrs, 32) / 32) * sizeof(*cursym->ptrs));
-		pc++;
-		goto loop;
-
-	case APTRS:
-		if(skip)
-			goto casedef;
-		if(cursym->nptrs == -1 || cursym->ptrs == nil) {
-			diag("ldobj1: pointer map data provided for %s without a definition", cursym->name);
-			errorexit();
-		}
-		if(p->from.offset*32 >= rnd(cursym->nptrs, 32)) {
-			diag("ldobj1: excessive pointer map data provided for %s", cursym->name);
-			errorexit();
-		}
-		cursym->ptrs[p->from.offset] = p->to.offset;
 		pc++;
 		goto loop;
 
@@ -702,10 +674,10 @@ loop:
 		p->to.offset = autosize;
 		autosize += 4;
 		s->type = STEXT;
+		s->hist = gethist();
 		s->text = p;
 		s->value = pc;
 		s->args = p->to.offset2;
-		s->nptrs = -1;
 		lastp = p;
 		p->pc = pc;
 		pc++;

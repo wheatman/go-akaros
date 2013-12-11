@@ -216,8 +216,61 @@ If you see the "hello, world" message then Go is installed correctly.
 <h2 id="gopath">Set up your work environment</h2>
 
 <p>
-The document <a href="/doc/code.html">How to Write Go Code</a> explains how to
-set up a work environment in which to build and test Go code.
+You're almost done.
+You just need to do a little more setup.
+</p>
+
+<p>
+<a href="/doc/code.html" class="download" id="start">
+<span class="big">How to Write Go Code</span>
+<span class="desc">Learn how to set up and use the Go tools</span>
+</a>
+</p>
+
+<p>
+The <a href="/doc/code.html">How to Write Go Code</a> document 
+provides <b>essential setup instructions</b> for using the Go tools.
+</p>
+
+
+<h2 id="tools">Install additional tools</h2>
+
+<p>
+The source code for several Go tools (including <a href="/cmd/godoc/">godoc</a>)
+is kept in <a href="https://code.google.com/p/go.tools">the go.tools repository</a>.
+To install all of them, run the <code>go</code> <code>get</code> command:
+</p>
+
+<pre>
+$ go get code.google.com/p/go.tools/cmd/...
+</pre>
+
+<p>
+Or if you just want to install a specific command (<code>godoc</code> in this case):
+</p>
+
+<pre>
+$ go get code.google.com/p/go.tools/cmd/godoc
+</pre>
+
+<p>
+To install these tools, the <code>go</code> <code>get</code> command requires 
+that <a href="#mercurial">Mercurial</a> be installed locally.
+</p>
+
+<p>
+You must also have a workspace (<code>GOPATH</code>) set up;
+see <a href="/doc/code.html">How to Write Go Code</a> for the details.
+</p>
+
+<p>
+<b>Note</b>: The <code>go</code> command will install the <code>godoc</code>
+binary to <code>$GOROOT/bin</code> (or <code>$GOBIN</code>) and the
+<code>cover</code> and <code>vet</code> binaries to
+<code>$GOROOT/pkg/tool/$GOOS_$GOARCH</code>.
+You can access the latter commands with
+"<code>go</code> <code>tool</code> <code>cover</code>" and
+"<code>go</code> <code>tool</code> <code>vet</code>".
 </p>
 
 <h2 id="community">Community resources</h2>

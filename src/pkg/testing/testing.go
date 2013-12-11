@@ -73,17 +73,19 @@
 //
 // Example functions without output comments are compiled but not executed.
 //
-// The naming convention to declare examples for a function F, a type T and
+// The naming convention to declare examples for the package, a function F, a type T and
 // method M on type T are:
 //
+//     func Example() { ... }
 //     func ExampleF() { ... }
 //     func ExampleT() { ... }
 //     func ExampleT_M() { ... }
 //
-// Multiple example functions for a type/function/method may be provided by
+// Multiple example functions for a package/type/function/method may be provided by
 // appending a distinct suffix to the name. The suffix must start with a
 // lower-case letter.
 //
+//     func Example_suffix() { ... }
 //     func ExampleF_suffix() { ... }
 //     func ExampleT_suffix() { ... }
 //     func ExampleT_M_suffix() { ... }
@@ -122,6 +124,7 @@ var (
 
 	// Report as tests are run; default is silent for success.
 	chatty           = flag.Bool("test.v", false, "verbose: print additional output")
+	coverProfile     = flag.String("test.coverprofile", "", "write a coverage profile to the named file after execution")
 	match            = flag.String("test.run", "", "regular expression to select tests and examples to run")
 	memProfile       = flag.String("test.memprofile", "", "write a memory profile to the named file after execution")
 	memProfileRate   = flag.Int("test.memprofilerate", 0, "if >=0, sets runtime.MemProfileRate")
@@ -195,6 +198,31 @@ func decorate(s string) string {
 	return buf.String()
 }
 
+// TB is the interface common to T and B.
+type TB interface {
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fail()
+	FailNow()
+	Failed() bool
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Log(args ...interface{})
+	Logf(format string, args ...interface{})
+	Skip(args ...interface{})
+	SkipNow()
+	Skipf(format string, args ...interface{})
+	Skipped() bool
+
+	// A private method to prevent users implementing the
+	// interface and so future additions to it will not
+	// violate Go 1 compatibility.
+	private()
+}
+
+var _ TB = (*T)(nil)
+var _ TB = (*B)(nil)
+
 // T is a type passed to Test functions to manage test state and support formatted test logs.
 // Logs are accumulated during execution and dumped to standard error when done.
 type T struct {
@@ -202,6 +230,8 @@ type T struct {
 	name          string    // Name of test.
 	startParallel chan bool // Parallel tests will wait on this.
 }
+
+func (c *common) private() {}
 
 // Fail marks the function as having failed but continues execution.
 func (c *common) Fail() {
@@ -329,6 +359,9 @@ func (c *common) Skipped() bool {
 func (t *T) Parallel() {
 	t.signal <- (*T)(nil) // Release main testing loop
 	<-t.startParallel     // Wait for serial tests to finish
+	// Assuming Parallel is the first thing a test does, which is reasonable,
+	// reinitialize the test's start time because it's actually starting now.
+	t.start = time.Now()
 }
 
 // An internal type but exported because it is cross-package; part of the implementation
@@ -339,8 +372,6 @@ type InternalTest struct {
 }
 
 func tRunner(t *T, test *InternalTest) {
-	t.start = time.Now()
-
 	// When this goroutine is done, either because test.F(t)
 	// returned normally or because a test failure triggered
 	// a call to runtime.Goexit, record the duration and send
@@ -356,6 +387,7 @@ func tRunner(t *T, test *InternalTest) {
 		t.signal <- t
 	}()
 
+	t.start = time.Now()
 	test.F(t)
 }
 
@@ -370,12 +402,12 @@ func Main(matchString func(pat, str string) (bool, error), tests []InternalTest,
 	haveExamples = len(examples) > 0
 	testOk := RunTests(matchString, tests)
 	exampleOk := RunExamples(matchString, examples)
+	stopAlarm()
 	if !testOk || !exampleOk {
 		fmt.Println("FAIL")
 		os.Exit(1)
 	}
 	fmt.Println("PASS")
-	stopAlarm()
 	RunBenchmarks(matchString, benchmarks)
 	after()
 }
@@ -487,6 +519,10 @@ func before() {
 	if *blockProfile != "" && *blockProfileRate >= 0 {
 		runtime.SetBlockProfileRate(*blockProfileRate)
 	}
+	if *coverProfile != "" && cover.Mode == "" {
+		fmt.Fprintf(os.Stderr, "testing: cannot use -test.coverprofile because test binary was not built with coverage enabled\n")
+		os.Exit(2)
+	}
 }
 
 // after runs after all testing.
@@ -517,6 +553,9 @@ func after() {
 			os.Exit(2)
 		}
 		f.Close()
+	}
+	if cover.Mode != "" {
+		coverReport()
 	}
 }
 
@@ -553,7 +592,9 @@ var timer *time.Timer
 // startAlarm starts an alarm if requested.
 func startAlarm() {
 	if *timeout > 0 {
-		timer = time.AfterFunc(*timeout, alarm)
+		timer = time.AfterFunc(*timeout, func() {
+			panic(fmt.Sprintf("test timed out after %v", *timeout))
+		})
 	}
 }
 
@@ -564,22 +605,20 @@ func stopAlarm() {
 	}
 }
 
-// alarm is called if the timeout expires.
-func alarm() {
-	panic("test timed out")
-}
-
 func parseCpuList() {
-	if len(*cpuListStr) == 0 {
-		cpuList = append(cpuList, runtime.GOMAXPROCS(-1))
-	} else {
-		for _, val := range strings.Split(*cpuListStr, ",") {
-			cpu, err := strconv.Atoi(val)
-			if err != nil || cpu <= 0 {
-				fmt.Fprintf(os.Stderr, "testing: invalid value %q for -test.cpu", val)
-				os.Exit(1)
-			}
-			cpuList = append(cpuList, cpu)
+	for _, val := range strings.Split(*cpuListStr, ",") {
+		val = strings.TrimSpace(val)
+		if val == "" {
+			continue
 		}
+		cpu, err := strconv.Atoi(val)
+		if err != nil || cpu <= 0 {
+			fmt.Fprintf(os.Stderr, "testing: invalid value %q for -test.cpu\n", val)
+			os.Exit(1)
+		}
+		cpuList = append(cpuList, cpu)
+	}
+	if cpuList == nil {
+		cpuList = append(cpuList, runtime.GOMAXPROCS(-1))
 	}
 }

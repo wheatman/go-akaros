@@ -61,6 +61,14 @@ import time
 from mercurial import commands as hg_commands
 from mercurial import util as hg_util
 
+# bind Plan 9 preferred dotfile location
+if os.sys.platform == 'plan9':
+	try:
+		import plan9
+		n = plan9.bind(os.path.expanduser("~/lib"), os.path.expanduser("~"), plan9.MBEFORE|plan9.MCREATE)
+	except ImportError:
+		pass
+
 defaultcc = None
 codereview_disabled = None
 real_rollback = None
@@ -712,7 +720,10 @@ Examples:
 '''
 
 def promptyesno(ui, msg):
-	return ui.promptchoice(msg, ["&yes", "&no"], 0) == 0
+	if hgversion >= "2.7":
+		return ui.promptchoice(msg + " $$ &yes $$ &no", 0) == 0
+	else:
+		return ui.promptchoice(msg, ["&yes", "&no"], 0) == 0
 
 def promptremove(ui, repo, f):
 	if promptyesno(ui, "hg remove %s (y/n)?" % (f,)):
@@ -973,7 +984,7 @@ def ReadContributors(ui, repo):
 			f = open(repo.root + '/CONTRIBUTORS', 'r')
 	except:
 		ui.write("warning: cannot open %s: %s\n" % (opening, ExceptionDetail()))
-		return
+		return {}
 
 	contributors = {}
 	for line in f:
@@ -1154,6 +1165,25 @@ def hg_pull(ui, repo, **opts):
 	ui.quiet = False
 	ui.verbose = True  # for file list
 	err = hg_commands.pull(ui, repo, **opts)
+	for line in w.output().split('\n'):
+		if isNoise(line):
+			continue
+		if line.startswith('moving '):
+			line = 'mv ' + line[len('moving '):]
+		if line.startswith('getting ') and line.find(' to ') >= 0:
+			line = 'mv ' + line[len('getting '):]
+		if line.startswith('getting '):
+			line = '+ ' + line[len('getting '):]
+		if line.startswith('removing '):
+			line = '- ' + line[len('removing '):]
+		ui.write(line + '\n')
+	return err
+
+def hg_update(ui, repo, **opts):
+	w = uiwrap(ui)
+	ui.quiet = False
+	ui.verbose = True  # for file list
+	err = hg_commands.update(ui, repo, **opts)
 	for line in w.output().split('\n'):
 		if isNoise(line):
 			continue
@@ -2019,7 +2049,19 @@ def sync(ui, repo, **opts):
 		raise hg_util.Abort(codereview_disabled)
 
 	if not opts["local"]:
-		err = hg_pull(ui, repo, update=True)
+		# If there are incoming CLs, pull -u will do the update.
+		# If there are no incoming CLs, do hg update to make sure
+		# that an update always happens regardless. This is less
+		# surprising than update depending on incoming CLs.
+		# It is important not to do both hg pull -u and hg update
+		# in the same command, because the hg update will end
+		# up marking resolve conflicts from the hg pull -u as resolved,
+		# causing files with <<< >>> markers to not show up in 
+		# hg resolve -l. Yay Mercurial.
+		if hg_incoming(ui, repo):
+			err = hg_pull(ui, repo, update=True)
+		else:
+			err = hg_update(ui, repo)
 		if err:
 			return err
 	sync_changes(ui, repo)
@@ -2360,7 +2402,7 @@ def IsRietveldSubmitted(ui, clname, hex):
 		return False
 	for msg in dict.get("messages", []):
 		text = msg.get("text", "")
-		m = re.match('\*\*\* Submitted as [^*]*?([0-9a-f]+) \*\*\*', text)
+		m = re.match('\*\*\* Submitted as [^*]*?r=([0-9a-f]+)[^ ]* \*\*\*', text)
 		if m is not None and len(m.group(1)) >= 8 and hex.startswith(m.group(1)):
 			return True
 	return False

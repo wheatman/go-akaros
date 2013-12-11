@@ -6,25 +6,23 @@ package tls
 
 import (
 	"bytes"
-	"crypto"
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/subtle"
 	"crypto/x509"
+	"encoding/asn1"
 	"errors"
 	"io"
 	"strconv"
 )
 
 func (c *Conn) clientHandshake() error {
-	finishedHash := newFinishedHash(VersionTLS10)
-
 	if c.config == nil {
 		c.config = defaultConfig()
 	}
 
 	hello := &clientHelloMsg{
 		vers:               c.config.maxVersion(),
-		cipherSuites:       c.config.cipherSuites(),
 		compressionMethods: []uint8{compressionNone},
 		random:             make([]byte, 32),
 		ocspStapling:       true,
@@ -32,6 +30,25 @@ func (c *Conn) clientHandshake() error {
 		supportedCurves:    []uint16{curveP256, curveP384, curveP521},
 		supportedPoints:    []uint8{pointFormatUncompressed},
 		nextProtoNeg:       len(c.config.NextProtos) > 0,
+	}
+
+	possibleCipherSuites := c.config.cipherSuites()
+	hello.cipherSuites = make([]uint16, 0, len(possibleCipherSuites))
+
+NextCipherSuite:
+	for _, suiteId := range possibleCipherSuites {
+		for _, suite := range cipherSuites {
+			if suite.id != suiteId {
+				continue
+			}
+			// Don't advertise TLS 1.2-only cipher suites unless
+			// we're attempting TLS 1.2.
+			if hello.vers < VersionTLS12 && suite.flags&suiteTLS12 != 0 {
+				continue
+			}
+			hello.cipherSuites = append(hello.cipherSuites, suiteId)
+			continue NextCipherSuite
+		}
 	}
 
 	t := uint32(c.config.time().Unix())
@@ -45,7 +62,10 @@ func (c *Conn) clientHandshake() error {
 		return errors.New("short read from Rand")
 	}
 
-	finishedHash.Write(hello.marshal())
+	if hello.vers >= VersionTLS12 {
+		hello.signatureAndHashes = supportedSKXSignatureAlgorithms
+	}
+
 	c.writeRecord(recordTypeHandshake, hello.marshal())
 
 	msg, err := c.readHandshake()
@@ -56,7 +76,6 @@ func (c *Conn) clientHandshake() error {
 	if !ok {
 		return c.sendAlert(alertUnexpectedMessage)
 	}
-	finishedHash.Write(serverHello.marshal())
 
 	vers, ok := c.config.mutualVersion(serverHello.vers)
 	if !ok || vers < VersionTLS10 {
@@ -65,6 +84,10 @@ func (c *Conn) clientHandshake() error {
 	}
 	c.vers = vers
 	c.haveVers = true
+
+	finishedHash := newFinishedHash(c.vers)
+	finishedHash.Write(hello.marshal())
+	finishedHash.Write(serverHello.marshal())
 
 	if serverHello.compressionMethod != compressionNone {
 		return c.sendAlert(alertUnexpectedMessage)
@@ -121,7 +144,10 @@ func (c *Conn) clientHandshake() error {
 		}
 	}
 
-	if _, ok := certs[0].PublicKey.(*rsa.PublicKey); !ok {
+	switch certs[0].PublicKey.(type) {
+	case *rsa.PublicKey, *ecdsa.PublicKey:
+		break
+	default:
 		return c.sendAlert(alertUnsupportedCertificate)
 	}
 
@@ -148,7 +174,7 @@ func (c *Conn) clientHandshake() error {
 		return err
 	}
 
-	keyAgreement := suite.ka()
+	keyAgreement := suite.ka(c.vers)
 
 	skx, ok := msg.(*serverKeyExchangeMsg)
 	if ok {
@@ -184,12 +210,13 @@ func (c *Conn) clientHandshake() error {
 
 		finishedHash.Write(certReq.marshal())
 
-		// For now, we only know how to sign challenges with RSA
-		rsaAvail := false
+		var rsaAvail, ecdsaAvail bool
 		for _, certType := range certReq.certificateTypes {
-			if certType == certTypeRSASign {
+			switch certType {
+			case certTypeRSASign:
 				rsaAvail = true
-				break
+			case certTypeECDSASign:
+				ecdsaAvail = true
 			}
 		}
 
@@ -198,7 +225,7 @@ func (c *Conn) clientHandshake() error {
 		// certReq.certificateAuthorities
 	findCert:
 		for i, chain := range c.config.Certificates {
-			if !rsaAvail {
+			if !rsaAvail && !ecdsaAvail {
 				continue
 			}
 
@@ -213,7 +240,10 @@ func (c *Conn) clientHandshake() error {
 					}
 				}
 
-				if x509Cert.PublicKeyAlgorithm != x509.RSA {
+				switch {
+				case rsaAvail && x509Cert.PublicKeyAlgorithm == x509.RSA:
+				case ecdsaAvail && x509Cert.PublicKeyAlgorithm == x509.ECDSA:
+				default:
 					continue findCert
 				}
 
@@ -268,11 +298,28 @@ func (c *Conn) clientHandshake() error {
 	}
 
 	if chainToSend != nil {
-		certVerify := new(certificateVerifyMsg)
-		digest := make([]byte, 0, 36)
-		digest = finishedHash.serverMD5.Sum(digest)
-		digest = finishedHash.serverSHA1.Sum(digest)
-		signed, err := rsa.SignPKCS1v15(c.config.rand(), c.config.Certificates[0].PrivateKey.(*rsa.PrivateKey), crypto.MD5SHA1, digest)
+		var signed []byte
+		certVerify := &certificateVerifyMsg{
+			hasSignatureAndHash: c.vers >= VersionTLS12,
+		}
+
+		switch key := c.config.Certificates[0].PrivateKey.(type) {
+		case *ecdsa.PrivateKey:
+			digest, _, hashId := finishedHash.hashForClientCertificate(signatureECDSA)
+			r, s, err := ecdsa.Sign(c.config.rand(), key, digest)
+			if err == nil {
+				signed, err = asn1.Marshal(ecdsaSignature{r, s})
+			}
+			certVerify.signatureAndHash.signature = signatureECDSA
+			certVerify.signatureAndHash.hash = hashId
+		case *rsa.PrivateKey:
+			digest, hashFunc, hashId := finishedHash.hashForClientCertificate(signatureRSA)
+			signed, err = rsa.SignPKCS1v15(c.config.rand(), key, hashFunc, digest)
+			certVerify.signatureAndHash.signature = signatureRSA
+			certVerify.signatureAndHash.hash = hashId
+		default:
+			err = errors.New("unknown private key type")
+		}
 		if err != nil {
 			return c.sendAlert(alertInternalError)
 		}
@@ -286,8 +333,14 @@ func (c *Conn) clientHandshake() error {
 	clientMAC, serverMAC, clientKey, serverKey, clientIV, serverIV :=
 		keysFromMasterSecret(c.vers, masterSecret, hello.random, serverHello.random, suite.macLen, suite.keyLen, suite.ivLen)
 
-	clientCipher := suite.cipher(clientKey, clientIV, false /* not for reading */)
-	clientHash := suite.mac(c.vers, clientMAC)
+	var clientCipher interface{}
+	var clientHash macFunction
+	if suite.cipher != nil {
+		clientCipher = suite.cipher(clientKey, clientIV, false /* not for reading */)
+		clientHash = suite.mac(c.vers, clientMAC)
+	} else {
+		clientCipher = suite.aead(clientKey, clientIV)
+	}
 	c.out.prepareCipherSpec(c.vers, clientCipher, clientHash)
 	c.writeRecord(recordTypeChangeCipherSpec, []byte{1})
 
@@ -307,8 +360,14 @@ func (c *Conn) clientHandshake() error {
 	finishedHash.Write(finished.marshal())
 	c.writeRecord(recordTypeHandshake, finished.marshal())
 
-	serverCipher := suite.cipher(serverKey, serverIV, true /* for reading */)
-	serverHash := suite.mac(c.vers, serverMAC)
+	var serverCipher interface{}
+	var serverHash macFunction
+	if suite.cipher != nil {
+		serverCipher = suite.cipher(serverKey, serverIV, true /* for reading */)
+		serverHash = suite.mac(c.vers, serverMAC)
+	} else {
+		serverCipher = suite.aead(serverKey, serverIV)
+	}
 	c.in.prepareCipherSpec(c.vers, serverCipher, serverHash)
 	c.readRecord(recordTypeChangeCipherSpec)
 	if err := c.error(); err != nil {

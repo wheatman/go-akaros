@@ -16,20 +16,21 @@ import (
 // Some constants in the form of bytes, to avoid string overhead.
 // Needlessly fastidious, I suppose.
 var (
-	commaSpaceBytes = []byte(", ")
-	nilAngleBytes   = []byte("<nil>")
-	nilParenBytes   = []byte("(nil)")
-	nilBytes        = []byte("nil")
-	mapBytes        = []byte("map[")
-	missingBytes    = []byte("(MISSING)")
-	badIndexBytes   = []byte("(BADINDEX)")
-	panicBytes      = []byte("(PANIC=")
-	extraBytes      = []byte("%!(EXTRA ")
-	irparenBytes    = []byte("i)")
-	bytesBytes      = []byte("[]byte{")
-	badWidthBytes   = []byte("%!(BADWIDTH)")
-	badPrecBytes    = []byte("%!(BADPREC)")
-	noVerbBytes     = []byte("%!(NOVERB)")
+	commaSpaceBytes  = []byte(", ")
+	nilAngleBytes    = []byte("<nil>")
+	nilParenBytes    = []byte("(nil)")
+	nilBytes         = []byte("nil")
+	mapBytes         = []byte("map[")
+	percentBangBytes = []byte("%!")
+	missingBytes     = []byte("(MISSING)")
+	badIndexBytes    = []byte("(BADINDEX)")
+	panicBytes       = []byte("(PANIC=")
+	extraBytes       = []byte("%!(EXTRA ")
+	irparenBytes     = []byte("i)")
+	bytesBytes       = []byte("[]byte{")
+	badWidthBytes    = []byte("%!(BADWIDTH)")
+	badPrecBytes     = []byte("%!(BADPREC)")
+	noVerbBytes      = []byte("%!(NOVERB)")
 )
 
 // State represents the printer state passed to custom formatters.
@@ -43,7 +44,7 @@ type State interface {
 	// Precision returns the value of the precision option and whether it has been set.
 	Precision() (prec int, ok bool)
 
-	// Flag returns whether the flag c, a character, has been set.
+	// Flag reports whether the flag c, a character, has been set.
 	Flag(c int) bool
 }
 
@@ -117,7 +118,7 @@ type pp struct {
 	value reflect.Value
 	// reordered records whether the format string used argument reordering.
 	reordered bool
-	// goodArgNum records whether all reordering directives were valid.
+	// goodArgNum records whether the most recent reordering directive was valid.
 	goodArgNum bool
 	runeBuf    [utf8.UTFMax]byte
 	fmt        fmt
@@ -510,7 +511,7 @@ func (p *pp) fmtFloat64(v float64, verb rune) {
 
 func (p *pp) fmtComplex64(v complex64, verb rune) {
 	switch verb {
-	case 'e', 'E', 'f', 'F', 'g', 'G':
+	case 'b', 'e', 'E', 'f', 'F', 'g', 'G':
 		p.fmt.fmt_c64(v, verb)
 	case 'v':
 		p.fmt.fmt_c64(v, 'g')
@@ -521,7 +522,7 @@ func (p *pp) fmtComplex64(v complex64, verb rune) {
 
 func (p *pp) fmtComplex128(v complex128, verb rune) {
 	switch verb {
-	case 'e', 'E', 'f', 'F', 'g', 'G':
+	case 'b', 'e', 'E', 'f', 'F', 'g', 'G':
 		p.fmt.fmt_c128(v, verb)
 	case 'v':
 		p.fmt.fmt_c128(v, 'g')
@@ -640,8 +641,6 @@ func (p *pp) fmtPointer(value reflect.Value, verb rune, goSyntax bool) {
 
 var (
 	intBits     = reflect.TypeOf(0).Bits()
-	floatBits   = reflect.TypeOf(0.0).Bits()
-	complexBits = reflect.TypeOf(1i).Bits()
 	uintptrBits = reflect.TypeOf(uintptr(0)).Bits()
 )
 
@@ -660,7 +659,7 @@ func (p *pp) catchPanic(arg interface{}, verb rune) {
 			// Nested panics; the recursion in printArg cannot succeed.
 			panic(err)
 		}
-		p.buf.WriteByte('%')
+		p.buf.Write(percentBangBytes)
 		p.add(verb)
 		p.buf.Write(panicBytes)
 		p.panicking = true
@@ -775,7 +774,7 @@ func (p *pp) printArg(arg interface{}, verb rune, plus, goSyntax bool, depth int
 	case float64:
 		p.fmtFloat64(f, verb)
 	case complex64:
-		p.fmtComplex64(complex64(f), verb)
+		p.fmtComplex64(f, verb)
 	case complex128:
 		p.fmtComplex128(f, verb)
 	case int:
@@ -811,8 +810,8 @@ func (p *pp) printArg(arg interface{}, verb rune, plus, goSyntax bool, depth int
 		p.fmt.plus = oldPlus
 		p.fmt.sharp = oldSharp
 		// If the type is not simple, it might have methods.
-		if wasString, handled := p.handleMethods(verb, plus, goSyntax, depth); handled {
-			return wasString
+		if isString, handled := p.handleMethods(verb, plus, goSyntax, depth); handled {
+			return isString
 		}
 		// Need to use reflection
 		return p.printReflectValue(reflect.ValueOf(arg), verb, plus, goSyntax, depth)
@@ -849,8 +848,8 @@ func (p *pp) printValue(value reflect.Value, verb rune, plus, goSyntax bool, dep
 	if value.CanInterface() {
 		p.arg = value.Interface()
 	}
-	if wasString, handled := p.handleMethods(verb, plus, goSyntax, depth); handled {
-		return wasString
+	if isString, handled := p.handleMethods(verb, plus, goSyntax, depth); handled {
+		return isString
 	}
 
 	return p.printReflectValue(value, verb, plus, goSyntax, depth)
@@ -868,18 +867,18 @@ BigSwitch:
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		p.fmtInt64(f.Int(), verb)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		p.fmtUint64(uint64(f.Uint()), verb, goSyntax)
+		p.fmtUint64(f.Uint(), verb, goSyntax)
 	case reflect.Float32, reflect.Float64:
 		if f.Type().Size() == 4 {
 			p.fmtFloat32(float32(f.Float()), verb)
 		} else {
-			p.fmtFloat64(float64(f.Float()), verb)
+			p.fmtFloat64(f.Float(), verb)
 		}
 	case reflect.Complex64, reflect.Complex128:
 		if f.Type().Size() == 8 {
 			p.fmtComplex64(complex64(f.Complex()), verb)
 		} else {
-			p.fmtComplex128(complex128(f.Complex()), verb)
+			p.fmtComplex128(f.Complex(), verb)
 		}
 	case reflect.String:
 		p.fmtString(f.String(), verb, goSyntax)
@@ -1037,7 +1036,7 @@ func intFromArg(a []interface{}, argNum int) (num int, isInt bool, newArgNum int
 // up to the closing paren, if present, and whether the number parsed
 // ok. The bytes to consume will be 1 if no closing paren is present.
 func parseArgNumber(format string) (index int, wid int, ok bool) {
-	// Find closing parenthesis
+	// Find closing bracket.
 	for i := 1; i < len(format); i++ {
 		if format[i] == ']' {
 			width, ok, newi := parsenum(format, 1, i)
@@ -1071,8 +1070,8 @@ func (p *pp) doPrintf(format string, a []interface{}) {
 	argNum := 0         // we process one argument per non-trivial format
 	afterIndex := false // previous item in format was an index like [3].
 	p.reordered = false
-	p.goodArgNum = true
 	for i := 0; i < end; {
+		p.goodArgNum = true
 		lasti := i
 		for i < end && format[i] != '%' {
 			i++
@@ -1165,12 +1164,12 @@ func (p *pp) doPrintf(format string, a []interface{}) {
 			continue
 		}
 		if !p.goodArgNum {
-			p.buf.WriteByte('%')
+			p.buf.Write(percentBangBytes)
 			p.add(c)
 			p.buf.Write(badIndexBytes)
 			continue
 		} else if argNum >= len(a) { // out of operands
-			p.buf.WriteByte('%')
+			p.buf.Write(percentBangBytes)
 			p.add(c)
 			p.buf.Write(missingBytes)
 			continue

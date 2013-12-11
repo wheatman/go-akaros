@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"io"
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ const (
 	VersionSSL30 = 0x0300
 	VersionTLS10 = 0x0301
 	VersionTLS11 = 0x0302
+	VersionTLS12 = 0x0303
 )
 
 const (
@@ -27,7 +29,7 @@ const (
 	maxHandshake    = 65536        // maximum handshake we support (protocol max is 16 MB)
 
 	minVersion = VersionSSL30
-	maxVersion = VersionTLS11
+	maxVersion = VersionTLS12
 )
 
 // TLS record types.
@@ -63,12 +65,13 @@ const (
 
 // TLS extension numbers
 var (
-	extensionServerName      uint16 = 0
-	extensionStatusRequest   uint16 = 5
-	extensionSupportedCurves uint16 = 10
-	extensionSupportedPoints uint16 = 11
-	extensionSessionTicket   uint16 = 35
-	extensionNextProtoNeg    uint16 = 13172 // not IANA assigned
+	extensionServerName          uint16 = 0
+	extensionStatusRequest       uint16 = 5
+	extensionSupportedCurves     uint16 = 10
+	extensionSupportedPoints     uint16 = 11
+	extensionSignatureAlgorithms uint16 = 13
+	extensionSessionTicket       uint16 = 35
+	extensionNextProtoNeg        uint16 = 13172 // not IANA assigned
 )
 
 // TLS Elliptic Curves
@@ -96,25 +99,60 @@ const (
 	certTypeDSSSign    = 2 // A certificate containing a DSA key
 	certTypeRSAFixedDH = 3 // A certificate containing a static DH key
 	certTypeDSSFixedDH = 4 // A certificate containing a static DH key
+
+	// See RFC4492 sections 3 and 5.5.
+	certTypeECDSASign      = 64 // A certificate containing an ECDSA-capable public key, signed with ECDSA.
+	certTypeRSAFixedECDH   = 65 // A certificate containing an ECDH-capable public key, signed with RSA.
+	certTypeECDSAFixedECDH = 66 // A certificate containing an ECDH-capable public key, signed with ECDSA.
+
 	// Rest of these are reserved by the TLS spec
 )
 
+// Hash functions for TLS 1.2 (See RFC 5246, section A.4.1)
+const (
+	hashSHA1   uint8 = 2
+	hashSHA256 uint8 = 4
+)
+
+// Signature algorithms for TLS 1.2 (See RFC 5246, section A.4.1)
+const (
+	signatureRSA   uint8 = 1
+	signatureECDSA uint8 = 3
+)
+
+// signatureAndHash mirrors the TLS 1.2, SignatureAndHashAlgorithm struct. See
+// RFC 5246, section A.4.1.
+type signatureAndHash struct {
+	hash, signature uint8
+}
+
+// supportedSKXSignatureAlgorithms contains the signature and hash algorithms
+// that the code advertises as supported in a TLS 1.2 ClientHello.
+var supportedSKXSignatureAlgorithms = []signatureAndHash{
+	{hashSHA256, signatureRSA},
+	{hashSHA256, signatureECDSA},
+	{hashSHA1, signatureRSA},
+	{hashSHA1, signatureECDSA},
+}
+
+// supportedClientCertSignatureAlgorithms contains the signature and hash
+// algorithms that the code advertises as supported in a TLS 1.2
+// CertificateRequest.
+var supportedClientCertSignatureAlgorithms = []signatureAndHash{
+	{hashSHA256, signatureRSA},
+	{hashSHA256, signatureECDSA},
+}
+
 // ConnectionState records basic TLS details about the connection.
 type ConnectionState struct {
-	HandshakeComplete          bool
-	DidResume                  bool
-	CipherSuite                uint16
-	NegotiatedProtocol         string
-	NegotiatedProtocolIsMutual bool
-
-	// ServerName contains the server name indicated by the client, if any.
-	// (Only valid for server connections.)
-	ServerName string
-
-	// the certificate chain that was presented by the other side
-	PeerCertificates []*x509.Certificate
-	// the verified certificate chains built from PeerCertificates.
-	VerifiedChains [][]*x509.Certificate
+	HandshakeComplete          bool                  // TLS handshake is complete
+	DidResume                  bool                  // connection resumes a previous TLS connection
+	CipherSuite                uint16                // cipher suite in use (TLS_RSA_WITH_RC4_128_SHA, ...)
+	NegotiatedProtocol         string                // negotiated next protocol (from Config.NextProtos)
+	NegotiatedProtocolIsMutual bool                  // negotiated protocol was advertised by server
+	ServerName                 string                // server name requested by client, if any (server side only)
+	PeerCertificates           []*x509.Certificate   // certificate chain presented by remote peer
+	VerifiedChains             [][]*x509.Certificate // verified chains built from PeerCertificates
 }
 
 // ClientAuthType declares the policy the server will follow for
@@ -213,7 +251,7 @@ type Config struct {
 
 	// MaxVersion contains the maximum SSL/TLS version that is acceptable.
 	// If zero, then the maximum version supported by this package is used,
-	// which is currently TLS 1.1.
+	// which is currently TLS 1.2.
 	MaxVersion uint16
 
 	serverInitOnce sync.Once // guards calling (*Config).serverInit
@@ -345,7 +383,7 @@ func (c *Config) BuildNameToCertificate() {
 // A Certificate is a chain of one or more certificates, leaf first.
 type Certificate struct {
 	Certificate [][]byte
-	PrivateKey  crypto.PrivateKey // supported types: *rsa.PrivateKey
+	PrivateKey  crypto.PrivateKey // supported types: *rsa.PrivateKey, *ecdsa.PrivateKey
 	// OCSPStaple contains an optional OCSP response which will be served
 	// to clients that request it.
 	OCSPStaple []byte
@@ -367,6 +405,13 @@ type handshakeMessage interface {
 	marshal() []byte
 	unmarshal([]byte) bool
 }
+
+// TODO(jsing): Make these available to both crypto/x509 and crypto/tls.
+type dsaSignature struct {
+	R, S *big.Int
+}
+
+type ecdsaSignature dsaSignature
 
 var emptyConfig Config
 

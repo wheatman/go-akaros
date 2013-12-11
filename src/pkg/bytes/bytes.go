@@ -77,7 +77,7 @@ func Count(s, sep []byte) int {
 	return count
 }
 
-// Contains returns whether subslice is within b.
+// Contains reports whether subslice is within b.
 func Contains(b, subslice []byte) bool {
 	return Index(b, subslice) != -1
 }
@@ -375,10 +375,7 @@ func Repeat(b []byte, count int) []byte {
 	nb := make([]byte, len(b)*count)
 	bp := 0
 	for i := 0; i < count; i++ {
-		for j := 0; j < len(b); j++ {
-			nb[bp] = b[j]
-			bp++
-		}
+		bp += copy(nb[bp:], b)
 	}
 	return nb
 }

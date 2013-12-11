@@ -864,6 +864,8 @@ elfemitreloc(void)
 	elfrelocsect(segtext.sect, textp);
 	for(sect=segtext.sect->next; sect!=nil; sect=sect->next)
 		elfrelocsect(sect, datap);	
+	for(sect=segrodata.sect; sect!=nil; sect=sect->next)
+		elfrelocsect(sect, datap);	
 	for(sect=segdata.sect; sect!=nil; sect=sect->next)
 		elfrelocsect(sect, datap);	
 }
@@ -903,8 +905,6 @@ doelf(void)
 	addstring(shstrtab, ".elfdata");
 	addstring(shstrtab, ".rodata");
 	addstring(shstrtab, ".typelink");
-	if(flag_shared)
-		addstring(shstrtab, ".data.rel.ro");
 	addstring(shstrtab, ".gosymtab");
 	addstring(shstrtab, ".gopclntab");
 	
@@ -932,6 +932,14 @@ doelf(void)
 		}
 		// add a .note.GNU-stack section to mark the stack as non-executable
 		addstring(shstrtab, ".note.GNU-stack");
+	}
+
+	if(flag_shared) {
+		addstring(shstrtab, ".init_array");
+		if(thechar == '6')
+			addstring(shstrtab, ".rela.init_array");
+		else
+			addstring(shstrtab, ".rel.init_array");
 	}
 
 	if(!debug['s']) {
@@ -1001,7 +1009,7 @@ doelf(void)
 
 		s = lookup(".plt", 0);
 		s->reachable = 1;
-		s->type = SELFROSECT;
+		s->type = SELFRXSECT;
 		
 		elfsetupplt();
 		
@@ -1062,13 +1070,6 @@ doelf(void)
 		
 		elfwritedynent(s, DT_DEBUG, 0);
 
-		if(flag_shared) {
-			Sym *init_sym = lookup(LIBINITENTRY, 0);
-			if(init_sym->type != STEXT)
-				diag("entry not text: %s", init_sym->name);
-			elfwritedynentsym(s, DT_INIT, init_sym);
-		}
-
 		// Do not write DT_NULL.  elfdynhash will finish it.
 	}
 }
@@ -1104,6 +1105,8 @@ asmbelfsetup(void)
 	elfshname("");
 	
 	for(sect=segtext.sect; sect!=nil; sect=sect->next)
+		elfshalloc(sect);
+	for(sect=segrodata.sect; sect!=nil; sect=sect->next)
 		elfshalloc(sect);
 	for(sect=segdata.sect; sect!=nil; sect=sect->next)
 		elfshalloc(sect);
@@ -1189,6 +1192,9 @@ asmbelf(vlong symo)
 			case Hopenbsd:
 				interpreter = openbsddynld;
 				break;
+			case Hdragonfly:
+				interpreter = dragonflydynld;
+				break;
 			}
 		}
 		resoff -= elfinterp(sh, startva, resoff, interpreter);
@@ -1235,6 +1241,8 @@ asmbelf(vlong symo)
 	USED(resoff);
 
 	elfphload(&segtext);
+	if(segrodata.sect != nil)
+		elfphload(&segrodata);
 	elfphload(&segdata);
 
 	/* Dynamic linking sections */
@@ -1400,11 +1408,15 @@ elfobj:
 
 	for(sect=segtext.sect; sect!=nil; sect=sect->next)
 		elfshbits(sect);
+	for(sect=segrodata.sect; sect!=nil; sect=sect->next)
+		elfshbits(sect);
 	for(sect=segdata.sect; sect!=nil; sect=sect->next)
 		elfshbits(sect);
 
 	if(linkmode == LinkExternal) {
 		for(sect=segtext.sect; sect!=nil; sect=sect->next)
+			elfshreloc(sect);
+		for(sect=segrodata.sect; sect!=nil; sect=sect->next)
 			elfshreloc(sect);
 		for(sect=segdata.sect; sect!=nil; sect=sect->next)
 			elfshreloc(sect);
@@ -1455,6 +1467,8 @@ elfobj:
 		eh->ident[EI_OSABI] = ELFOSABI_NETBSD;
 	else if(HEADTYPE == Hopenbsd)
 		eh->ident[EI_OSABI] = ELFOSABI_OPENBSD;
+	else if(HEADTYPE == Hdragonfly)
+		eh->ident[EI_OSABI] = ELFOSABI_NONE;
 	if(PtrSize == 8)
 		eh->ident[EI_CLASS] = ELFCLASS64;
 	else
@@ -1462,9 +1476,7 @@ elfobj:
 	eh->ident[EI_DATA] = ELFDATA2LSB;
 	eh->ident[EI_VERSION] = EV_CURRENT;
 
-	if(flag_shared)
-		eh->type = ET_DYN;
-	else if(linkmode == LinkExternal)
+	if(linkmode == LinkExternal)
 		eh->type = ET_REL;
 	else
 		eh->type = ET_EXEC;

@@ -42,6 +42,7 @@ char akarosdynld[] = "/lib/ld-linux.so.2";
 char freebsddynld[] = "/usr/libexec/ld-elf.so.1";
 char openbsddynld[] = "/usr/libexec/ld.so";
 char netbsddynld[] = "/usr/libexec/ld.elf_so";
+char dragonflydynld[] = "/usr/libexec/ld-elf.so.2";
 
 int32
 entryvalue(void)
@@ -95,12 +96,6 @@ int	nelfsym = 1;
 
 static void	addpltsym(Sym*);
 static void	addgotsym(Sym*);
-
-Sym *
-lookuprel(void)
-{
-	return lookup(".rel", 0);
-}
 
 void
 adddynrela(Sym *rela, Sym *s, Reloc *r)
@@ -367,6 +362,8 @@ int
 archreloc(Reloc *r, Sym *s, vlong *val)
 {
 	USED(s);
+	if(linkmode == LinkExternal)
+		return -1;
 	switch(r->type) {
 	case D_CONST:
 		*val = r->add;
@@ -596,11 +593,18 @@ asmb(void)
 	sect = segtext.sect;
 	cseek(sect->vaddr - segtext.vaddr + segtext.fileoff);
 	codeblk(sect->vaddr, sect->len);
-
-	/* output read-only data in text segment (rodata, gosymtab, pclntab, ...) */
 	for(sect = sect->next; sect != nil; sect = sect->next) {
 		cseek(sect->vaddr - segtext.vaddr + segtext.fileoff);
 		datblk(sect->vaddr, sect->len);
+	}
+	
+	if(segrodata.filelen > 0) {
+		if(debug['v'])
+			Bprint(&bso, "%5.2f rodatblk\n", cputime());
+		Bflush(&bso);
+
+		cseek(segrodata.fileoff);
+		datblk(segrodata.vaddr, segrodata.filelen);
 	}
 
 	if(debug['v'])
@@ -656,7 +660,7 @@ asmb(void)
 			symo = rnd(HEADR+segtext.filelen, INITRND)+rnd(segdata.filelen, INITRND)+machlink;
 			break;
 		Elfsym:
-			symo = rnd(HEADR+segtext.filelen, INITRND)+segdata.filelen;
+			symo = rnd(HEADR+segtext.filelen, INITRND)+rnd(HEADR+segrodata.filelen, INITRND)+segdata.filelen;
 			symo = rnd(symo, INITRND);
 			break;
 		case Hwindows:
@@ -845,6 +849,7 @@ asmb(void)
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:
+	case Hdragonfly:
 		asmbelf(symo);
 		break;
 	case Hwindows:

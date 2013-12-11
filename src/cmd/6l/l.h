@@ -159,10 +159,7 @@ struct	Sym
 	int32	got;
 	int32	align;	// if non-zero, required alignment in bytes
 	int32	elfsym;
-	int32	locals;	// size of stack frame locals area
 	int32	args;	// size of stack frame incoming arguments area
-	int32	nptrs;	// number of bits in the pointer map
-	uint32*	ptrs;	// pointer map data
 	Sym*	hash;	// in hash table
 	Sym*	allsym;	// in all symbol list
 	Sym*	next;	// in text or data list
@@ -177,6 +174,7 @@ struct	Sym
 	char*	dynimplib;
 	char*	dynimpvers;
 	struct Section*	sect;
+	struct Hist*	hist;	// for ATEXT
 	
 	// STEXT
 	Auto*	autom;
@@ -189,14 +187,13 @@ struct	Sym
 	Reloc*	r;
 	int32	nr;
 	int32	maxr;
-	int 	rel_ro;
 };
 struct	Optab
 {
 	short	as;
 	uchar*	ytab;
 	uchar	prefix;
-	uchar	op[22];
+	uchar	op[23];
 };
 struct	Movtab
 {
@@ -213,7 +210,7 @@ enum
 	STRINGSZ	= 200,
 	MINLC		= 1,
 	MAXIO		= 8192,
-	MAXHIST		= 20,				/* limit of path elements for history symbols */
+	MAXHIST		= 40,				/* limit of path elements for history symbols */
 
 	Yxxx		= 0,
 	Ynone,
@@ -331,7 +328,6 @@ EXTERN	int32	INITRND;
 EXTERN	int64	INITTEXT;
 EXTERN	int64	INITDAT;
 EXTERN	char*	INITENTRY;		/* entry point */
-EXTERN	char*	LIBINITENTRY;		/* shared library entry point */
 EXTERN	char*	pcstr;
 EXTERN	Auto*	curauto;
 EXTERN	Auto*	curhist;
@@ -359,7 +355,6 @@ EXTERN	int32	spsize;
 EXTERN	Sym*	symlist;
 EXTERN	int32	symsize;
 EXTERN	int	tlsoffset;
-EXTERN	int	version;
 EXTERN	Prog	zprg;
 EXTERN	int	dtype;
 EXTERN	char*	paramspace;

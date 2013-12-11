@@ -238,7 +238,7 @@ type transferReader struct {
 	Trailer          Header
 }
 
-// bodyAllowedForStatus returns whether a given response status code
+// bodyAllowedForStatus reports whether a given response status code
 // permits a body.  See RFC2616, section 4.4.
 func bodyAllowedForStatus(status int) bool {
 	switch {
@@ -254,7 +254,7 @@ func bodyAllowedForStatus(status int) bool {
 
 // msg is *Request or *Response.
 func readTransfer(msg interface{}, r *bufio.Reader) (err error) {
-	t := &transferReader{}
+	t := &transferReader{RequestMethod: "GET"}
 
 	// Unify input
 	isResponse := false
@@ -262,11 +262,13 @@ func readTransfer(msg interface{}, r *bufio.Reader) (err error) {
 	case *Response:
 		t.Header = rr.Header
 		t.StatusCode = rr.StatusCode
-		t.RequestMethod = rr.Request.Method
 		t.ProtoMajor = rr.ProtoMajor
 		t.ProtoMinor = rr.ProtoMinor
 		t.Close = shouldClose(t.ProtoMajor, t.ProtoMinor, t.Header)
 		isResponse = true
+		if rr.Request != nil {
+			t.RequestMethod = rr.Request.Method
+		}
 	case *Request:
 		t.Header = rr.Header
 		t.ProtoMajor = rr.ProtoMajor
@@ -274,7 +276,6 @@ func readTransfer(msg interface{}, r *bufio.Reader) (err error) {
 		// Transfer semantics for Requests are exactly like those for
 		// Responses with status code 200, responding to a GET method
 		t.StatusCode = 200
-		t.RequestMethod = "GET"
 	default:
 		panic("unexpected type")
 	}
@@ -532,13 +533,22 @@ func (b *body) Read(p []byte) (n int, err error) {
 	}
 	n, err = b.Reader.Read(p)
 
-	// Read the final trailer once we hit EOF.
-	if err == io.EOF && b.hdr != nil {
-		if e := b.readTrailer(); e != nil {
-			err = e
+	if err == io.EOF {
+		// Chunked case. Read the trailer.
+		if b.hdr != nil {
+			if e := b.readTrailer(); e != nil {
+				err = e
+			}
+			b.hdr = nil
+		} else {
+			// If the server declared the Content-Length, our body is a LimitedReader
+			// and we need to check whether this EOF arrived early.
+			if lr, ok := b.Reader.(*io.LimitedReader); ok && lr.N > 0 {
+				err = io.ErrUnexpectedEOF
+			}
 		}
-		b.hdr = nil
 	}
+
 	return n, err
 }
 

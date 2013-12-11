@@ -322,7 +322,7 @@ setlineno(Node *n)
 uint32
 stringhash(char *p)
 {
-	int32 h;
+	uint32 h;
 	int c;
 
 	h = 0;
@@ -333,9 +333,9 @@ stringhash(char *p)
 		h = h*PRIME1 + c;
 	}
 
-	if(h < 0) {
+	if((int32)h < 0) {
 		h = -h;
-		if(h < 0)
+		if((int32)h < 0)
 			h = 0;
 	}
 	return h;
@@ -525,7 +525,7 @@ saveorignode(Node *n)
 	n->orig = norig;
 }
 
-// ispaddedfield returns whether the given field
+// ispaddedfield reports whether the given field
 // is followed by padding. For the case where t is
 // the last field, total gives the size of the enclosing struct.
 static int
@@ -546,6 +546,9 @@ algtype1(Type *t, Type **bad)
 	
 	if(bad)
 		*bad = T;
+
+	if(t->noalg)
+		return ANOEQ;
 
 	switch(t->etype) {
 	case TANY:
@@ -615,23 +618,23 @@ algtype1(Type *t, Type **bad)
 		return -1;  // needs special compare
 
 	case TSTRUCT:
-		if(t->type != T && t->type->down == T) {
+		if(t->type != T && t->type->down == T && !isblanksym(t->type->sym)) {
 			// One-field struct is same as that one field alone.
 			return algtype1(t->type->type, bad);
 		}
 		ret = AMEM;
 		for(t1=t->type; t1!=T; t1=t1->down) {
-			// Blank fields and padding must be ignored,
-			// so need special compare.
-			if(isblanksym(t1->sym) || ispaddedfield(t1, t->width)) {
+			// All fields must be comparable.
+			a = algtype1(t1->type, bad);
+			if(a == ANOEQ)
+				return ANOEQ;
+
+			// Blank fields, padded fields, fields with non-memory
+			// equality need special compare.
+			if(a != AMEM || isblanksym(t1->sym) || ispaddedfield(t1, t->width)) {
 				ret = -1;
 				continue;
 			}
-			a = algtype1(t1->type, bad);
-			if(a == ANOEQ)
-				return ANOEQ;  // not comparable
-			if(a != AMEM)
-				ret = -1;  // needs special compare
 		}
 		return ret;
 	}
@@ -1260,7 +1263,7 @@ assignop(Type *src, Type *dst, char **why)
 					"\t\thave %S%hhT\n\t\twant %S%hhT", src, dst, missing->sym,
 					have->sym, have->type, missing->sym, missing->type);
 			else if(ptr)
-				*why = smprint(":\n\t%T does not implement %T (%S method requires pointer receiver)",
+				*why = smprint(":\n\t%T does not implement %T (%S method has pointer receiver)",
 					src, dst, missing->sym);
 			else if(have)
 				*why = smprint(":\n\t%T does not implement %T (missing %S method)\n"
@@ -1410,6 +1413,9 @@ assignconv(Node *n, Type *t, char *context)
 	
 	if(n == N || n->type == T || n->type->broke)
 		return n;
+
+	if(t->etype == TBLANK && n->type->etype == TNIL)
+		yyerror("use of untyped nil");
 
 	old = n;
 	old->diag++;  // silence errors about n; we'll issue one below
@@ -2177,7 +2183,7 @@ lookdot0(Sym *s, Type *t, Type **save, int ignorecase)
 	c = 0;
 	if(u->etype == TSTRUCT || u->etype == TINTER) {
 		for(f=u->type; f!=T; f=f->down)
-			if(f->sym == s || (ignorecase && ucistrcmp(f->sym->name, s->name) == 0)) {
+			if(f->sym == s || (ignorecase && f->type->etype == TFUNC && f->type->thistuple > 0 && ucistrcmp(f->sym->name, s->name) == 0)) {
 				if(save)
 					*save = f;
 				c++;
@@ -2573,11 +2579,9 @@ genwrapper(Type *rcvr, Type *method, Sym *newnam, int iface)
 	dot = adddot(nod(OXDOT, this->left, newname(method->sym)));
 	
 	// generate call
-	if(isptr[rcvr->etype] && isptr[methodrcvr->etype] && method->embedded && !isifacemethod(method->type)) {
+	if(!flag_race && isptr[rcvr->etype] && isptr[methodrcvr->etype] && method->embedded && !isifacemethod(method->type)) {
 		// generate tail call: adjust pointer receiver and jump to embedded method.
-		fn->norace = 1; // something about this body makes the race detector unhappy.
-		// skip final .M
-		dot = dot->left;
+		dot = dot->left;	// skip final .M
 		if(!isptr[dotlist[0].field->type->etype])
 			dot = nod(OADDR, dot, N);
 		as = nod(OAS, this->left, nod(OCONVNOP, dot, N));
@@ -2587,6 +2591,7 @@ genwrapper(Type *rcvr, Type *method, Sym *newnam, int iface)
 		n->left = newname(methodsym(method->sym, methodrcvr, 0));
 		fn->nbody = list(fn->nbody, n);
 	} else {
+		fn->wrapper = 1; // ignore frame for panic+recover matching
 		call = nod(OCALL, dot, N);
 		call->list = args;
 		call->isddd = isddd;
@@ -3771,7 +3776,7 @@ isbadimport(Strlit *path)
 }
 
 void
-checknotnil(Node *x, NodeList **init)
+checknil(Node *x, NodeList **init)
 {
 	Node *n;
 	
@@ -3779,7 +3784,7 @@ checknotnil(Node *x, NodeList **init)
 		x = nod(OITAB, x, N);
 		typecheck(&x, Erv);
 	}
-	n = nod(OCHECKNOTNIL, x, N);
+	n = nod(OCHECKNIL, x, N);
 	n->typecheck = 1;
 	*init = list(*init, n);
 }

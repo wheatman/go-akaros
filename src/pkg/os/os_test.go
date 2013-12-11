@@ -302,6 +302,7 @@ func TestReaddirnamesOneAtATime(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("open %q failed: %v", dir, err2)
 	}
+	defer file1.Close()
 	small := smallReaddirnames(file1, len(all)+100, t) // +100 in case we screw up
 	if len(small) < len(all) {
 		t.Fatalf("len(small) is %d, less than %d", len(small), len(all))
@@ -529,6 +530,7 @@ func exec(t *testing.T, dir, cmd string, args []string, expect string) {
 	if err != nil {
 		t.Fatalf("Pipe: %v", err)
 	}
+	defer r.Close()
 	attr := &ProcAttr{Dir: dir, Files: []*File{nil, w, Stderr}}
 	p, err := StartProcess(cmd, args, attr)
 	if err != nil {
@@ -826,9 +828,16 @@ func TestOpenError(t *testing.T) {
 				if !strings.HasSuffix(syscallErrStr, expectedErrStr) {
 					t.Errorf("Open(%q, %d) = _, %q; want suffix %q", tt.path, tt.mode, syscallErrStr, expectedErrStr)
 				}
-			} else {
-				t.Errorf("Open(%q, %d) = _, %q; want %q", tt.path, tt.mode, perr.Err.Error(), tt.error.Error())
+				continue
 			}
+			if runtime.GOOS == "dragonfly" {
+				// DragonFly incorrectly returns EACCES rather
+				// EISDIR when a directory is opened for write.
+				if tt.error == syscall.EISDIR && perr.Err == syscall.EACCES {
+					continue
+				}
+			}
+			t.Errorf("Open(%q, %d) = _, %q; want %q", tt.path, tt.mode, perr.Err.Error(), tt.error.Error())
 		}
 	}
 }
@@ -847,6 +856,7 @@ func run(t *testing.T, cmd []string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer r.Close()
 	p, err := StartProcess("/bin/hostname", []string{"hostname"}, &ProcAttr{Files: []*File{nil, w, Stderr}})
 	if err != nil {
 		t.Fatal(err)

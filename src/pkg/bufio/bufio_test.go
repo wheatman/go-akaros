@@ -847,6 +847,10 @@ func TestWriterReadFrom(t *testing.T) {
 				t.Errorf("ws[%d],rs[%d]: w.ReadFrom(r) = %d, %v, want %d, nil", wi, ri, n, err, len(input))
 				continue
 			}
+			if err := w.Flush(); err != nil {
+				t.Errorf("Flush returned %v", err)
+				continue
+			}
 			if got, want := b.String(), string(input); got != want {
 				t.Errorf("ws[%d], rs[%d]:\ngot  %q\nwant %q\n", wi, ri, got, want)
 			}
@@ -1000,6 +1004,56 @@ func TestReaderClearError(t *testing.T) {
 	}
 	if r.nread != 2 {
 		t.Errorf("num reads = %d; want 2", r.nread)
+	}
+}
+
+// Test for golang.org/issue/5947
+func TestWriterReadFromWhileFull(t *testing.T) {
+	buf := new(bytes.Buffer)
+	w := NewWriterSize(buf, 10)
+
+	// Fill buffer exactly.
+	n, err := w.Write([]byte("0123456789"))
+	if n != 10 || err != nil {
+		t.Fatalf("Write returned (%v, %v), want (10, nil)", n, err)
+	}
+
+	// Use ReadFrom to read in some data.
+	n2, err := w.ReadFrom(strings.NewReader("abcdef"))
+	if n2 != 6 || err != nil {
+		t.Fatalf("ReadFrom returned (%v, %v), want (6, nil)", n, err)
+	}
+}
+
+func TestReaderReset(t *testing.T) {
+	r := NewReader(strings.NewReader("foo foo"))
+	buf := make([]byte, 3)
+	r.Read(buf)
+	if string(buf) != "foo" {
+		t.Errorf("buf = %q; want foo", buf)
+	}
+	r.Reset(strings.NewReader("bar bar"))
+	all, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(all) != "bar bar" {
+		t.Errorf("ReadAll = %q; want bar bar", all)
+	}
+}
+
+func TestWriterReset(t *testing.T) {
+	var buf1, buf2 bytes.Buffer
+	w := NewWriter(&buf1)
+	w.WriteString("foo")
+	w.Reset(&buf2) // and not flushed
+	w.WriteString("bar")
+	w.Flush()
+	if buf1.String() != "" {
+		t.Errorf("buf1 = %q; want empty", buf1.String())
+	}
+	if buf2.String() != "bar" {
+		t.Errorf("buf2 = %q; want bar", buf2.String())
 	}
 }
 

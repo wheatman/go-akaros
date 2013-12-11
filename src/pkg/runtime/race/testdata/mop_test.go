@@ -231,6 +231,22 @@ func TestRaceCaseFallthrough(t *testing.T) {
 	<-ch
 }
 
+func TestRaceCaseIssue6418(t *testing.T) {
+	m := map[string]map[string]string{
+		"a": map[string]string{
+			"b": "c",
+		},
+	}
+	ch := make(chan int)
+	go func() {
+		m["a"]["x"] = "y"
+		ch <- 1
+	}()
+	switch m["a"]["b"] {
+	}
+	<-ch
+}
+
 func TestRaceCaseType(t *testing.T) {
 	var x, y int
 	var i interface{} = x
@@ -259,6 +275,25 @@ func TestRaceCaseTypeBody(t *testing.T) {
 		c <- 1
 	}()
 	x = y
+	<-c
+}
+
+func TestRaceCaseTypeIssue5890(t *testing.T) {
+	// spurious extra instrumentation of the initial interface
+	// value.
+	var x, y int
+	m := make(map[int]map[int]interface{})
+	m[0] = make(map[int]interface{})
+	c := make(chan int, 1)
+	go func() {
+		switch i := m[0][1].(type) {
+		case nil:
+		case *int:
+			*i = x
+		}
+		c <- 1
+	}()
+	m[0][1] = y
 	<-c
 }
 

@@ -563,13 +563,13 @@ func (z *Int) SetBytes(buf []byte) *Int {
 	return z
 }
 
-// Bytes returns the absolute value of z as a big-endian byte slice.
+// Bytes returns the absolute value of x as a big-endian byte slice.
 func (x *Int) Bytes() []byte {
 	buf := make([]byte, len(x.abs)*_S)
 	return buf[x.abs.bytes(buf):]
 }
 
-// BitLen returns the length of the absolute value of z in bits.
+// BitLen returns the length of the absolute value of x in bits.
 // The bit length of 0 is 0.
 func (x *Int) BitLen() int {
 	return x.abs.bitLen()
@@ -952,6 +952,9 @@ const intGobVersion byte = 1
 
 // GobEncode implements the gob.GobEncoder interface.
 func (x *Int) GobEncode() ([]byte, error) {
+	if x == nil {
+		return nil, nil
+	}
 	buf := make([]byte, 1+len(x.abs)*_S) // extra byte for version and sign bit
 	i := x.abs.bytes(buf) - 1            // i >= 0
 	b := intGobVersion << 1              // make space for sign bit
@@ -965,7 +968,9 @@ func (x *Int) GobEncode() ([]byte, error) {
 // GobDecode implements the gob.GobDecoder interface.
 func (z *Int) GobDecode(buf []byte) error {
 	if len(buf) == 0 {
-		return errors.New("Int.GobDecode: no data")
+		// Other side sent a nil or default value.
+		*z = Int{}
+		return nil
 	}
 	b := buf[0]
 	if b>>1 != intGobVersion {

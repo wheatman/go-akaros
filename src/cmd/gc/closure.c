@@ -280,11 +280,13 @@ typecheckpartialcall(Node *fn, Node *sym)
 static Node*
 makepartialcall(Node *fn, Type *t0, Node *meth)
 {
-	Node *ptr, *n, *fld, *call, *xtype, *xfunc, *cv;
+	Node *ptr, *n, *fld, *call, *xtype, *xfunc, *cv, *savecurfn;
 	Type *rcvrtype, *basetype, *t;
 	NodeList *body, *l, *callargs, *retargs;
 	char *p;
 	Sym *sym;
+	Pkg *spkg;
+	static Pkg* gopkg;
 	int i, ddd;
 
 	// TODO: names are not right
@@ -296,14 +298,25 @@ makepartialcall(Node *fn, Type *t0, Node *meth)
 	basetype = rcvrtype;
 	if(isptr[rcvrtype->etype])
 		basetype = basetype->type;
-	if(basetype->sym == S)
+	if(basetype->etype != TINTER && basetype->sym == S)
 		fatal("missing base type for %T", rcvrtype);
 
-	sym = pkglookup(p, basetype->sym->pkg);
+	spkg = nil;
+	if(basetype->sym != S)
+		spkg = basetype->sym->pkg;
+	if(spkg == nil) {
+		if(gopkg == nil)
+			gopkg = mkpkg(strlit("go"));
+		spkg = gopkg;
+	}
+	sym = pkglookup(p, spkg);
 	free(p);
 	if(sym->flags & SymUniq)
 		return sym->def;
 	sym->flags |= SymUniq;
+	
+	savecurfn = curfn;
+	curfn = N;
 
 	xtype = nod(OTFUNC, N, N);
 	i = 0;
@@ -311,6 +324,7 @@ makepartialcall(Node *fn, Type *t0, Node *meth)
 	callargs = nil;
 	ddd = 0;
 	xfunc = nod(ODCLFUNC, N, N);
+	curfn = xfunc;
 	for(t = getinargx(t0)->type; t; t = t->down) {
 		snprint(namebuf, sizeof namebuf, "a%d", i++);
 		n = newname(lookup(namebuf));
@@ -385,6 +399,7 @@ makepartialcall(Node *fn, Type *t0, Node *meth)
 	typecheck(&xfunc, Etop);
 	sym->def = xfunc;
 	xtop = list(xtop, xfunc);
+	curfn = savecurfn;
 
 	return xfunc;
 }
@@ -402,8 +417,10 @@ walkpartialcall(Node *n, NodeList **init)
 	// Like walkclosure above.
 
 	if(isinter(n->left->type)) {
+		// Trigger panic for method on nil interface now.
+		// Otherwise it happens in the wrapper and is confusing.
 		n->left = cheapexpr(n->left, init);
-		checknotnil(n->left, init);
+		checknil(n->left, init);
 	}
 
 	typ = nod(OTSTRUCT, N, N);

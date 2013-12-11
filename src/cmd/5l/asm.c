@@ -42,6 +42,7 @@ char akarosdynld[] = "/lib/ld-linux.so.3";
 char freebsddynld[] = "/usr/libexec/ld-elf.so.1";
 char openbsddynld[] = "XXX";
 char netbsddynld[] = "/libexec/ld.elf_so";
+char dragonflydynld[] = "XXX";
 
 int32
 entryvalue(void)
@@ -92,12 +93,6 @@ static int32
 braddoff(int32 a, int32 b)
 {
 	return (((uint32)a) & 0xff000000U) | (0x00ffffffU & (uint32)(a + b));
-}
-
-Sym *
-lookuprel(void)
-{
-	return lookup(".rel", 0);
 }
 
 void
@@ -265,6 +260,26 @@ elfreloc1(Reloc *r, vlong sectoff)
 		else
 			return -1;
 		break;
+
+	case D_CALL:
+		if(r->siz == 4) {
+			if((r->add & 0xff000000) == 0xeb000000) // BL
+				LPUT(R_ARM_CALL | elfsym<<8);
+			else
+				LPUT(R_ARM_JUMP24 | elfsym<<8);
+		} else
+			return -1;
+		break;
+
+	case D_TLS:
+		if(r->siz == 4) {
+			if(flag_shared)
+				LPUT(R_ARM_TLS_IE32 | elfsym<<8);
+			else
+				LPUT(R_ARM_TLS_LE32 | elfsym<<8);
+		} else
+			return -1;
+		break;
 	}
 
 	return 0;
@@ -309,6 +324,34 @@ machoreloc1(Reloc *r, vlong sectoff)
 int
 archreloc(Reloc *r, Sym *s, vlong *val)
 {
+	Sym *rs;
+
+	if(linkmode == LinkExternal) {
+		switch(r->type) {
+		case D_CALL:
+			r->done = 0;
+
+			// set up addend for eventual relocation via outer symbol.
+			rs = r->sym;
+			r->xadd = r->add;
+			if(r->xadd & 0x800000)
+				r->xadd |= ~0xffffff;
+			r->xadd *= 4;
+			while(rs->outer != nil) {
+				r->xadd += symaddr(rs) - symaddr(rs->outer);
+				rs = rs->outer;
+			}
+
+			if(rs->type != SHOSTOBJ && rs->sect == nil)
+				diag("missing section for %s", rs->name);
+			r->xsym = rs;
+
+			*val = braddoff((0xff000000U & (uint32)r->add), 
+							(0xffffff & (uint32)(r->xadd / 4)));
+			return 0;
+		}
+		return -1;
+	}
 	switch(r->type) {
 	case D_CONST:
 		*val = r->add;
@@ -551,11 +594,18 @@ asmb(void)
 	sect = segtext.sect;
 	cseek(sect->vaddr - segtext.vaddr + segtext.fileoff);
 	codeblk(sect->vaddr, sect->len);
-
-	/* output read-only data in text segment (rodata, gosymtab, pclntab, ...) */
 	for(sect = sect->next; sect != nil; sect = sect->next) {
 		cseek(sect->vaddr - segtext.vaddr + segtext.fileoff);
 		datblk(sect->vaddr, sect->len);
+	}
+
+	if(segrodata.filelen > 0) {
+		if(debug['v'])
+			Bprint(&bso, "%5.2f rodatblk\n", cputime());
+		Bflush(&bso);
+
+		cseek(segrodata.fileoff);
+		datblk(segrodata.vaddr, segrodata.filelen);
 	}
 
 	if(debug['v'])
@@ -588,7 +638,7 @@ asmb(void)
 			symo = HEADR+segtext.len+segdata.filelen;
 			break;
 		ElfSym:
-			symo = rnd(HEADR+segtext.filelen, INITRND)+segdata.filelen;
+			symo = rnd(HEADR+segtext.filelen, INITRND)+rnd(HEADR+segrodata.filelen, INITRND)+segdata.filelen;
 			symo = rnd(symo, INITRND);
 			break;
 		}
@@ -761,7 +811,7 @@ nopstat(char *f, Count *c)
 }
 
 void
-asmout(Prog *p, Optab *o, int32 *out)
+asmout(Prog *p, Optab *o, int32 *out, Sym *gmsym)
 {
 	int32 o1, o2, o3, o4, o5, o6, v;
 	int r, rf, rt, rt2;
@@ -793,7 +843,7 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		r = p->reg;
 		if(p->to.type == D_NONE)
 			rt = 0;
-		if(p->as == AMOVW || p->as == AMVN)
+		if(p->as == AMOVB || p->as == AMOVH || p->as == AMOVW || p->as == AMVN)
 			r = 0;
 		else
 		if(r == NREG)
@@ -844,11 +894,19 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		break;
 
 	case 5:		/* bra s */
+		o1 = opbra(p->as, p->scond);
 		v = -8;
-		// TODO: Use addrel.
+		if(p->to.sym != S && p->to.sym->type != 0) {
+			rel = addrel(cursym);
+			rel->off = pc - cursym->value;
+			rel->siz = 4;
+			rel->sym = p->to.sym;
+			rel->add = o1 | ((v >> 2) & 0xffffff);
+			rel->type = D_CALL;
+			break;
+		}
 		if(p->cond != P)
 			v = (p->cond->pc - pc) - 8;
-		o1 = opbra(p->as, p->scond);
 		o1 |= (v >> 2) & 0xffffff;
 		break;
 
@@ -906,7 +964,13 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 			rel->siz = 4;
 			rel->sym = p->to.sym;
 			rel->add = p->to.offset;
-			if(flag_shared) {
+			if(rel->sym == gmsym) {
+				rel->type = D_TLS;
+				if(flag_shared)
+					rel->add += pc - p->pcrel->pc - 8 - rel->siz;
+				rel->xadd = rel->add;
+				rel->xsym = rel->sym;
+			} else if(flag_shared) {
 				rel->type = D_PCREL;
 				rel->add += pc - p->pcrel->pc - 8;
 			} else
@@ -949,7 +1013,7 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		r = p->to.reg;
 		o1 |= (p->from.reg)|(r<<12);
 		o2 |= (r)|(r<<12);
-		if(p->as == AMOVB || p->as == AMOVBU) {
+		if(p->as == AMOVB || p->as == AMOVBS || p->as == AMOVBU) {
 			o1 |= (24<<7);
 			o2 |= (24<<7);
 		} else {
@@ -1030,7 +1094,7 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(r == NREG)
 			r = o->param;
 		o2 = olrr(REGTMP,r, p->to.reg, p->scond);
-		if(p->as == AMOVBU || p->as == AMOVB)
+		if(p->as == AMOVBU || p->as == AMOVBS || p->as == AMOVB)
 			o2 |= 1<<22;
 		break;
 
@@ -1219,7 +1283,7 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(p->to.reg == NREG)
 			diag("MOV to shifter operand");
 		o1 = osrr(p->from.reg, p->to.offset, p->to.reg, p->scond);
-		if(p->as == AMOVB || p->as == AMOVBU)
+		if(p->as == AMOVB || p->as == AMOVBS || p->as == AMOVBU)
 			o1 |= 1<<22;
 		break;
 
@@ -1237,9 +1301,22 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 
 	case 63:	/* bcase */
 		if(p->cond != P) {
-			o1 = p->cond->pc;
-			if(flag_shared)
-				o1 = o1 - p->pcrel->pc - 16;
+			rel = addrel(cursym);
+			rel->off = pc - cursym->value;
+			rel->siz = 4;
+			if(p->to.sym != S && p->to.sym->type != 0) {
+				rel->sym = p->to.sym;
+				rel->add = p->to.offset;
+			} else {
+				rel->sym = cursym;
+				rel->add = p->cond->pc - cursym->value;
+			}
+			if(o->flag & LPCREL) {
+				rel->type = D_PCREL;
+				rel->add += pc - p->pcrel->pc - 16 + rel->siz;
+			} else
+				rel->type = D_ADDR;
+			o1 = 0;
 		}
 		break;
 
@@ -1260,7 +1337,7 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(!o1)
 			break;
 		o2 = olr(0, REGTMP, p->to.reg, p->scond);
-		if(p->as == AMOVBU || p->as == AMOVB)
+		if(p->as == AMOVBU || p->as == AMOVBS || p->as == AMOVB)
 			o2 |= 1<<22;
 		if(o->flag & LPCREL) {
 			o3 = o2;
@@ -1304,9 +1381,9 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(r == NREG)
 			r = o->param;
 		o1 = olhr(instoffset, r, p->to.reg, p->scond);
-		if(p->as == AMOVB)
+		if(p->as == AMOVB || p->as == AMOVBS)
 			o1 ^= (1<<5)|(1<<6);
-		else if(p->as == AMOVH)
+		else if(p->as == AMOVH || p->as == AMOVHS)
 			o1 ^= (1<<6);
 		break;
 	case 72:	/* movh/movhu R,L(R) -> strh */
@@ -1326,9 +1403,9 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(r == NREG)
 			r = o->param;
 		o2 = olhrr(REGTMP, r, p->to.reg, p->scond);
-		if(p->as == AMOVB)
+		if(p->as == AMOVB || p->as == AMOVBS)
 			o2 ^= (1<<5)|(1<<6);
-		else if(p->as == AMOVH)
+		else if(p->as == AMOVH || p->as == AMOVHS)
 			o2 ^= (1<<6);
 		break;
 	case 74:	/* bx $I */
@@ -1480,9 +1557,9 @@ if(debug['G']) print("%ux: %s: arm %d\n", (uint32)(p->pc), p->from.sym->name, p-
 		if(!o1)
 			break;
 		o2 = olhr(0, REGTMP, p->to.reg, p->scond);
-		if(p->as == AMOVB)
+		if(p->as == AMOVB || p->as == AMOVBS)
 			o2 ^= (1<<5)|(1<<6);
-		else if(p->as == AMOVH)
+		else if(p->as == AMOVH || p->as == AMOVHS)
 			o2 ^= (1<<6);
 		if(o->flag & LPCREL) {
 			o3 = o2;
@@ -1634,6 +1711,8 @@ oprrr(int a, int sc)
 	case ACMP:	return o | (0xa<<21) | (1<<20);
 	case ACMN:	return o | (0xb<<21) | (1<<20);
 	case AORR:	return o | (0xc<<21);
+	case AMOVB:
+	case AMOVH:
 	case AMOVW:	return o | (0xd<<21);
 	case ABIC:	return o | (0xe<<21);
 	case AMVN:	return o | (0xf<<21);

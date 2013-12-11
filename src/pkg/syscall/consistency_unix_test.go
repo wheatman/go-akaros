@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build freebsd darwin linux akaros netbsd openbsd
+// +build akaros freebsd dragonfly darwin linux netbsd openbsd
 
 // This file tests that some basic syscalls are consistent across
 // all Unixes.
@@ -21,5 +21,14 @@ func _() {
 		_ int = syscall.PRIO_USER
 		_ int = syscall.PRIO_PROCESS
 		_ int = syscall.PRIO_PGRP
+	)
+}
+
+// termios functions and constants
+func _() {
+	const (
+		_ int = syscall.TCIFLUSH
+		_ int = syscall.TCIOFLUSH
+		_ int = syscall.TCOFLUSH
 	)
 }

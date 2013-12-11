@@ -297,6 +297,8 @@ type (
 		Lbrack token.Pos // position of "["
 		Low    Expr      // begin of slice range; or nil
 		High   Expr      // end of slice range; or nil
+		Max    Expr      // maximum capacity of slice; or nil
+		Slice3 bool      // true if 3-index slice (2 colons present)
 		Rbrack token.Pos // position of "]"
 	}
 
@@ -518,16 +520,16 @@ func (*ChanType) exprNode()      {}
 //
 func NewIdent(name string) *Ident { return &Ident{token.NoPos, name, nil} }
 
-// IsExported returns whether name is an exported Go symbol
-// (i.e., whether it begins with an uppercase letter).
+// IsExported reports whether name is an exported Go symbol
+// (that is, whether it begins with an upper-case letter).
 //
 func IsExported(name string) bool {
 	ch, _ := utf8.DecodeRuneInString(name)
 	return unicode.IsUpper(ch)
 }
 
-// IsExported returns whether id is an exported Go symbol
-// (i.e., whether it begins with an uppercase letter).
+// IsExported reports whether id is an exported Go symbol
+// (that is, whether it begins with an uppercase letter).
 //
 func (id *Ident) IsExported() bool { return IsExported(id.Name) }
 
@@ -919,7 +921,7 @@ type (
 		Doc  *CommentGroup // associated documentation; or nil
 		Recv *FieldList    // receiver (methods); or nil (functions)
 		Name *Ident        // function/method name
-		Type *FuncType     // position of Func keyword, parameters and results
+		Type *FuncType     // function signature: parameters, results, and position of "func" keyword
 		Body *BlockStmt    // function body; or nil (forward declaration)
 	}
 )

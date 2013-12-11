@@ -53,6 +53,16 @@ uchar	ynop[] =
 	Yxr,	Ynone,	Zpseudo,1,
 	0
 };
+uchar	yfuncdata[] =
+{
+	Yi32,	Ym,	Zpseudo,	0,
+	0
+};
+uchar	ypcdata[] = 
+{
+	Yi32,	Yi32,	Zpseudo,	0,
+	0
+};
 uchar	yxorb[] =
 {
 	Yi32,	Yal,	Zib_,	1,
@@ -247,8 +257,10 @@ uchar	yrb_mb[] =
 	Yrb,	Ymb,	Zr_m,	1,
 	0
 };
-uchar	yml_ml[] =
+uchar	yxchg[] =
 {
+	Yax,	Yrl,	Z_rp,	1,
+	Yrl,	Yax,	Zrp_,	1,
 	Yrl,	Yml,	Zr_m,	1,
 	Yml,	Yrl,	Zm_r,	1,
 	0
@@ -901,7 +913,7 @@ Optab optab[] =
 	{ AMOVHLPS,	yxr,	Pm, 0x12 },
 	{ AMOVHPD,	yxmov,	Pe, 0x16,0x17 },
 	{ AMOVHPS,	yxmov,	Pm, 0x16,0x17 },
-	{ AMOVL,	ymovl,	Px, 0x89,0x8b,0x31,0xb8,0xc7,(00),0x6e,0x7e,Pe,0x6e,Pe,0x7e },
+	{ AMOVL,	ymovl,	Px, 0x89,0x8b,0x31,0xb8,0xc7,(00),0x6e,0x7e,Pe,0x6e,Pe,0x7e,0 },
 	{ AMOVLHPS,	yxr,	Pm, 0x16 },
 	{ AMOVLPD,	yxmov,	Pe, 0x12,0x13 },
 	{ AMOVLPS,	yxmov,	Pm, 0x12,0x13 },
@@ -913,7 +925,7 @@ Optab optab[] =
 	{ AMOVNTPD,	yxr_ml,	Pe, 0x2b },
 	{ AMOVNTPS,	yxr_ml,	Pm, 0x2b },
 	{ AMOVNTQ,	ymr_ml,	Pm, 0xe7 },
-	{ AMOVQ,	ymovq,	Pw, 0x89, 0x8b, 0x31, 0xc7,(00), 0xb8, 0xc7,(00), 0x6f, 0x7f, 0x6e, 0x7e, Pf2,0xd6, Pf3,0x7e, Pe,0xd6, Pe,0x6e, Pe,0x7e },
+	{ AMOVQ,	ymovq,	Pw, 0x89, 0x8b, 0x31, 0xc7,(00), 0xb8, 0xc7,(00), 0x6f, 0x7f, 0x6e, 0x7e, Pf2,0xd6, Pf3,0x7e, Pe,0xd6, Pe,0x6e, Pe,0x7e,0 },
 	{ AMOVQOZX,	ymrxr,	Pf3, 0xd6,0x7e },
 	{ AMOVSB,	ynone,	Pb, 0xa4 },
 	{ AMOVSD,	yxmov,	Pf2, 0x10,0x11 },
@@ -923,7 +935,7 @@ Optab optab[] =
 	{ AMOVSW,	ynone,	Pe, 0xa5 },
 	{ AMOVUPD,	yxmov,	Pe, 0x10,0x11 },
 	{ AMOVUPS,	yxmov,	Pm, 0x10,0x11 },
-	{ AMOVW,	ymovw,	Pe, 0x89,0x8b,0x31,0xb8,0xc7,(00) },
+	{ AMOVW,	ymovw,	Pe, 0x89,0x8b,0x31,0xb8,0xc7,(00),0 },
 	{ AMOVWLSX,	yml_rl,	Pm, 0xbf },
 	{ AMOVWLZX,	yml_rl,	Pm, 0xb7 },
 	{ AMOVWQSX,	yml_rl,	Pw, 0x0f,0xbf },
@@ -1174,9 +1186,9 @@ Optab optab[] =
 	{ AWAIT,	ynone,	Px, 0x9b },
 	{ AWORD,	ybyte,	Px, 2 },
 	{ AXCHGB,	yml_mb,	Pb, 0x86,0x86 },
-	{ AXCHGL,	yml_ml,	Px, 0x87,0x87 },
-	{ AXCHGQ,	yml_ml,	Pw, 0x87,0x87 },
-	{ AXCHGW,	yml_ml,	Pe, 0x87,0x87 },
+	{ AXCHGL,	yxchg,	Px, 0x90,0x90,0x87,0x87 },
+	{ AXCHGQ,	yxchg,	Pw, 0x90,0x90,0x87,0x87 },
+	{ AXCHGW,	yxchg,	Pe, 0x90,0x90,0x87,0x87 },
 	{ AXLAT,	ynone,	Px, 0xd7 },
 	{ AXORB,	yxorb,	Pb, 0x34,0x80,(06),0x30,0x32 },
 	{ AXORL,	yxorl,	Px, 0x83,(06),0x35,0x81,(06),0x31,0x33 },
@@ -1337,12 +1349,11 @@ Optab optab[] =
 	{ AAESKEYGENASSIST,	yaes2,	Pq, 0x3a,0xdf,(0) },
 
 	{ APSHUFD,	yaes2,	Pq,	0x70,(0) },
+	{ APCLMULQDQ,	yxshuf,	Pq, 0x3a,0x44,0 },
 
 	{ AUSEFIELD,	ynop,	Px, 0,0 },
-	{ ALOCALS },
-	{ ATYPE },
-	{ ANPTRS },
-	{ APTRS },
+	{ AFUNCDATA,	yfuncdata,	Px, 0,0 },
+	{ APCDATA,	ypcdata,	Px, 0,0 },
 
 	{ AEND },
 	0

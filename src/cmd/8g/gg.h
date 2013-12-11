@@ -42,7 +42,7 @@ struct	Prog
 	Addr	from;		// src address
 	Addr	to;		// dst address
 	Prog*	link;		// next instruction in this func
-	void*	reg;		// pointer to containing Reg struct
+	void*	opt;		// for optimizer passes
 };
 
 #define TEXTFLAG from.scale
@@ -151,7 +151,7 @@ void	split64(Node*, Node*, Node*);
 void	splitclean(void);
 void	nswap(Node*, Node*);
 void	gtrack(Sym*);
-
+void	gargsize(int32);
 /*
  * cplx.c
  */

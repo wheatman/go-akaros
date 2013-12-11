@@ -39,7 +39,7 @@ struct	Prog
 	uint32	loc;		// pc offset in this func
 	uint32	lineno;		// source line that generated this
 	Prog*	link;		// next instruction in this func
-	void*	regp;		// points to enclosing Reg struct
+	void*	opt;		// for optimizer passes
 	short	as;		// opcode
 	uchar	reg;		// doubles as width in DATA op
 	uchar	scond;
@@ -51,7 +51,7 @@ struct	Prog
 
 #define REGALLOC_R0 0
 #define REGALLOC_RMAX REGEXT
-#define REGALLOC_F0 (REGALLOC_RMAX+1)
+#define REGALLOC_F0 NREG
 #define REGALLOC_FMAX (REGALLOC_F0 + FREGEXT)
 
 EXTERN	int32	dynloc;
@@ -146,6 +146,7 @@ void	split64(Node*, Node*, Node*);
 void	splitclean(void);
 Node*	ncon(uint32 i);
 void	gtrack(Sym*);
+void	gargsize(int32);
 
 /*
  * obj.c

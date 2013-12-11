@@ -9,6 +9,7 @@
 #include "arch_GOARCH.h"
 #include "malloc.h"
 #include "race.h"
+#include "../../cmd/ld/textflag.h"
 
 void runtime∕race·Initialize(uintptr *racectx);
 void runtime∕race·MapShadow(void *addr, uintptr size);
@@ -33,17 +34,23 @@ extern byte enoptrbss[];
 
 static bool onstack(uintptr argp);
 
+// We set m->racecall around all calls into race library to trigger fast path in cgocall.
+// Also we increment m->locks to disable preemption and potential rescheduling
+// to ensure that we reset m->racecall on the correct m.
+
 uintptr
 runtime·raceinit(void)
 {
 	uintptr racectx, start, size;
 
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·Initialize(&racectx);
 	// Round data segment to page boundaries, because it's used in mmap().
 	start = (uintptr)noptrdata & ~(PageSize-1);
 	size = ROUND((uintptr)enoptrbss - start, PageSize);
 	runtime∕race·MapShadow((void*)start, size);
+	m->locks--;
 	m->racecall = false;
 	return racectx;
 }
@@ -52,7 +59,9 @@ void
 runtime·racefini(void)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·Finalize();
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -60,60 +69,70 @@ void
 runtime·racemapshadow(void *addr, uintptr size)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·MapShadow(addr, size);
+	m->locks--;
 	m->racecall = false;
 }
 
 // Called from instrumented code.
 // If we split stack, getcallerpc() can return runtime·lessstack().
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·racewrite(uintptr addr)
 {
 	if(!onstack(addr)) {
 		m->racecall = true;
+		m->locks++;
 		runtime∕race·Write(g->racectx, (void*)addr, runtime·getcallerpc(&addr));
+		m->locks--;
 		m->racecall = false;
 	}
 }
 
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·racewriterange(uintptr addr, uintptr sz)
 {
 	if(!onstack(addr)) {
 		m->racecall = true;
+		m->locks++;
 		runtime∕race·WriteRange(g->racectx, (void*)addr, sz, runtime·getcallerpc(&addr));
+		m->locks--;
 		m->racecall = false;
 	}
 }
 
 // Called from instrumented code.
 // If we split stack, getcallerpc() can return runtime·lessstack().
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·raceread(uintptr addr)
 {
 	if(!onstack(addr)) {
 		m->racecall = true;
+		m->locks++;
 		runtime∕race·Read(g->racectx, (void*)addr, runtime·getcallerpc(&addr));
+		m->locks--;
 		m->racecall = false;
 	}
 }
 
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·racereadrange(uintptr addr, uintptr sz)
 {
 	if(!onstack(addr)) {
 		m->racecall = true;
+		m->locks++;
 		runtime∕race·ReadRange(g->racectx, (void*)addr, sz, runtime·getcallerpc(&addr));
+		m->locks--;
 		m->racecall = false;
 	}
 }
 
 // Called from runtime·racefuncenter (assembly).
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·racefuncenter1(uintptr pc)
 {
@@ -123,28 +142,34 @@ runtime·racefuncenter1(uintptr pc)
 		runtime·callers(2, &pc, 1);
 
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·FuncEnter(g->racectx, (void*)pc);
+	m->locks--;
 	m->racecall = false;
 }
 
 // Called from instrumented code.
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·racefuncexit(void)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·FuncExit(g->racectx);
+	m->locks--;
 	m->racecall = false;
 }
 
 void
-runtime·racemalloc(void *p, uintptr sz, void *pc)
+runtime·racemalloc(void *p, uintptr sz)
 {
 	// use m->curg because runtime·stackalloc() is called from g0
 	if(m->curg == nil)
 		return;
 	m->racecall = true;
-	runtime∕race·Malloc(m->curg->racectx, p, sz, pc);
+	m->locks++;
+	runtime∕race·Malloc(m->curg->racectx, p, sz, /* unused pc */ 0);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -152,7 +177,9 @@ void
 runtime·racefree(void *p)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·Free(p);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -162,7 +189,9 @@ runtime·racegostart(void *pc)
 	uintptr racectx;
 
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·GoStart(g->racectx, &racectx, pc);
+	m->locks--;
 	m->racecall = false;
 	return racectx;
 }
@@ -171,7 +200,9 @@ void
 runtime·racegoend(void)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·GoEnd(g->racectx);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -182,6 +213,7 @@ memoryaccess(void *addr, uintptr callpc, uintptr pc, bool write)
 
 	if(!onstack((uintptr)addr)) {
 		m->racecall = true;
+		m->locks++;
 		racectx = g->racectx;
 		if(callpc) {
 			if(callpc == (uintptr)runtime·lessstack)
@@ -194,6 +226,7 @@ memoryaccess(void *addr, uintptr callpc, uintptr pc, bool write)
 			runtime∕race·Read(racectx, addr, (void*)pc);
 		if(callpc)
 			runtime∕race·FuncExit(racectx);
+		m->locks--;
 		m->racecall = false;
 	}
 }
@@ -217,6 +250,7 @@ rangeaccess(void *addr, uintptr size, uintptr callpc, uintptr pc, bool write)
 
 	if(!onstack((uintptr)addr)) {
 		m->racecall = true;
+		m->locks++;
 		racectx = g->racectx;
 		if(callpc) {
 			if(callpc == (uintptr)runtime·lessstack)
@@ -229,6 +263,7 @@ rangeaccess(void *addr, uintptr size, uintptr callpc, uintptr pc, bool write)
 			runtime∕race·ReadRange(racectx, addr, size, (void*)pc);
 		if(callpc)
 			runtime∕race·FuncExit(racectx);
+		m->locks--;
 		m->racecall = false;
 	}
 }
@@ -257,7 +292,9 @@ runtime·raceacquireg(G *gp, void *addr)
 	if(g->raceignore)
 		return;
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·Acquire(gp->racectx, addr);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -273,7 +310,9 @@ runtime·racereleaseg(G *gp, void *addr)
 	if(g->raceignore)
 		return;
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·Release(gp->racectx, addr);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -289,7 +328,9 @@ runtime·racereleasemergeg(G *gp, void *addr)
 	if(g->raceignore)
 		return;
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·ReleaseMerge(gp->racectx, addr);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -297,7 +338,9 @@ void
 runtime·racefingo(void)
 {
 	m->racecall = true;
+	m->locks++;
 	runtime∕race·FinalizerGoroutine(g->racectx);
+	m->locks--;
 	m->racecall = false;
 }
 
@@ -326,7 +369,7 @@ runtime·RaceReleaseMerge(void *addr)
 void
 runtime·RaceSemacquire(uint32 *s)
 {
-	runtime·semacquire(s);
+	runtime·semacquire(s, false);
 }
 
 // func RaceSemrelease(s *uint32)
@@ -337,7 +380,7 @@ runtime·RaceSemrelease(uint32 *s)
 }
 
 // func RaceRead(addr unsafe.Pointer)
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·RaceRead(void *addr)
 {
@@ -345,7 +388,7 @@ runtime·RaceRead(void *addr)
 }
 
 // func RaceWrite(addr unsafe.Pointer)
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·RaceWrite(void *addr)
 {
@@ -353,7 +396,7 @@ runtime·RaceWrite(void *addr)
 }
 
 // func RaceReadRange(addr unsafe.Pointer, len int)
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·RaceReadRange(void *addr, intgo len)
 {
@@ -361,7 +404,7 @@ runtime·RaceReadRange(void *addr, intgo len)
 }
 
 // func RaceWriteRange(addr unsafe.Pointer, len int)
-#pragma textflag 7
+#pragma textflag NOSPLIT
 void
 runtime·RaceWriteRange(void *addr, intgo len)
 {

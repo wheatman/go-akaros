@@ -666,6 +666,36 @@ func TestClientWithIncorrectTLSServerName(t *testing.T) {
 	}
 }
 
+// Test for golang.org/issue/5829; the Transport should respect TLSClientConfig.ServerName
+// when not empty.
+//
+// tls.Config.ServerName (non-empty, set to "example.com") takes
+// precedence over "some-other-host.tld" which previously incorrectly
+// took precedence. We don't actually connect to (or even resolve)
+// "some-other-host.tld", though, because of the Transport.Dial hook.
+//
+// The httptest.Server has a cert with "example.com" as its name.
+func TestTransportUsesTLSConfigServerName(t *testing.T) {
+	defer afterTest(t)
+	ts := httptest.NewTLSServer(HandlerFunc(func(w ResponseWriter, r *Request) {
+		w.Write([]byte("Hello"))
+	}))
+	defer ts.Close()
+
+	tr := newTLSTransport(t, ts)
+	tr.TLSClientConfig.ServerName = "example.com" // one of httptest's Server cert names
+	tr.Dial = func(netw, addr string) (net.Conn, error) {
+		return net.Dial(netw, ts.Listener.Addr().String())
+	}
+	defer tr.CloseIdleConnections()
+	c := &Client{Transport: tr}
+	res, err := c.Get("https://some-other-host.tld/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+}
+
 // Verify Response.ContentLength is populated. http://golang.org/issue/4126
 func TestClientHeadContentLength(t *testing.T) {
 	defer afterTest(t)
@@ -734,4 +764,38 @@ func TestEmptyPasswordAuth(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
+}
+
+func TestBasicAuth(t *testing.T) {
+	defer afterTest(t)
+	tr := &recordingTransport{}
+	client := &Client{Transport: tr}
+
+	url := "http://My%20User:My%20Pass@dummy.faketld/"
+	expected := "My User:My Pass"
+	client.Get(url)
+
+	if tr.req.Method != "GET" {
+		t.Errorf("got method %q, want %q", tr.req.Method, "GET")
+	}
+	if tr.req.URL.String() != url {
+		t.Errorf("got URL %q, want %q", tr.req.URL.String(), url)
+	}
+	if tr.req.Header == nil {
+		t.Fatalf("expected non-nil request Header")
+	}
+	auth := tr.req.Header.Get("Authorization")
+	if strings.HasPrefix(auth, "Basic ") {
+		encoded := auth[6:]
+		decoded, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := string(decoded)
+		if expected != s {
+			t.Errorf("Invalid Authorization header. Got %q, wanted %q", s, expected)
+		}
+	} else {
+		t.Errorf("Invalid auth %q", auth)
+	}
 }
