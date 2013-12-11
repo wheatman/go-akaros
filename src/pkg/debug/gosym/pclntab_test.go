@@ -23,7 +23,7 @@ var (
 
 func dotest() bool {
 	// For now, only works on ELF platforms.
-	if (runtime.GOOS != "linux" && runtime.GOOS != "akaros") || runtime.GOARCH != "amd64" {
+	if (runtime.GOOS != "linux") || runtime.GOARCH != "amd64" {
 		return false
 	}
 	if pclinetestBinary != "" {
@@ -44,6 +44,9 @@ func dotest() bool {
 	command := fmt.Sprintf("go tool 6a -o %s.6 pclinetest.asm && go tool 6l -E main -o %s %s.6",
 		pclinetestBinary, pclinetestBinary, pclinetestBinary)
 	cmd := exec.Command("sh", "-c", command)
+	if runtime.GOOS == "akaros" {
+		cmd = exec.Command("/bin/ash", "-c", command)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
