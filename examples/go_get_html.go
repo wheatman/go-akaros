@@ -33,7 +33,7 @@ func main() {
 	// Dial the addr
 	conn, err := net.Dial(proto, addr)
 	if err != nil {
-		fmt.Errorf("Dial failed: %v", err)
+		fmt.Printf("Dial failed: %v\n", err)
 		return
 	}
 	defer conn.Close()
@@ -44,7 +44,7 @@ func main() {
 	// Write it to the connection
 	_, err = fmt.Fprintf(conn, req)
 	if err != nil {
-		fmt.Errorf("Fprintf failed: %v", err)
+		fmt.Printf("Fprintf failed: %v\n", err)
 		return
 	}
 
