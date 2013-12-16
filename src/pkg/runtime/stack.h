@@ -86,6 +86,7 @@ enum {
 	// space at zero.
 	StackBig = 4096,
 
+#ifndef GOOS_akaros
 	// The stack guard is a pointer this many bytes above the
 	// bottom of the stack.
 	StackGuard = 256 + StackSystem,
@@ -94,6 +95,12 @@ enum {
 	// many bytes below the stack guard.  This saves an instruction
 	// in the checking sequence for tiny frames.
 	StackSmall = 128,
+#else
+	// Akaros needs more than 128 bytes in its NOSPLIT stacks, 256 seems to be
+	// enough for now.
+	StackGuard = 2*256 + StackSystem,
+	StackSmall = 2*128,
+#endif // Akaros
 
 	// The maximum number of bytes that a chain of NOSPLIT
 	// functions can use.
