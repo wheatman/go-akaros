@@ -14,21 +14,16 @@ void runtime·setldt(void)
 void
 runtime·futexsleep(uint32 *addr, uint32 val, int64 ns)
 {
-	Timespec ts, *tsp;
-	int64 secs;
-
-	if(ns < 0)
-		tsp = nil;
-	else {
-		secs = ns/1000000000LL;
-		// Avoid overflow
-		if(secs > 1LL<<30)
-			secs = 1LL<<30;
-		ts.tv_sec = secs;
-		ts.tv_nsec = ns%1000000000LL;
-		tsp = &ts;
+	Timespec ts;
+	
+	if(ns < 0) {
+		runtime·futex(addr, FUTEX_WAIT, val, nil, nil, 0);
+		return;
 	}
-	runtime·futex(addr, FUTEX_WAIT, val, tsp, nil, 0);
+	// NOTE: tv_nsec is int64 on amd64, so this assumes a little-endian system.
+	ts.tv_nsec = 0;
+	ts.tv_sec = runtime·timediv(ns, 1000000000LL, (int32*)&ts.tv_nsec);
+	runtime·futex(addr, FUTEX_WAIT, val, &ts, nil, 0);
 }
 
 void
@@ -61,6 +56,7 @@ runtime·osinit(void)
 void
 runtime·get_random_data(byte **rnd, int32 *rnd_len)
 {
+	// TODO: revisit and do something similar to Linux with #c/random
 	*rnd = nil;
 	*rnd_len = 0;
 }
@@ -105,26 +101,5 @@ runtime·memlimit(void)
 {
 	// Do nothing for now
 	return 0;
-}
-
-void
-runtime·setprof(bool on)
-{
-	USED(on);
-}
-
-#pragma dataflag 16  // no pointers
-static int8 badsignal[] = "runtime: signal received on thread not created by Go!\n";
-
-// This runs on a foreign stack, without an m or a g.  No stack split.
-#pragma textflag 7
-void
-runtime·badsignal(int32 sig)
-{
-	// Think of a better way to do this with a symbol table to print the actual
-	// name of the event received
-	USED(sig);
-	runtime·write(2, badsignal, sizeof badsignal - 1);
-	runtime·exit(1);
 }
 

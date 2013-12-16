@@ -42,6 +42,9 @@ const (
 	LINUX_REBOOT_MAGIC2              = 0x28121969
 	RTM_GETLINK                      = 0x12
 	RTM_GETADDR                      = 0x16
+	TCIFLUSH                         = 0x0
+	TCIOFLUSH                        = 0x2
+	TCOFLUSH                         = 0x1
 )
 // AF_ALG                           = 0x26
 // AF_APPLETALK                     = 0x5

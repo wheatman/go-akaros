@@ -349,6 +349,7 @@ var cgoExclude = map[string]bool{
 var cgoSyscallExclude = map[string]bool{
 	"runtime/cgo":  true,
 	"runtime/race": true,
+	"runtime/parlib": true,
 }
 
 // load populates p using information from bp, err, which should
