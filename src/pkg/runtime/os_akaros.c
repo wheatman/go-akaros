@@ -5,12 +5,14 @@
 #include "runtime.h"
 #include "defs_GOOS_GOARCH.h"
 #include "os_GOOS.h"
+#include "../../cmd/ld/textflag.h"
 
 void runtime·setldt(void)
 {
 	// Do nothing for now
 }
 
+#pragma textflag NOSPLIT
 void
 runtime·futexsleep(uint32 *addr, uint32 val, int64 ns)
 {
@@ -26,6 +28,7 @@ runtime·futexsleep(uint32 *addr, uint32 val, int64 ns)
 	runtime·futex(addr, FUTEX_WAIT, val, &ts, nil, 0);
 }
 
+#pragma textflag NOSPLIT
 void
 runtime·futexwakeup(uint32 *addr, uint32 cnt)
 {

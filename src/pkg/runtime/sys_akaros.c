@@ -9,6 +9,7 @@
 #include "runtime.h"
 #include "cgocall.h"
 #include "defs_GOOS_GOARCH.h"
+#include "../../cmd/ld/textflag.h"
 
 // We extern these libc functions here, so we don't have to reimplement the logic
 // they entails just for compilation in the kenc world.
@@ -59,23 +60,27 @@ static inline intgo __akaros_syscall(uint32 num,
 	                 (int32*)(perrno))
 
 // Runtime functions themselves
+#pragma textflag NOSPLIT
 int32 runtime·getpid(void)
 {
 	return 	__procinfo.pid;
 }
 
+#pragma textflag NOSPLIT
 int32 runtime·read(int32 fd, void* buf, int32 count)
 {
 	int32 errno;
 	return akaros_syscall(SYS_read, fd, buf, count, 0, 0, 0, &errno);
 }
 
+#pragma textflag NOSPLIT
 int32 runtime·write(int32 fd, void* buf, int32 count)
 {
 	int32 errno;
 	return akaros_syscall(SYS_write, fd, buf, count, 0, 0, 0, &errno);
 }
 
+#pragma textflag NOSPLIT
 int32 runtime·open(int8* pathname, int32 flags, int32 mode)
 {
 	int32 errno;
@@ -83,12 +88,14 @@ int32 runtime·open(int8* pathname, int32 flags, int32 mode)
 	return akaros_syscall(SYS_open, pathname, len, flags, mode, 0, 0, &errno);
 }
 
+#pragma textflag NOSPLIT
 int32 runtime·close(int32 fd)
 {
 	int32 errno;
 	return akaros_syscall(SYS_close, fd, 0, 0, 0, 0, 0, &errno);
 }
 
+#pragma textflag NOSPLIT
 uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
                     int32 flags, int32 fd, uint32 offset)
 {
@@ -97,21 +104,25 @@ uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
 	                              flags, fd, offset, &errno);
 }
 
+#pragma textflag NOSPLIT
 void runtime·munmap(byte* addr, uintptr len)
 {
 	akaros_syscall(SYS_mmap, addr, len, 0, 0, 0, 0, nil);
 }
 
+#pragma textflag NOSPLIT
 void runtime·osyield(void)
 {
 	runtime·asmcgocall(gcc_myield, nil);
 }
 
+#pragma textflag NOSPLIT
 void runtime·usleep(uint32 usec)
 {
 	akaros_syscall(SYS_block, usec, 0, 0, 0, 0, 0, nil);
 }
 
+#pragma textflag NOSPLIT
 int64 runtime·nanotime(void)
 {
 	// TODO: We should think about doing something smarter here to get a more
@@ -123,6 +134,7 @@ int64 runtime·nanotime(void)
 	return time;
 }
 
+#pragma textflag NOSPLIT
 void time·now(int64 sec, int32 nsec)
 {
 	int64 ns;
@@ -133,6 +145,7 @@ void time·now(int64 sec, int32 nsec)
 	FLUSH(&nsec);
 }
 
+#pragma textflag NOSPLIT
 void runtime·exit(int32 status)
 {
 	intgo pid = runtime·getpid();
@@ -140,6 +153,7 @@ void runtime·exit(int32 status)
 	while(1); // We should never get here!!!!!
 }
 
+#pragma textflag NOSPLIT
 int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
                     Timespec *timeout, uint32 *uaddr2, uint32 val3)
 {
