@@ -285,6 +285,9 @@ struct	G
 	uintptr	sigpc;
 	uintptr	gopc;		// pc of go statement that created this goroutine
 	uintptr	racectx;
+#ifdef GOOS_akaros
+	int8	sysc[88];
+#endif
 	uintptr	end[];
 };
 struct	M

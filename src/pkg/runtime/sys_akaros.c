@@ -32,32 +32,27 @@ static intgo strlen(int8 *string)
 }
 
 // Wrapper for making an akaros syscall through gcc
-static inline intgo __akaros_syscall(uint32 num,
-                                     intgo a0, intgo a1, intgo a2,
-                                     intgo a3, intgo a4, intgo a5,
-                                     int32 *perrno)
-    
-{
-	SyscallArg sysc = {0};
-	sysc.num = num;
-	sysc.ev_q = 0;
-	sysc.arg0 = a0;
-	sysc.arg1 = a1;
-	sysc.arg2 = a2;
-	sysc.arg3 = a3;
-	sysc.arg4 = a4;
-	sysc.arg5 = a5;
-	runtime·asmcgocall(gcc_syscall, &sysc);
-	if(perrno != nil)
-    	*perrno = sysc.err;
-	return sysc.retval;
-}
-#define akaros_syscall(num, a0, a1, a2, a3, a4, a5, perrno) \
-	__akaros_syscall((uint32)(num),                         \
-	                 (intgo)(a0), (intgo)(a1),              \
-	                 (intgo)(a2), (intgo)(a3),              \
-	                 (intgo)(a4), (intgo)(a5),              \
-	                 (int32*)(perrno))
+#define __akaros_syscall(sysc, n, a0, a1, a2, a3, a4, a5, perrno) \
+do { \
+	sysc->num = n;   \
+	sysc->ev_q = 0;  \
+	sysc->arg0 = a0; \
+	sysc->arg1 = a1; \
+	sysc->arg2 = a2; \
+	sysc->arg3 = a3; \
+	sysc->arg4 = a4; \
+	sysc->arg5 = a5; \
+	runtime·asmcgocall(gcc_syscall, sysc); \
+	if(perrno != nil) \
+    	*perrno = sysc->err; \
+} while(0);
+
+#define akaros_syscall(sysc, n, a0, a1, a2, a3, a4, a5, perrno) \
+	__akaros_syscall(((sysc)), ((uint32)(n)),                   \
+	                 ((intgo)(a0)), ((intgo)(a1)),              \
+	                 ((intgo)(a2)), ((intgo)(a3)),              \
+	                 ((intgo)(a4)), ((intgo)(a5)),              \
+	                 ((int32*)(perrno)))
 
 // Runtime functions themselves
 #pragma textflag NOSPLIT
@@ -70,14 +65,18 @@ int32 runtime·getpid(void)
 int32 runtime·read(int32 fd, void* buf, int32 count)
 {
 	int32 errno;
-	return akaros_syscall(SYS_read, fd, buf, count, 0, 0, 0, &errno);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_read, fd, buf, count, 0, 0, 0, &errno);
+	return sysc->retval;
 }
 
 #pragma textflag NOSPLIT
 int32 runtime·write(int32 fd, void* buf, int32 count)
 {
 	int32 errno;
-	return akaros_syscall(SYS_write, fd, buf, count, 0, 0, 0, &errno);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_write, fd, buf, count, 0, 0, 0, &errno);
+	return sysc->retval;
 }
 
 #pragma textflag NOSPLIT
@@ -85,14 +84,18 @@ int32 runtime·open(int8* pathname, int32 flags, int32 mode)
 {
 	int32 errno;
 	intgo len = strlen(pathname);
-	return akaros_syscall(SYS_open, pathname, len, flags, mode, 0, 0, &errno);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_open, pathname, len, flags, mode, 0, 0, &errno);
+	return sysc->retval;
 }
 
 #pragma textflag NOSPLIT
 int32 runtime·close(int32 fd)
 {
 	int32 errno;
-	return akaros_syscall(SYS_close, fd, 0, 0, 0, 0, 0, &errno);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_close, fd, 0, 0, 0, 0, 0, &errno);
+	return sysc->retval;
 }
 
 #pragma textflag NOSPLIT
@@ -100,14 +103,16 @@ uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
                     int32 flags, int32 fd, uint32 offset)
 {
 	int32 errno;
-	return (uint8*)akaros_syscall(SYS_mmap, addr, len, prot,
-	                              flags, fd, offset, &errno);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags, fd, offset, &errno);
+	return (uint8*)sysc->retval;
 }
 
 #pragma textflag NOSPLIT
 void runtime·munmap(byte* addr, uintptr len)
 {
-	akaros_syscall(SYS_mmap, addr, len, 0, 0, 0, 0, nil);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_munmap, addr, len, 0, 0, 0, 0, nil);
 }
 
 #pragma textflag NOSPLIT
@@ -119,7 +124,8 @@ void runtime·osyield(void)
 #pragma textflag NOSPLIT
 void runtime·usleep(uint32 usec)
 {
-	akaros_syscall(SYS_block, usec, 0, 0, 0, 0, 0, nil);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_block, usec, 0, 0, 0, 0, 0, nil);
 }
 
 #pragma textflag NOSPLIT
@@ -129,7 +135,8 @@ int64 runtime·nanotime(void)
 	// accurate nonotime e.g. SYS_getnanotime.
 	int64 time;
 	Timeval tv;
-	akaros_syscall(SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
 	time = ((tv.tv_sec * 1000000LLU) + tv.tv_usec)*1000LLU;
 	return time;
 }
@@ -149,8 +156,9 @@ void time·now(int64 sec, int32 nsec)
 void runtime·exit(int32 status)
 {
 	intgo pid = runtime·getpid();
-	akaros_syscall(SYS_proc_destroy, pid, status, 0, 0, 0, 0, nil);
-	while(1); // We should never get here!!!!!
+	SyscallArg *sysc = (SyscallArg *)(g->sysc);
+	akaros_syscall(sysc, SYS_proc_destroy, pid, status, 0, 0, 0, 0, nil);
+	runtime·throw("Exit Returned: We should never get here!");
 }
 
 #pragma textflag NOSPLIT
