@@ -14,7 +14,10 @@ package parlib
 #include <futex.h>
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+	"errors"
+)
 
 var Procinfo *ProcinfoType = (*ProcinfoType)(unsafe.Pointer(uintptr(C.UINFO)))
 func (p *ProcinfoType) Pid() int32 { return int32(p.pid) }
@@ -37,5 +40,21 @@ func Futex(uaddr *int32, op int32, val int32,
 	                     C.int(op), C.int(val),
 	                     (*C.struct_timespec)(unsafe.Pointer(timeout)),
 	                     (*C.int)(unsafe.Pointer(uaddr2)), C.int(val3)))
+}
+
+func ProcinfoPackArgs(argv []string, envp []string) (pi ProcinfoType, err error) {
+	__argv, _ := SlicePtrFromStrings(argv)
+	__envp, _ := SlicePtrFromStrings(envp)
+	p_pi := (*_Ctype_procinfo_t)(unsafe.Pointer(&pi))
+    p_argv := (**_Ctype_char)(unsafe.Pointer(&__argv[0]))
+    p_envp := (**_Ctype_char)(unsafe.Pointer(&__envp[0]))
+
+	__err := C.procinfo_pack_args(p_pi, p_argv, p_envp)
+	if __err == -1 {
+		err = nil
+	} else {
+		err = errors.New("ProcinfoPackArgs: error packing argv and envp")
+	}
+	return pi, err
 }
 
