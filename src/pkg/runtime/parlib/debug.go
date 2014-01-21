@@ -10,6 +10,14 @@ package parlib
 #include <stdint.h>
 #include <stdio.h>
 
+void printChar(char c)
+{
+	printf("%c\n", c);
+}
+void printString(char *s)
+{
+	printf("%s\n", s);
+}
 void printChars(char *s, int len)
 {
 	int i = 0;
@@ -38,9 +46,19 @@ func Checkpoint(arg uint64, c int8) {
 	C.checkpoint((C.ulonglong)(arg), (C.char)(c))
 }
 
+// Print an arbitraty character
+func PrintChar(c byte) {
+	C.printChar(C.char(c))
+}
+
 // Print an arbitraty string of bytes as characters
 func PrintChars(s [256]int8) {
 	C.printChars((*C.char)(unsafe.Pointer(&s[0])), C.int(len(s)))
+}
+
+// Print a string 
+func PrintString(s string) {
+	C.printString(C.CString(s))
 }
 
 // Print out an error related to the syscall specified
