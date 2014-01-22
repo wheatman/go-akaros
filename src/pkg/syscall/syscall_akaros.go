@@ -47,6 +47,9 @@ type AkaError struct {
 	errstr string
 }
 func (e AkaError) Error() string {
+	if e.errstr == "" {
+		return e.errno.Error()
+	}
 	return e.errstr;
 }
 func (e AkaError) Temporary() bool {
@@ -68,7 +71,14 @@ func (s Signal) String() string {
 			return str
 		}
 	}
-	return "signal " + itoa(int(s))
+	return "Signal " + itoa(int(s))
+}
+
+// An Event is a number describing an Akaros event type
+type Event int
+func (e Event) Event() {}
+func (e Event) String() string {
+	return "Event " + itoa(int(e))
 }
 
 // Convert a c string to a go string
@@ -223,7 +233,7 @@ func Seek(fd int, offset int64, whence int) (newoffset int64, err error) {
 	return newoffset, err
 }
 
-//sys	proc_destroy(pid int32, exitcode int)
+//sys	proc_destroy(pid int, exitcode int) (err error)
 func Exit(exitcode int) {
 	proc_destroy(parlib.Procinfo.Pid(), exitcode)
 }
@@ -438,6 +448,20 @@ func Wait4(pid int, wstatus *WaitStatus, options int, rusage *Rusage) (wpid int,
 	// We only implement this function for compatibility with unix.
 	// On akaros, we simply ignore the rusage parameter for now...
 	return Waitpid(pid, wstatus, options)
+}
+
+//sys	notify(pid int, ev Event, ev_msg *EventMsg) (err error)
+func Kill(pid int, sig Signal) (err error) {
+	localMsg := EventMsg{};
+	if pid <= 0 {
+		return ENOSYS
+	}
+	if (sig == SIGKILL) {
+		return proc_destroy(pid, 0)
+	}
+	localMsg.Type = uint16(EV_POSIX_SIGNAL);
+	localMsg.Arg1 = uint16(sig);
+	return notify(pid, EV_POSIX_SIGNAL, &localMsg)
 }
 
 /*****************************************************************************/
@@ -1223,7 +1247,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sysnb	InotifyInit() (fd int, err error)
 //sysnb	InotifyInit1(flags int) (fd int, err error)
 //sysnb	InotifyRmWatch(fd int, watchdesc uint32) (success int, err error)
-//sysnb	Kill(pid int, sig Signal) (err error)
 //sys	Klogctl(typ int, buf []byte) (n int, err error) = SYS_SYSLOG
 //sys	Link(oldpath string, newpath string) (err error)
 //sys	Listxattr(path string, dest []byte) (sz int, err error)

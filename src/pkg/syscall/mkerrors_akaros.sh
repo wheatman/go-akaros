@@ -7,7 +7,7 @@ export GCC=$TARGETCC
 export GORUN=false
 $DIR/mkerrors.sh
 mv _errors $ROSROOT/kern/kfs/bin/go_errors
-rm -rf _const.go  _error.grep  _error.out  _errors.c  _signal.grep
+rm -rf _const.go  _error.grep  _error.out  _errors.c  _signal.grep _event.grep
 
 if [ ! -f $ERRORSTRINGS_FILE ]; then
 (

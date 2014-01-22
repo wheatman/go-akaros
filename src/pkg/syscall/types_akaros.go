@@ -36,6 +36,7 @@ package syscall
 #include <sys/resource.h> 
 #include <bits/sockaddr.h>
 #include <ros/glibc-asm/ioctls.h>
+#include <ros/event.h>
 
 enum {
 	sizeofPtr = sizeof(void*),
@@ -79,6 +80,8 @@ type (
 	_C_long      C.long
 	_C_long_long C.longlong
 )
+
+type EventMsg C.struct_event_msg
 
 // Time
 

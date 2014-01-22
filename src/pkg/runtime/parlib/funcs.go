@@ -20,7 +20,7 @@ import (
 )
 
 var Procinfo *ProcinfoType = (*ProcinfoType)(unsafe.Pointer(uintptr(C.UINFO)))
-func (p *ProcinfoType) Pid() int32 { return int32(p.pid) }
+func (p *ProcinfoType) Pid() int { return int(p.pid) }
 
 func Futex(uaddr *int32, op int32, val int32,
            timeout *Timespec, uaddr2 *int32, val3 int32) (ret int32) {
