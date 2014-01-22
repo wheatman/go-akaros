@@ -145,10 +145,6 @@ if [[ "$TESTS" != "" ]]; then
            | grep -v 'runtime/race' \
            | grep -v 'net' \
            | grep -v 'os/exec' \
-           | grep -v 'crypto/dsa' \
-           | grep -v 'crypto/rsa' \
-           | grep -v 'crypto/tls' \
-           | grep -v 'crypto/x509' \
            | sort -u)
     cd - > /dev/null
   fi
