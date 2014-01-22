@@ -8,6 +8,7 @@ package syscall
 
 import (
 	"unsafe"
+	"runtime/parlib"
 )
 
 type SysProcAttr struct {
@@ -21,10 +22,6 @@ type SysProcAttr struct {
 	Ctty       int         // Controlling TTY fd (Linux only)
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 }
-
-// Implemented in runtime package.
-func runtime_BeforeFork()
-func runtime_AfterFork()
 
 // Fork, dup fd onto 0..len(fd), and exec(argv0, argvv, envv) in child.
 // If a dup or exec fails, write the errno error to pipe.
@@ -40,206 +37,39 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	var (
 		r1     uintptr
 		err1   error
-		nextfd int
-		i      int
 	)
 
-	// Guard against side effects of shuffling fds below.
-	// Make sure that nextfd is beyond any currently open files so
-	// that we can't run the risk of overwriting any of them.
-	fd := make([]int, len(attr.Files))
-	nextfd = len(attr.Files)
-	for i, ufd := range attr.Files {
-		if nextfd < int(ufd) {
-			nextfd = int(ufd)
-		}
-		fd[i] = int(ufd)
+	// Make sure we aren't passing invalid arguments for Akaros (we should
+	// probably support these some day though...)
+	if chroot != nil {
+		return 0, NewAkaError(EMORON, "Akaros does not support passing 'chroot' to forkAndExecInChild")
 	}
-	nextfd++
+	if dir != nil {
+		return 0, NewAkaError(EMORON, "Akaros does not support passing 'dir' to forkAndExecInChild")
+	}
 
-	// About to call fork.
-	// No more allocation or calls of non-assembly functions.
-	runtime_BeforeFork()
-	r1, _, err1 = RawSyscall(SYS_FORK, 0, 0, 0)
+	// Set up arguments for proc_create
+	bs_cmd := *((*[]byte)(unsafe.Pointer(&argv0)))
+	pi, _ := parlib.ProcinfoPackArgs(argv, envv)
+	__cmd := uintptr(unsafe.Pointer(&bs_cmd[0]))
+    __cmdlen := uintptr(parlib.Cstrlen(bs_cmd))
+	__pi := uintptr(unsafe.Pointer(&pi))
+
+	// Call proc create.
+	r1, _, err1 = RawSyscall(SYS_PROC_CREATE, __cmd, __cmdlen, __pi)
 	if err1 != nil {
-		runtime_AfterFork()
+		return 0, err1
+	}
+	child := int(r1)
+
+	// Proc create succeeded, now run it!
+	r1, _, err1 = RawSyscall(SYS_PROC_RUN, r1, 0, 0)
+	if err1 != nil {
 		return 0, err1
 	}
 
-	if r1 != 0 {
-		// parent; return PID
-		runtime_AfterFork()
-		return int(r1), nil
-	}
-
-	// Fork succeeded, now in child.
-
-	// Parent death signal
-	if sys.Pdeathsig != 0 {
-		_, _, err1 = RawSyscall6(SYS_PRCTL, PR_SET_PDEATHSIG, uintptr(sys.Pdeathsig), 0, 0, 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-
-		// Signal self if parent is already dead. This might cause a
-		// duplicate signal in rare cases, but it won't matter when
-		// using SIGKILL.
-		r1, _, _ = RawSyscall(SYS_GETPPID, 0, 0, 0)
-		if r1 == 1 {
-			pid, _, _ := RawSyscall(SYS_GETPID, 0, 0, 0)
-			_, _, err1 := RawSyscall(SYS_KILL, pid, uintptr(sys.Pdeathsig), 0)
-			if err1 != nil {
-				goto childerror
-			}
-		}
-	}
-
-	// Enable tracing if requested.
-	if sys.Ptrace {
-		_, _, err1 = RawSyscall(SYS_PTRACE, uintptr(PTRACE_TRACEME), 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Session ID
-	if sys.Setsid {
-		_, _, err1 = RawSyscall(SYS_SETSID, 0, 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Set process group
-	if sys.Setpgid {
-		_, _, err1 = RawSyscall(SYS_SETPGID, 0, 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Chroot
-	if chroot != nil {
-		_, _, err1 = RawSyscall(SYS_CHROOT, uintptr(unsafe.Pointer(chroot)), 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// User and groups
-	if cred := sys.Credential; cred != nil {
-		ngroups := uintptr(len(cred.Groups))
-		groups := uintptr(0)
-		if ngroups > 0 {
-			groups = uintptr(unsafe.Pointer(&cred.Groups[0]))
-		}
-		_, _, err1 = RawSyscall(SYS_SETGROUPS, ngroups, groups, 0)
-		if err1 != nil {
-			goto childerror
-		}
-		_, _, err1 = RawSyscall(SYS_SETGID, uintptr(cred.Gid), 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-		_, _, err1 = RawSyscall(SYS_SETUID, uintptr(cred.Uid), 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Chdir
-	if dir != nil {
-		_, _, err1 = RawSyscall(SYS_CHDIR, uintptr(unsafe.Pointer(dir)), 0, 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Pass 1: look for fd[i] < i and move those up above len(fd)
-	// so that pass 2 won't stomp on an fd it needs later.
-	if pipe < nextfd {
-		_, _, err1 = RawSyscall(SYS_DUP2, uintptr(pipe), uintptr(nextfd), 0)
-		if err1 != nil {
-			goto childerror
-		}
-		RawSyscall(SYS_FCNTL, uintptr(nextfd), F_SETFD, FD_CLOEXEC)
-		pipe = nextfd
-		nextfd++
-	}
-	for i = 0; i < len(fd); i++ {
-		if fd[i] >= 0 && fd[i] < int(i) {
-			_, _, err1 = RawSyscall(SYS_DUP2, uintptr(fd[i]), uintptr(nextfd), 0)
-			if err1 != nil {
-				goto childerror
-			}
-			RawSyscall(SYS_FCNTL, uintptr(nextfd), F_SETFD, FD_CLOEXEC)
-			fd[i] = nextfd
-			nextfd++
-			if nextfd == pipe { // don't stomp on pipe
-				nextfd++
-			}
-		}
-	}
-
-	// Pass 2: dup fd[i] down onto i.
-	for i = 0; i < len(fd); i++ {
-		if fd[i] == -1 {
-			RawSyscall(SYS_CLOSE, uintptr(i), 0, 0)
-			continue
-		}
-		if fd[i] == int(i) {
-			// dup2(i, i) won't clear close-on-exec flag on Linux,
-			// probably not elsewhere either.
-			_, _, err1 = RawSyscall(SYS_FCNTL, uintptr(fd[i]), F_SETFD, 0)
-			if err1 != nil {
-				goto childerror
-			}
-			continue
-		}
-		// The new fd is created NOT close-on-exec,
-		// which is exactly what we want.
-		_, _, err1 = RawSyscall(SYS_DUP2, uintptr(fd[i]), uintptr(i), 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// By convention, we don't close-on-exec the fds we are
-	// started with, so if len(fd) < 3, close 0, 1, 2 as needed.
-	// Programs that know they inherit fds >= 3 will need
-	// to set them close-on-exec.
-	for i = len(fd); i < 3; i++ {
-		RawSyscall(SYS_CLOSE, uintptr(i), 0, 0)
-	}
-
-	// Detach fd 0 from tty
-	if sys.Noctty {
-		_, _, err1 = RawSyscall(SYS_IOCTL, 0, uintptr(TIOCNOTTY), 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Set the controlling TTY to Ctty
-	if sys.Setctty && sys.Ctty >= 0 {
-		_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(sys.Ctty), uintptr(TIOCSCTTY), 0)
-		if err1 != nil {
-			goto childerror
-		}
-	}
-
-	// Time to exec.
-	_, _, err1 = RawSyscall(SYS_EXECVE,
-		uintptr(unsafe.Pointer(argv0)),
-		uintptr(unsafe.Pointer(&argv[0])),
-		uintptr(unsafe.Pointer(&envv[0])))
-
-childerror:
-	// send error code on pipe
-	RawSyscall(SYS_WRITE, uintptr(pipe), uintptr(unsafe.Pointer(&err1)), unsafe.Sizeof(err1))
-	for {
-		RawSyscall(SYS_EXIT, 253, 0, 0)
-	}
+	// Return the child pid
+	return child, nil
 }
 
 // Try to open a pipe with O_CLOEXEC set on both file descriptors.
