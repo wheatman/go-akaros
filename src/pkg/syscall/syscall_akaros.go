@@ -81,6 +81,53 @@ func cstring(s []byte) string {
 	return string(s)
 }
 
+type WaitStatus uint32
+// Wait status is 7 bits at bottom, either 0 (exited),
+// 0x7F (stopped), or a signal number that caused an exit.
+// The 0x80 bit is whether there was a core dump.
+// An extra number (exit code, signal causing a stop)
+// is in the high bits.  At least that's the idea.
+// There are various irregularities.  For example, the
+// "continued" status is 0xFFFF, distinguishing itself
+// from stopped via the core dump bit.
+const (
+	mask    = 0x7F
+	core    = 0x80
+	exited  = 0x00
+	stopped = 0x7F
+	shift   = 8
+)
+func (w WaitStatus) Exited() bool { return w&mask == exited }
+func (w WaitStatus) Signaled() bool { return w&mask != stopped && w&mask != exited }
+func (w WaitStatus) Stopped() bool { return w&0xFF == stopped }
+func (w WaitStatus) Continued() bool { return w == 0xFFFF }
+func (w WaitStatus) CoreDump() bool { return w.Signaled() && w&core != 0 }
+func (w WaitStatus) ExitStatus() int {
+	if !w.Exited() {
+		return -1
+	}
+	return int(w>>shift) & 0xFF
+}
+func (w WaitStatus) Signal() Signal {
+	if !w.Signaled() {
+		return -1
+	}
+	return Signal(w & mask)
+}
+func (w WaitStatus) StopSignal() Signal {
+	if !w.Stopped() {
+		return -1
+	}
+	return Signal(w>>shift) & 0xFF
+}
+func (w WaitStatus) TrapCause() int {
+	if w.StopSignal() != SIGTRAP {
+		return -1
+	}
+	return int(w>>shift) >> 8
+}
+
+// Syscall wrappers....
 func Syscall(trap, a1, a2, a3 uintptr) (r1, r2 uintptr, err error)
 func Syscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err error)
 func RawSyscall(trap, a1, a2, a3 uintptr) (r1, r2 uintptr, err error)
@@ -125,8 +172,6 @@ func Syscall6Wrapper(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err 
 //sys	Close(fd int) (err error)
 //sys	Fstat(fd int, stat *Stat_t) (err error)
 //sys	Write(fd int, p []byte) (n int, err error)
-
-// These syscalls are wrapped and exposed in other files (e.g. syscall_unix.go)
 
 // Locally wrapped syscalls
 //sys	real_read(fd int, p []byte) (n int, err error) = SYS_READ
@@ -311,15 +356,6 @@ func Fd2path(fd int) (path string, err error) {
 	return cstring(buf[:]), nil
 }
 
-func Getegid() (egid int) { return -1 }
-func Geteuid() (euid int) { return -1 }
-func Getgid() (gid int)   { return -1 }
-func Getuid() (uid int)   { return -1 }
-
-func Getgroups() (gids []int, err error) {
-    return make([]int, 0), nil
-}
-
 // Mmap manager, for use by operating system-specific implementations.
 type mmapper struct {
 	sync.Mutex
@@ -387,6 +423,32 @@ func Mmap(fd int, offset int64, length int, prot int, flags int) (data []byte, e
 //sys	munmap(addr uintptr, length uintptr) (err error)
 func Munmap(b []byte) (err error) {
 	return mapper.Munmap(b)
+}
+
+//sys	waitpid(pid int, wstatus *_C_int, options int) (wpid int, err error)
+func Waitpid(pid int, wstatus *WaitStatus, options int) (wpid int, err error) {
+	var status _C_int
+	wpid, err = waitpid(pid, &status, options)
+	if wstatus != nil {
+		*wstatus = WaitStatus(status)
+	}
+	return
+}
+func Wait4(pid int, wstatus *WaitStatus, options int, rusage *Rusage) (wpid int, err error) {
+	// We only implement this function for compatibility with unix.
+	// On akaros, we simply ignore the rusage parameter for now...
+	return Waitpid(pid, wstatus, options)
+}
+
+/*****************************************************************************/
+/******* Stuff below is ported, but only exists as stubs thus far ************/
+/*****************************************************************************/
+func Getegid() (egid int) { return -1 }
+func Geteuid() (euid int) { return -1 }
+func Getgid() (gid int)   { return -1 }
+func Getuid() (uid int)   { return -1 }
+func Getgroups() (gids []int, err error) {
+    return make([]int, 0), nil
 }
 
 /*****************************************************************************/
@@ -481,74 +543,6 @@ func Setgroups(gids []int) (err error) {
 		a[i] = _Gid_t(v)
 	}
 	return setgroups(len(a), &a[0])
-}
-
-type WaitStatus uint32
-
-// Wait status is 7 bits at bottom, either 0 (exited),
-// 0x7F (stopped), or a signal number that caused an exit.
-// The 0x80 bit is whether there was a core dump.
-// An extra number (exit code, signal causing a stop)
-// is in the high bits.  At least that's the idea.
-// There are various irregularities.  For example, the
-// "continued" status is 0xFFFF, distinguishing itself
-// from stopped via the core dump bit.
-
-const (
-	mask    = 0x7F
-	core    = 0x80
-	exited  = 0x00
-	stopped = 0x7F
-	shift   = 8
-)
-
-func (w WaitStatus) Exited() bool { return w&mask == exited }
-
-func (w WaitStatus) Signaled() bool { return w&mask != stopped && w&mask != exited }
-
-func (w WaitStatus) Stopped() bool { return w&0xFF == stopped }
-
-func (w WaitStatus) Continued() bool { return w == 0xFFFF }
-
-func (w WaitStatus) CoreDump() bool { return w.Signaled() && w&core != 0 }
-
-func (w WaitStatus) ExitStatus() int {
-	if !w.Exited() {
-		return -1
-	}
-	return int(w>>shift) & 0xFF
-}
-
-func (w WaitStatus) Signal() Signal {
-	if !w.Signaled() {
-		return -1
-	}
-	return Signal(w & mask)
-}
-
-func (w WaitStatus) StopSignal() Signal {
-	if !w.Stopped() {
-		return -1
-	}
-	return Signal(w>>shift) & 0xFF
-}
-
-func (w WaitStatus) TrapCause() int {
-	if w.StopSignal() != SIGTRAP {
-		return -1
-	}
-	return int(w>>shift) >> 8
-}
-
-//sys	wait4(pid int, wstatus *_C_int, options int, rusage *Rusage) (wpid int, err error)
-
-func Wait4(pid int, wstatus *WaitStatus, options int, rusage *Rusage) (wpid int, err error) {
-	var status _C_int
-	wpid, err = wait4(pid, &status, options, rusage)
-	if wstatus != nil {
-		*wstatus = WaitStatus(status)
-	}
-	return
 }
 
 func Mkfifo(path string, mode uint32) (err error) {
