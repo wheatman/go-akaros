@@ -16,11 +16,12 @@ package parlib
 #include <ros/memlayout.h>
 #include "gcc_akaros.h"
 
+#undef sa_handler
 struct parlib_sigaction {
-    void (*Sa_handler) (int);
-    unsigned long Sa_flags;
-    void (*Sa_restorer) (void);
-    unsigned long long Sa_mask;
+    __sighandler_t sa_handler;
+    unsigned long sa_flags;
+    void (*sa_restorer) (void);
+    unsigned long long sa_mask;
 };
 */
 import "C"
@@ -42,5 +43,5 @@ type EventQueue C.struct_event_queue
 type EventMbox C.struct_event_mbox
 type SyscallArg C.gcc_syscall_arg_t
 type FutexArg C.gcc_futex_arg_t
-type SigactionType C.struct_parlib_sigaction
+type Sigaction C.struct_parlib_sigaction
 
