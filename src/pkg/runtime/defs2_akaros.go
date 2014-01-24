@@ -23,24 +23,11 @@ package runtime
 #define pid_t int
 #include <asm/signal.h>
 #include <asm/mman.h>
-#include <asm/sigcontext.h>
 #include <asm/ucontext.h>
-#include <asm/siginfo.h>
 #include <asm-generic/errno.h>
 #include <asm-generic/fcntl.h>
 #include <asm-generic/poll.h>
 #include <linux/eventpoll.h>
-
-// This is the sigaction structure from the Linux 2.1.68 kernel which
-//   is used with the rt_sigaction system call.  For 386 this is not
-//   defined in any public header file.
-
-struct kernel_sigaction {
-	__sighandler_t k_sa_handler;
-	unsigned long sa_flags;
-	void (*sa_restorer) (void);
-	unsigned long long sa_mask;
-};
 */
 import "C"
 
@@ -59,42 +46,6 @@ const (
 	MAP_FIXED   = C.MAP_FIXED
 
 	MADV_DONTNEED = C.MADV_DONTNEED
-
-	SA_RESTART  = C.SA_RESTART
-	SA_ONSTACK  = C.SA_ONSTACK
-	SA_RESTORER = C.SA_RESTORER
-	SA_SIGINFO  = C.SA_SIGINFO
-
-	SIGHUP    = C.SIGHUP
-	SIGINT    = C.SIGINT
-	SIGQUIT   = C.SIGQUIT
-	SIGILL    = C.SIGILL
-	SIGTRAP   = C.SIGTRAP
-	SIGABRT   = C.SIGABRT
-	SIGBUS    = C.SIGBUS
-	SIGFPE    = C.SIGFPE
-	SIGKILL   = C.SIGKILL
-	SIGUSR1   = C.SIGUSR1
-	SIGSEGV   = C.SIGSEGV
-	SIGUSR2   = C.SIGUSR2
-	SIGPIPE   = C.SIGPIPE
-	SIGALRM   = C.SIGALRM
-	SIGSTKFLT = C.SIGSTKFLT
-	SIGCHLD   = C.SIGCHLD
-	SIGCONT   = C.SIGCONT
-	SIGSTOP   = C.SIGSTOP
-	SIGTSTP   = C.SIGTSTP
-	SIGTTIN   = C.SIGTTIN
-	SIGTTOU   = C.SIGTTOU
-	SIGURG    = C.SIGURG
-	SIGXCPU   = C.SIGXCPU
-	SIGXFSZ   = C.SIGXFSZ
-	SIGVTALRM = C.SIGVTALRM
-	SIGPROF   = C.SIGPROF
-	SIGWINCH  = C.SIGWINCH
-	SIGIO     = C.SIGIO
-	SIGPWR    = C.SIGPWR
-	SIGSYS    = C.SIGSYS
 
 	FPE_INTDIV = C.FPE_INTDIV
 	FPE_INTOVF = C.FPE_INTOVF
@@ -137,10 +88,6 @@ type Xmmreg C.struct__xmmreg
 type Fpstate C.struct__fpstate
 type Timespec C.struct_timespec
 type Timeval C.struct_timeval
-type Sigaction C.struct_kernel_sigaction
-type Siginfo C.siginfo_t
-type Sigaltstack C.struct_sigaltstack
-type Sigcontext C.struct_sigcontext
 type Ucontext C.struct_ucontext
 type Itimerval C.struct_itimerval
 type EpollEvent C.struct_epoll_event

@@ -19,42 +19,6 @@ enum {
 
 	MADV_DONTNEED	= 0x4,
 
-	SA_RESTART	= 0x10000000,
-	SA_ONSTACK	= 0x8000000,
-	SA_RESTORER	= 0x4000000,
-	SA_SIGINFO	= 0x4,
-
-	SIGHUP		= 0x1,
-	SIGINT		= 0x2,
-	SIGQUIT		= 0x3,
-	SIGILL		= 0x4,
-	SIGTRAP		= 0x5,
-	SIGABRT		= 0x6,
-	SIGBUS		= 0x7,
-	SIGFPE		= 0x8,
-	SIGKILL		= 0x9,
-	SIGUSR1		= 0xa,
-	SIGSEGV		= 0xb,
-	SIGUSR2		= 0xc,
-	SIGPIPE		= 0xd,
-	SIGALRM		= 0xe,
-	SIGSTKFLT	= 0x10,
-	SIGCHLD		= 0x11,
-	SIGCONT		= 0x12,
-	SIGSTOP		= 0x13,
-	SIGTSTP		= 0x14,
-	SIGTTIN		= 0x15,
-	SIGTTOU		= 0x16,
-	SIGURG		= 0x17,
-	SIGXCPU		= 0x18,
-	SIGXFSZ		= 0x19,
-	SIGVTALRM	= 0x1a,
-	SIGPROF		= 0x1b,
-	SIGWINCH	= 0x1c,
-	SIGIO		= 0x1d,
-	SIGPWR		= 0x1e,
-	SIGSYS		= 0x1f,
-
 	FPE_INTDIV	= 0x1,
 	FPE_INTOVF	= 0x2,
 	FPE_FLTDIV	= 0x3,
@@ -94,11 +58,6 @@ typedef struct Fpreg Fpreg;
 typedef struct Fpxreg Fpxreg;
 typedef struct Xmmreg Xmmreg;
 typedef struct Fpstate Fpstate;
-typedef struct Sigaction Sigaction;
-typedef struct Siginfo Siginfo;
-typedef struct Sigaltstack Sigaltstack;
-typedef struct Sigcontext Sigcontext;
-typedef struct Ucontext Ucontext;
 typedef struct Itimerval Itimerval;
 typedef struct EpollEvent EpollEvent;
 
@@ -134,60 +93,6 @@ struct Fpstate {
 	Xmmreg	_xmm[8];
 	uint32	padding1[44];
 	byte	anon0[48];
-};
-struct Sigaction {
-	void	*k_sa_handler;
-	uint32	sa_flags;
-	void	*sa_restorer;
-	uint64	sa_mask;
-};
-struct Siginfo {
-	int32	si_signo;
-	int32	si_errno;
-	int32	si_code;
-	byte	_sifields[116];
-};
-struct Sigaltstack {
-	byte	*ss_sp;
-	int32	ss_flags;
-	uint32	ss_size;
-};
-struct Sigcontext {
-	uint16	gs;
-	uint16	__gsh;
-	uint16	fs;
-	uint16	__fsh;
-	uint16	es;
-	uint16	__esh;
-	uint16	ds;
-	uint16	__dsh;
-	uint32	edi;
-	uint32	esi;
-	uint32	ebp;
-	uint32	esp;
-	uint32	ebx;
-	uint32	edx;
-	uint32	ecx;
-	uint32	eax;
-	uint32	trapno;
-	uint32	err;
-	uint32	eip;
-	uint16	cs;
-	uint16	__csh;
-	uint32	eflags;
-	uint32	esp_at_signal;
-	uint16	ss;
-	uint16	__ssh;
-	Fpstate	*fpstate;
-	uint32	oldmask;
-	uint32	cr2;
-};
-struct Ucontext {
-	uint32	uc_flags;
-	Ucontext	*uc_link;
-	Sigaltstack	uc_stack;
-	Sigcontext	uc_mcontext;
-	uint32	uc_sigmask;
 };
 struct Itimerval {
 	Timeval	it_interval;
