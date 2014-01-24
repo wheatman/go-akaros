@@ -27,12 +27,12 @@ func main() {
 			d := time.Duration(rand.Intn(1000))
 			go func(sig int, d time.Duration) {
 				time.Sleep(d * time.Microsecond)
-				syscall.Kill(parlib.Procinfo.Pid(), syscall.Signal(sig))
+				syscall.Kill(int(parlib.Procinfo.Pid), syscall.Signal(sig))
 			}(sig, d)
 		}
 	}
 	time.Sleep(1000 * time.Millisecond)
-	syscall.Kill(parlib.Procinfo.Pid(), syscall.SIGTERM)
+	syscall.Kill(int(parlib.Procinfo.Pid), syscall.SIGTERM)
 	<-done
 	fmt.Printf("Exiting...\n")
 }

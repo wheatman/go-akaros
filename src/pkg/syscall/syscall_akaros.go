@@ -235,7 +235,7 @@ func Seek(fd int, offset int64, whence int) (newoffset int64, err error) {
 
 //sys	proc_destroy(pid int, exitcode int) (err error)
 func Exit(exitcode int) {
-	proc_destroy(parlib.Procinfo.Pid(), exitcode)
+	proc_destroy(int(parlib.Procinfo.Pid), exitcode)
 }
 
 //sys pipe(p *[2]_C_int, flags int) (err error)

@@ -20,7 +20,6 @@ import (
 )
 
 var Procinfo *ProcinfoType = (*ProcinfoType)(unsafe.Pointer(uintptr(C.UINFO)))
-func (p *ProcinfoType) Pid() int { return int(p.pid) }
 
 func Futex(uaddr *int32, op int32, val int32,
            timeout *Timespec, uaddr2 *int32, val3 int32) (ret int32) {
@@ -30,9 +29,9 @@ func Futex(uaddr *int32, op int32, val int32,
 	val3 = 0;
 	// Also, the minimum timout is 1ms, so up it to that if it's too small
 	if (timeout != nil) {
-		if (timeout.tv_sec == 0) {
-			if (timeout.tv_nsec < 1000000) {
-				timeout.tv_nsec = 1000000;
+		if (timeout.Sec == 0) {
+			if (timeout.Nsec < 1000000) {
+				timeout.Nsec = 1000000;
 			}
 		}
 	}
