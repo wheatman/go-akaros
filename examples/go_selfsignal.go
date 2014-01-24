@@ -10,7 +10,6 @@ import (
 	"runtime/parlib"
 )
 
-const NSIG = 32
 var done chan bool = make(chan bool)
 
 func handle_signal(sig int) {
@@ -21,7 +20,7 @@ func handle_signal(sig int) {
 func main() {
 	fmt.Printf("Hello world from program %s!!\n", os.Args[0])
 	rand.Seed( time.Now().UTC().UnixNano())
-	for sig := 1; sig < NSIG; sig++ {
+	for sig := 1; sig < parlib.SIGRTMIN; sig++ {
 		parlib.Signal(sig, handle_signal)
 		if (sig != int(syscall.SIGTERM)) && (sig != int(syscall.SIGKILL)) {
 			d := time.Duration(rand.Intn(1000))

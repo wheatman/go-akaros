@@ -26,10 +26,15 @@ import (
 	"unsafe"
 )
 
+const (
+	NSIG = C._NSIG
+	SIGRTMIN = C.__SIGRTMIN
+	SIGRTMAX = C.__SIGRTMAX
+)
 type SignalHandler func(sig int)
 
 var sigact = Sigaction{(C.__sighandler_t)(C.sig_hand), 0, nil, 0};
-var sighandlers = map[int]SignalHandler{}
+var sighandlers = make(map[int]SignalHandler, NSIG-1)
 
 func init() {
 	go process_signals()
@@ -50,19 +55,19 @@ func process_signals() {
                     break
                 }
             }
-            sighandlers[signr](signr)
+            sighandlers[signr-1](signr)
             C.__sigmap &^= ((_Ctype_uint64_t)(1) << (uint(signr)-1))
         }
     }
 }
 
-func Signal(sig int, newh SignalHandler) (SignalHandler, int) {
-	ret := int(C.sigaction(C.int(sig), (*C.struct_sigaction)(unsafe.Pointer(&sigact)), nil))
+func Signal(signr int, newh SignalHandler) (SignalHandler, int) {
+	ret := int(C.sigaction(C.int(signr), (*C.struct_sigaction)(unsafe.Pointer(&sigact)), nil))
 	if ret != 0 {
 		return nil, ret
 	}
-	oldh := sighandlers[sig]
-	sighandlers[sig] = newh
+	oldh := sighandlers[signr-1]
+	sighandlers[signr-1] = newh
 	return oldh, ret
 }
 
