@@ -12,6 +12,7 @@ package parlib
 #include <vcore.h>
 #include <mcs.h>
 #include <futex.h>
+#include <signal.h>
 */
 import "C"
 import (
@@ -54,5 +55,11 @@ func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
 		err = errors.New("ProcinfoPackArgs: error packing argv and envp")
 	}
 	return pi, err
+}
+
+func Sigaction(sig int, act *SigactionType, oact *SigactionType) (int) {
+	ret := C.sigaction(C.int(sig), (*C.struct_sigaction)(unsafe.Pointer(act)),
+                       (*C.struct_sigaction)(unsafe.Pointer(oact)))
+	return int(ret)
 }
 
