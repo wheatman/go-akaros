@@ -10,14 +10,12 @@ void
 runtime·initsig(void)
 {
 	// Do nothing for now
-	runtime·printf("In runtime.initsig\n");
 }
 
 void
 runtime·sigenable(uint32 sig)
 {
 	// Do nothing for now
-	runtime·printf("In runtime.sigenable: %d\n", sig);
 	USED(sig);
 }
 
@@ -25,7 +23,6 @@ void
 runtime·sigdisable(uint32 sig)
 {
 	// Do nothing for now
-	runtime·printf("In runtime.sigdisable: %d\n", sig);
 	USED(sig);
 }
 
@@ -33,14 +30,12 @@ void
 runtime·resetcpuprofiler(int32 hz)
 {
 	// Do nothing for now
-	runtime·printf("In runtime.resetcpuprofiler: %d\n", hz);
 	USED(hz);
 }
 
 void
 os·sigpipe(void)
 {
-	runtime·printf("In os.pipe\n");
 	// Do nothing for now
 }
 
@@ -48,6 +43,5 @@ void
 runtime·crash(void)
 {
 	// Do nothing for now
-	runtime·printf("In runtime.crash\n");
 }
 

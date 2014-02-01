@@ -182,6 +182,7 @@ func Syscall6Wrapper(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err 
 //sys	Close(fd int) (err error)
 //sys	Fstat(fd int, stat *Stat_t) (err error)
 //sys	Write(fd int, p []byte) (n int, err error)
+//sys	Block(usec int) (err error)
 
 // Locally wrapped syscalls
 //sys	real_read(fd int, p []byte) (n int, err error) = SYS_READ
@@ -462,6 +463,11 @@ func Kill(pid int, sig Signal) (err error) {
 	localMsg.Type = uint16(EV_POSIX_SIGNAL);
 	localMsg.Arg1 = uint16(sig);
 	return notify(pid, EV_POSIX_SIGNAL, &localMsg)
+}
+
+
+func Getpid() (pid int) {
+	return int(parlib.Procinfo.Pid)
 }
 
 /*****************************************************************************/
@@ -1237,7 +1243,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Fsync(fd int) (err error)
 //sysnb	Getpgid(pid int) (pgid int, err error)
 //sysnb	Getpgrp() (pid int)
-//sysnb	Getpid() (pid int)
 //sysnb	Getppid() (ppid int)
 //sys	Getpriority(which int, who int) (prio int, err error)
 //sysnb	Getrusage(who int, rusage *Rusage) (err error)
