@@ -473,6 +473,13 @@ func Getpid() (pid int) {
 /*****************************************************************************/
 /******* Stuff below is ported, but only exists as stubs thus far ************/
 /*****************************************************************************/
+func Accept(fd int) (nfd int, sa Sockaddr, err error) { return }
+func Accept4(fd int, flags int) (nfd int, sa Sockaddr, err error) { return }
+func Bind(fd int, sa Sockaddr) (err error) { return }
+func Connect(fd int, sa Sockaddr) (err error) { return }
+func Socket(domain, typ, proto int) (fd int, err error) { return }
+func Recvfrom(fd int, p []byte, flags int) (n int, from Sockaddr, err error) { return }
+func Sendto(fd int, p []byte, flags int, to Sockaddr) (err error) { return }
 func Getegid() (egid int) { return -1 }
 func Geteuid() (euid int) { return -1 }
 func Getgid() (gid int)   { return -1 }
@@ -773,36 +780,6 @@ func anyToSockaddr(rsa *RawSockaddrAny) (Sockaddr, error) {
 	return nil, EAFNOSUPPORT
 }
 
-func Accept(fd int) (nfd int, sa Sockaddr, err error) {
-	var rsa RawSockaddrAny
-	var len _Socklen = SizeofSockaddrAny
-	nfd, err = accept(fd, &rsa, &len)
-	if err != nil {
-		return
-	}
-	sa, err = anyToSockaddr(&rsa)
-	if err != nil {
-		Close(nfd)
-		nfd = 0
-	}
-	return
-}
-
-func Accept4(fd int, flags int) (nfd int, sa Sockaddr, err error) {
-	var rsa RawSockaddrAny
-	var len _Socklen = SizeofSockaddrAny
-	nfd, err = accept4(fd, &rsa, &len, flags)
-	if err != nil {
-		return
-	}
-	sa, err = anyToSockaddr(&rsa)
-	if err != nil {
-		Close(nfd)
-		nfd = 0
-	}
-	return
-}
-
 func Getsockname(fd int) (sa Sockaddr, err error) {
 	var rsa RawSockaddrAny
 	var len _Socklen = SizeofSockaddrAny
@@ -819,30 +796,6 @@ func Getpeername(fd int) (sa Sockaddr, err error) {
 		return
 	}
 	return anyToSockaddr(&rsa)
-}
-
-func Bind(fd int, sa Sockaddr) (err error) {
-	ptr, n, err := sa.sockaddr()
-	if err != nil {
-		return err
-	}
-	return bind(fd, ptr, n)
-}
-
-func Connect(fd int, sa Sockaddr) (err error) {
-	ptr, n, err := sa.sockaddr()
-	if err != nil {
-		return err
-	}
-	return connect(fd, ptr, n)
-}
-
-func Socket(domain, typ, proto int) (fd int, err error) {
-	if domain == AF_INET6 && SocketDisableIPv6 {
-		return -1, EAFNOSUPPORT
-	}
-	fd, err = socket(domain, typ, proto)
-	return
 }
 
 func Socketpair(domain, typ, proto int) (fd [2]int, err error) {
@@ -944,26 +897,6 @@ func SetsockoptICMPv6Filter(fd, level, opt int, filter *ICMPv6Filter) error {
 }
 func SetsockoptString(fd, level, opt int, s string) (err error) {
 	return setsockopt(fd, level, opt, uintptr(unsafe.Pointer(&[]byte(s)[0])), uintptr(len(s)))
-}
-
-func Recvfrom(fd int, p []byte, flags int) (n int, from Sockaddr, err error) {
-	var rsa RawSockaddrAny
-	var len _Socklen = SizeofSockaddrAny
-	if n, err = recvfrom(fd, p, flags, &rsa, &len); err != nil {
-		return
-	}
-	if rsa.Addr.Family != AF_UNSPEC {
-		from, err = anyToSockaddr(&rsa)
-	}
-	return
-}
-
-func Sendto(fd int, p []byte, flags int, to Sockaddr) (err error) {
-	ptr, n, err := to.sockaddr()
-	if err != nil {
-		return err
-	}
-	return sendto(fd, p, flags, ptr, n)
 }
 
 func Recvmsg(fd int, p, oob []byte, flags int) (n, oobn int, recvflags int, from Sockaddr, err error) {
