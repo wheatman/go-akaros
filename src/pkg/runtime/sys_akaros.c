@@ -104,7 +104,7 @@ uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
 {
 	int32 errno;
 	SyscallArg *sysc = (SyscallArg *)(g->sysc);
-	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags, fd, offset, &errno);
+	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags|MAP_POPULATE, fd, offset, &errno);
 	return (uint8*)sysc->retval;
 }
 
