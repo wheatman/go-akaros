@@ -9,6 +9,8 @@
 #include "runtime.h"
 #include "cgocall.h"
 #include "defs_GOOS_GOARCH.h"
+#include "os_GOOS.h"
+#include "zsyscall_akaros.h"
 #include "../../cmd/ld/textflag.h"
 
 // We extern these libc functions here, so we don't have to reimplement the logic
@@ -102,6 +104,8 @@ int32 runtime·close(int32 fd)
 uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
                     int32 flags, int32 fd, uint32 offset)
 {
+	/* TODO: For now we force a MAP_POPULATE on all mmaps because demand paging
+	 * seems to break things.  Need to look into why and fix it. */
 	int32 errno;
 	SyscallArg *sysc = (SyscallArg *)(g->sysc);
 	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags|MAP_POPULATE, fd, offset, &errno);

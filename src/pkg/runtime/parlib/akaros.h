@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <parlib/zsyscall_akaros.h>
 #include <parlib/ztypes_akaros.h>
 
 // I wanted to pass UINFO through cgo -cdefs, but it turns all #defines into
@@ -14,5 +13,8 @@ static const uint64 UINFO = 0x7f7fffe00000ULL;
 //#define UINFO 0x7f800000
 static const uint32 UINFO = 0x7f800000UL;
 #endif
+
+#define MIN(a, b)	((a < b) ? a : b)
+#define MAX(a, b)	((a > b) ? a : b)
 
 #define __procinfo (*(ProcinfoType*)UINFO)

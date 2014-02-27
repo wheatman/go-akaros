@@ -7,31 +7,24 @@
 /*
 Input to cgo -cdefs
 
-GOARCH=amd64 go tool cgo -cdefs defs_akaros.go defs1_akaros.go >defs_akaros_amd64.h
+go-akaros-386 tool cgo -cdefs defs_akaros.go > defs_akaros_386.h
+go-akaros-amd64 tool cgo -cdefs defs_akaros.go > defs_akaros_amd64.h
 */
 
 package runtime
 
 /*
-// Akaros glibc and Akaros kernel define different and conflicting
-// definitions for struct sigaction, struct timespec, etc.
-// We want the kernel ones, which are in the asm/* headers.
-// But then we'd get conflicts when we include the system
-// headers for things like ucontext_t, so that happens in
-// a separate file, defs1.go.
+#include <stdint.h>
+#include <signal.h>
+#include <ros/errno.h>
+#include <ros/mman.h>
+#include <ros/memlayout.h>
 
-#include <asm/posix_types.h>
-#define size_t __kernel_size_t
-#include <asm/signal.h>
-#include <asm/siginfo.h>
-#include <asm/mman.h>
-#include <asm-generic/errno.h>
-#include <asm-generic/poll.h>
-#include <linux/eventpoll.h>
 */
 import "C"
 
 const (
+
 	EINTR  = C.EINTR
 	EAGAIN = C.EAGAIN
 	ENOMEM = C.ENOMEM
@@ -46,7 +39,40 @@ const (
 	MAP_FIXED    = C.MAP_FIXED
 	MAP_POPULATE = C.MAP_POPULATE
 
-	MADV_DONTNEED = C.MADV_DONTNEED
+	SA_RESTART  = C.SA_RESTART
+	SA_ONSTACK  = C.SA_ONSTACK
+	SA_SIGINFO  = C.SA_SIGINFO
+
+	SIGHUP    = C.SIGHUP
+	SIGINT    = C.SIGINT
+	SIGQUIT   = C.SIGQUIT
+	SIGILL    = C.SIGILL
+	SIGTRAP   = C.SIGTRAP
+	SIGABRT   = C.SIGABRT
+	SIGBUS    = C.SIGBUS
+	SIGFPE    = C.SIGFPE
+	SIGKILL   = C.SIGKILL
+	SIGUSR1   = C.SIGUSR1
+	SIGSEGV   = C.SIGSEGV
+	SIGUSR2   = C.SIGUSR2
+	SIGPIPE   = C.SIGPIPE
+	SIGALRM   = C.SIGALRM
+	SIGSTKFLT = C.SIGSTKFLT
+	SIGCHLD   = C.SIGCHLD
+	SIGCONT   = C.SIGCONT
+	SIGSTOP   = C.SIGSTOP
+	SIGTSTP   = C.SIGTSTP
+	SIGTTIN   = C.SIGTTIN
+	SIGTTOU   = C.SIGTTOU
+	SIGURG    = C.SIGURG
+	SIGXCPU   = C.SIGXCPU
+	SIGXFSZ   = C.SIGXFSZ
+	SIGVTALRM = C.SIGVTALRM
+	SIGPROF   = C.SIGPROF
+	SIGWINCH  = C.SIGWINCH
+	SIGIO     = C.SIGIO
+	SIGPWR    = C.SIGPWR
+	SIGSYS    = C.SIGSYS
 
 	FPE_INTDIV = C.FPE_INTDIV
 	FPE_INTOVF = C.FPE_INTOVF
@@ -63,24 +89,7 @@ const (
 
 	SEGV_MAPERR = C.SEGV_MAPERR
 	SEGV_ACCERR = C.SEGV_ACCERR
-
-	ITIMER_REAL    = C.ITIMER_REAL
-	ITIMER_VIRTUAL = C.ITIMER_VIRTUAL
-	ITIMER_PROF    = C.ITIMER_PROF
-
-	EPOLLIN       = C.POLLIN
-	EPOLLOUT      = C.POLLOUT
-	EPOLLERR      = C.POLLERR
-	EPOLLHUP      = C.POLLHUP
-	EPOLLRDHUP    = C.POLLRDHUP
-	EPOLLET       = C.EPOLLET
-	EPOLL_CLOEXEC = C.EPOLL_CLOEXEC
-	EPOLL_CTL_ADD = C.EPOLL_CTL_ADD
-	EPOLL_CTL_DEL = C.EPOLL_CTL_DEL
-	EPOLL_CTL_MOD = C.EPOLL_CTL_MOD
 )
 
-type Timespec C.struct_timespec
-type Timeval C.struct_timeval
-type Itimerval C.struct_itimerval
-type EpollEvent C.struct_epoll_event
+type Siginfo C.siginfo_t
+
