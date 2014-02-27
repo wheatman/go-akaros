@@ -5,6 +5,7 @@
 #include "runtime.h"
 #include "defs_GOOS_GOARCH.h"
 #include "os_GOOS.h"
+#include "signal_unix.h"
 #include "../../cmd/ld/textflag.h"
 
 void runtime·setldt(void)
@@ -104,5 +105,20 @@ runtime·memlimit(void)
 {
 	// Do nothing for now
 	return 0;
+}
+
+void
+runtime·setsig(int32 i, GoSighandler *fn, bool restart)
+{
+	USED(i);
+	USED(fn);
+	USED(restart);
+}
+
+GoSighandler*
+runtime·getsig(int32 i)
+{
+	USED(i);
+	return nil;
 }
 

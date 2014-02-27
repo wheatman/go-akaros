@@ -11,7 +11,7 @@ go-akaros-386 tool cgo -cdefs defsbogus_akaros.go > defs_akaros_386.h
 go-akaros-amd64 tool cgo -cdefs defsbogus_akaros.go > defs_akaros_amd64.h
 */
 
-package runtime
+package parlib
 
 import "C"
 
@@ -32,5 +32,4 @@ const (
 	EPOLL_CTL_MOD = 0
 )
 
-type Itimerval *void
 type EpollEvent *void

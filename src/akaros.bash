@@ -251,9 +251,7 @@ then
   run_helper cd "$GOROOT"/src/pkg/runtime
   run_helper cp "$ROSROOT"/kern/include/ros/bits/syscall.h zsyscall_${GOOS}.h
   run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -cdefs defs_${GOOS}.go defsbogus_${GOOS}.go > defs_${GOOS}_${GOARCH}.h"
-  run_helper cd "$GOROOT"/src/pkg/runtime/parlib
-  run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -cdefs types_${GOOS}.go > ztypes_${GOOS}.h"
-  run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -godefs types_${GOOS}.go > ztypes_${GOOS}.go"
+  run_helper_eval "$GOTOOLDIR/go_bootstrap tool cgo -godefs defs_${GOOS}.go > parlib/zdefs_${GOOS}_${GOARCH}.go"
   run_helper rm -rf _obj
   run_helper_eval "cd - > /dev/null"
 

@@ -10,10 +10,11 @@
 int32	runtime·futex(uint32*, int32, uint32, Timespec*, uint32*, uint32);
 int32	runtime·clone(int32, void*, M*, G*, void(*)(void));
 
+struct Sigaction;
+int32	runtime·rt_sigaction(uintptr, struct Sigaction*, void*, uintptr);
+void	runtime·sigpanic(void);
 void runtime·setitimer(int32, Itimerval*, Itimerval*);
 
-
-#define	NSIG	65
 #define	SI_USER 0
 
 // It's hard to tease out exactly how big a Sigset is, but

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <parlib/ztypes_akaros.h>
-
 // I wanted to pass UINFO through cgo -cdefs, but it turns all #defines into
 // enums, which can only be 32-bit
 #ifdef _64BIT

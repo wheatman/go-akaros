@@ -27,11 +27,6 @@ import (
 	"unsafe"
 )
 
-const (
-	NSIG = C._NSIG
-	SIGRTMIN = C.__SIGRTMIN
-	SIGRTMAX = C.__SIGRTMAX
-)
 var (
 	__SIG_ERR = -1
 	__SIG_IGN = 1

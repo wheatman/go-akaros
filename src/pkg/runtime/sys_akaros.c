@@ -180,6 +180,20 @@ int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
 	return a.retval;
 }
 
+#pragma textflag NOSPLIT
+void runtime·raise(int32 sig)
+{
+	USED(sig);
+}
+
+#pragma textflag NOSPLIT
+void runtime·setitimer(int32 which, Itimerval *new_value, Itimerval *old_value)
+{
+	USED(which);
+	USED(new_value);
+	USED(old_value);
+}
+
 //TEXT runtime·exit1(SB),7,$0
 //	MOVL	$1, AX	// exit - exit the current os thread
 //	MOVL	4(SP), BX
@@ -191,23 +205,6 @@ int32 runtime·futex(uint32 *uaddr, int32 op, uint32 val,
 //	MOVL	$191, AX		// syscall - ugetrlimit
 //	MOVL	4(SP), BX
 //	MOVL	8(SP), CX
-//	CALL	*runtime·_vdso(SB)
-//	RET
-//
-//TEXT runtime·raise(SB),7,$12
-//	MOVL	$224, AX	// syscall - gettid
-//	CALL	*runtime·_vdso(SB)
-//	MOVL	AX, BX	// arg 1 tid
-//	MOVL	sig+0(FP), CX	// arg 2 signal
-//	MOVL	$238, AX	// syscall - tkill
-//	CALL	*runtime·_vdso(SB)
-//	RET
-//
-//TEXT runtime·setitimer(SB),7,$0-24
-//	MOVL	$104, AX			// syscall - setitimer
-//	MOVL	4(SP), BX
-//	MOVL	8(SP), CX
-//	MOVL	12(SP), DX
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
