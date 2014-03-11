@@ -28,5 +28,5 @@
 #define SIG_GS(info, ctxt) ((uint64)SIG_REGS(ctxt).tf_gsbase)
 
 #define SIG_CODE0(info, ctxt) ((info)->si_code)
-#define SIG_CODE1(info, ctxt) (((uintptr*)(info))[2])
+#define SIG_CODE1(info, ctxt) (*((uintptr*)(&((info)->si_addr))))
 

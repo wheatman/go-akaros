@@ -94,12 +94,6 @@ runtime·unminit(void)
 	// Do nothing for now.
 }
 
-void
-runtime·sigpanic(void)
-{
-	// Do nothing for now.
-}
-
 uintptr
 runtime·memlimit(void)
 {
@@ -107,18 +101,85 @@ runtime·memlimit(void)
 	return 0;
 }
 
+/*
+ * This assembler routine takes the args from registers, puts them on the stack,
+ * and calls sighandler().
+ */
+#pragma cgo_import_static gcc_sigaction
+typedef void (*gcc_call_t)(void *arg);
+extern gcc_call_t gcc_sigaction;
+extern void runtime·sigtramp(void);
+extern SigTab runtime·sigtab[];
+
 void
 runtime·setsig(int32 i, GoSighandler *fn, bool restart)
 {
-	USED(i);
-	USED(fn);
-	USED(restart);
+	USED(restart); // Akaros currently only supports the SA_SIGINFO flag
+	Sigaction sa;
+	runtime·memclr((byte*)&sa, sizeof sa);
+
+	sa.sa_flags = SA_SIGINFO;
+	if(fn == runtime·sighandler)
+		fn = (void*)runtime·sigtramp;
+	sa.sa_handler = fn;
+
+	SigactionArg sarg;
+	sarg.sig = i;
+	sarg.act = &sa;
+	sarg.oact = nil;
+	runtime·asmcgocall(gcc_sigaction, &sarg);
+	if (sarg.ret)
+		runtime·throw("sigaction failure");
 }
 
 GoSighandler*
 runtime·getsig(int32 i)
 {
-	USED(i);
-	return nil;
+	Sigaction sa;
+	runtime·memclr((byte*)&sa, sizeof sa);
+
+	SigactionArg sarg;
+	sarg.sig = i;
+	sarg.act = nil;
+	sarg.oact = &sa;
+	runtime·asmcgocall(gcc_sigaction, &sarg);
+	if (sarg.ret)
+		runtime·throw("rt_sigaction read failure");
+
+	if((void*)sa.sa_handler == runtime·sigtramp)
+		return runtime·sighandler;
+	return (void*)sa.sa_handler;
+}
+
+void
+runtime·sigpanic(void)
+{
+	switch(g->sig) {
+	case SIGBUS:
+		if(g->sigcode0 == BUS_ADRERR && g->sigcode1 < 0x1000) {
+			if(g->sigpc == 0)
+				runtime·panicstring("call of nil func value");
+			runtime·panicstring("invalid memory address or nil pointer dereference");
+		}
+		runtime·printf("unexpected fault address %p\n", g->sigcode1);
+		runtime·throw("fault");
+	case SIGSEGV:
+		if((g->sigcode0 == 0 || g->sigcode0 == SEGV_MAPERR || g->sigcode0 == SEGV_ACCERR) && g->sigcode1 < 0x1000) {
+			if(g->sigpc == 0)
+				runtime·panicstring("call of nil func value");
+			runtime·panicstring("invalid memory address or nil pointer dereference");
+		}
+		runtime·printf("unexpected fault address %p\n", g->sigcode1);
+		runtime·throw("fault");
+	case SIGFPE:
+		switch(g->sigcode0) {
+		case FPE_INTDIV:
+			runtime·panicstring("integer divide by zero");
+		case FPE_INTOVF:
+			runtime·panicstring("integer overflow");
+		}
+		runtime·panicstring("floating point error");
+	}
+	runtime·panicstring(runtime·sigtab[g->sig].name);
 }
 

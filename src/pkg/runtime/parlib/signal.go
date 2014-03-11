@@ -37,7 +37,7 @@ var (
 )
 type SignalHandler func(sig int)
 
-var sigact = Sigaction{(C.__sighandler_t)(C.sig_hand), 0, nil, 0};
+var sigact = Sigaction{(C.__sighandler_t)(C.sig_hand), 0, 0, 0, nil};
 var sighandlers = make(map[int]SignalHandler, NSIG-1)
 
 func init() {

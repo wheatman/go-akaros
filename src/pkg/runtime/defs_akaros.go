@@ -26,15 +26,6 @@ package parlib
 #include <ros/errno.h>
 #include <ros/trapframe.h>
 #include "parlib/gcc_akaros.h"
-
-#undef sa_handler
-struct parlib_sigaction {
-    __sighandler_t sa_handler;
-    unsigned long sa_flags;
-    void (*sa_restorer) (void);
-    unsigned long long sa_mask;
-};
-
 */
 import "C"
 
@@ -110,6 +101,7 @@ const (
 	BUS_ADRERR = C.BUS_ADRERR
 	BUS_OBJERR = C.BUS_OBJERR
 
+	SI_USER     = C.SI_USER
 	SEGV_MAPERR = C.SEGV_MAPERR
 	SEGV_ACCERR = C.SEGV_ACCERR
 )
@@ -120,8 +112,6 @@ type ProcinfoType C.procinfo_t
 type Ucq C.struct_ucq
 type EventQueue C.struct_event_queue
 type EventMbox C.struct_event_mbox
-type SyscallArg C.gcc_syscall_arg_t
-type FutexArg C.gcc_futex_arg_t
 type Timespec C.struct_timespec
 type Timeval C.struct_timeval
 type Itimerval C.struct_itimerval
@@ -130,4 +120,8 @@ type Siginfo C.siginfo_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe
 type UserContext C.struct_user_context
+
+type SyscallArg C.gcc_syscall_arg_t
+type FutexArg C.gcc_futex_arg_t
+type SigactionArg C.gcc_sigaction_arg_t
 

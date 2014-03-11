@@ -216,22 +216,6 @@ void runtime·setitimer(int32 which, Itimerval *new_value, Itimerval *old_value)
 //	CALL	*runtime·_vdso(SB)
 //	RET
 //
-//// func now() (sec int64, nsec int32)
-//TEXT time·now(SB), 7, $32
-//	MOVL	$265, AX			// syscall - clock_gettime
-//	MOVL	$0, BX
-//	LEAL	8(SP), CX
-//	MOVL	$0, DX
-//	CALL	*runtime·_vdso(SB)
-//	MOVL	8(SP), AX	// sec
-//	MOVL	12(SP), BX	// nsec
-//
-//	// sec is in AX, nsec in BX
-//	MOVL	AX, sec+0(FP)
-//	MOVL	$0, sec+4(FP)
-//	MOVL	BX, nsec+8(FP)
-//	RET
-//
 //TEXT runtime·rtsigprocmask(SB),7,$0
 //	MOVL	$175, AX		// syscall entry
 //	MOVL	4(SP), BX
@@ -251,53 +235,6 @@ void runtime·setitimer(int32 which, Itimerval *new_value, Itimerval *old_value)
 //	MOVL	12(SP), DX
 //	MOVL	16(SP), SI
 //	CALL	*runtime·_vdso(SB)
-//	RET
-//
-//TEXT runtime·sigtramp(SB),7,$44
-//	get_tls(CX)
-//
-//	// check that m exists
-//	MOVL	m(CX), BX
-//	CMPL	BX, $0
-//	JNE	5(PC)
-//	MOVL	sig+0(FP), BX
-//	MOVL	BX, 0(SP)
-//	CALL	runtime·badsignal(SB)
-//	RET
-//
-//	// save g
-//	MOVL	g(CX), DI
-//	MOVL	DI, 20(SP)
-//
-//	// g = m->gsignal
-//	MOVL	m(CX), BX
-//	MOVL	m_gsignal(BX), BX
-//	MOVL	BX, g(CX)
-//
-//	// copy arguments for call to sighandler
-//	MOVL	sig+0(FP), BX
-//	MOVL	BX, 0(SP)
-//	MOVL	info+4(FP), BX
-//	MOVL	BX, 4(SP)
-//	MOVL	context+8(FP), BX
-//	MOVL	BX, 8(SP)
-//	MOVL	DI, 12(SP)
-//
-//	CALL	runtime·sighandler(SB)
-//
-//	// restore g
-//	get_tls(CX)
-//	MOVL	20(SP), BX
-//	MOVL	BX, g(CX)
-//
-//	RET
-//
-//TEXT runtime·sigreturn(SB),7,$0
-//	MOVL	$173, AX	// rt_sigreturn
-//	// Sigreturn expects same SP as signal handler,
-//	// so cannot CALL *runtime._vsdo(SB) here.
-//	INT	$0x80
-//	INT $3	// not reached
 //	RET
 //
 //TEXT runtime·madvise(SB),7,$0

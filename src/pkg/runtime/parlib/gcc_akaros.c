@@ -29,6 +29,7 @@ static void __gcc_futex(void *__arg)
 }
 const gcc_call_t gcc_futex = __gcc_futex;
 
+// Akaros style pthread yields
 static void __gcc_myield(void *__arg)
 {
 	// We should never pass an argument here
@@ -36,4 +37,12 @@ static void __gcc_myield(void *__arg)
 	pthread_yield();
 }
 const gcc_call_t gcc_myield = __gcc_myield;
+
+// Akaros style sigactions
+static void __gcc_sigaction(void *__arg)
+{
+	gcc_sigaction_arg_t *a = (gcc_sigaction_arg_t*)__arg;
+	a->ret = sigaction(a->sig, (struct sigaction*)a->act, (struct sigaction*)a->oact);
+}
+const gcc_call_t gcc_sigaction = __gcc_sigaction;
 

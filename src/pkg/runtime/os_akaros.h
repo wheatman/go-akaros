@@ -15,8 +15,6 @@ int32	runtime·rt_sigaction(uintptr, struct Sigaction*, void*, uintptr);
 void	runtime·sigpanic(void);
 void runtime·setitimer(int32, Itimerval*, Itimerval*);
 
-#define	SI_USER 0
-
 // It's hard to tease out exactly how big a Sigset is, but
 // rt_sigprocmask crashes if we get it wrong, so if binaries
 // are running, this is right.
