@@ -181,37 +181,17 @@ func Syscall6Wrapper(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err 
 // don't need to wrap them, just list them with the //sys directive.
 //sys	Close(fd int) (err error)
 //sys	Fstat(fd int, stat *Stat_t) (err error)
+//sys	Read(fd int, p []byte) (n int, err error)
 //sys	Write(fd int, p []byte) (n int, err error)
 //sys	Block(usec int) (err error)
 
 // Locally wrapped syscalls
-//sys	real_read(fd int, p []byte) (n int, err error) = SYS_READ
-var dev_urandom_fd int = -1
-var nanwans_birthday int = 1242129600
-func Read(fd int, p []byte) (n int, err error) {
-	if (fd == dev_urandom_fd) {
-		cval := nanwans_birthday
-		for i := 0; i < len(p); i++ {
-			if (cval/10 == 0) {
-				cval = nanwans_birthday
-			}
-			p[i] = byte(cval/10)
-		}
-		return len(p), nil
-	} else {
-		return real_read(fd, p)
-	}
-}
-
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
 func Open(path string, flags int, mode ...uint32) (fd int, err error) {
 	if len(path) == 0 {
 		return -1, EINVAL
 	}
 	fd, err = open(path, len(path), flags, mode[0])
-	if err == nil && path == "/dev/urandom" {
-		dev_urandom_fd = fd
-	}
 	return fd, err
 }
 
