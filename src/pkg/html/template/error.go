@@ -182,9 +182,7 @@ const (
 )
 
 func (e *Error) Error() string {
-	if e == nil {
-		return "html/template: Unknown Error"
-	} else if e.Line != 0 {
+	if e.Line != 0 {
 		return fmt.Sprintf("html/template:%s:%d: %s", e.Name, e.Line, e.Description)
 	} else if e.Name != "" {
 		return fmt.Sprintf("html/template:%s: %s", e.Name, e.Description)
