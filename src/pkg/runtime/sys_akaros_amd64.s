@@ -10,7 +10,7 @@
 #include "../../cmd/ld/textflag.h"
 
 // Do nothing for now
-TEXT runtime·settls(SB), 7, $0
+TEXT runtime·settls(SB), NOSPLIT, $0
 	RET
 
 TEXT sigtramp_real(SB),NOSPLIT,$64
@@ -60,7 +60,6 @@ TEXT runtime·sigtramp(SB),NOSPLIT,$0
 	POPQ	R12
 	POPQ	BP
 	POPQ	BX
-
     RET
 
 TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0
