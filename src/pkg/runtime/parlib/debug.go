@@ -14,16 +14,19 @@ void printChar(char c)
 {
 	printf("%c\n", c);
 }
+void printInt(int d)
+{
+	printf("%d", d);
+}
 void printString(char *s)
 {
-	printf("%s\n", s);
+	printf("%s", s);
 }
 void printChars(char *s, int len)
 {
 	int i = 0;
 	for (i=0; i<len; i++)
 		printf("%c", *(s+i));
-	printf("\n");
 }
 void checkpoint(long long unsigned arg, char c)
 {
@@ -47,12 +50,17 @@ func Checkpoint(arg uint64, c int8) {
 }
 
 // Print an arbitraty character
+func PrintInt(d int) {
+	C.printInt(C.int(d))
+}
+
+// Print an arbitraty character
 func PrintChar(c byte) {
 	C.printChar(C.char(c))
 }
 
 // Print an arbitraty string of bytes as characters
-func PrintChars(s [256]int8) {
+func PrintChars(s []byte) {
 	C.printChars((*C.char)(unsafe.Pointer(&s[0])), C.int(len(s)))
 }
 
