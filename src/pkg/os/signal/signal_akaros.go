@@ -18,7 +18,7 @@ func signum(sig os.Signal) int {
 	switch sig := sig.(type) {
 	case syscall.Signal:
 		i := int(sig)
-		if i < 0 || i >= numSig {
+		if i < 1 || i >= numSig {
 			return -1
 		}
 		return i

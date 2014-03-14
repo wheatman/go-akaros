@@ -19,9 +19,8 @@ TEXT sigtramp_real(SB),NOSPLIT,$64
     // check that m exists
     MOVQ    m(BX), BP
     CMPQ    BP, $0
-    JNE 5(PC)
-    MOVQ    DI, 0(SP)
-    MOVQ    $runtime·badsignal(SB), AX
+    JNE     4(PC)
+    MOVQ    $sig_hand(SB), AX
     CALL    AX
     RET
 
@@ -63,4 +62,10 @@ TEXT runtime·sigtramp(SB),NOSPLIT,$0
 	POPQ	BX
 
     RET
+
+TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0
+    MOVQ    8(SP), DI
+    CALL    sigtramp_real(SB)
+	RET
+
 

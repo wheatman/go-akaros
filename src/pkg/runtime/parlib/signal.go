@@ -37,10 +37,16 @@ var (
 )
 type SignalHandler func(sig int)
 
+var sighandlers [NSIG-1]SignalHandler
 var sigact = Sigaction{(C.__sighandler_t)(C.sig_hand), 0, 0, 0, nil};
-var sighandlers = make(map[int]SignalHandler, NSIG-1)
+
+// Implemented in runtime/sys_{GOOS}_{GOARCH}.s 
+func defaultSighandler(sig int)
 
 func init() {
+	for i := 0; i < (NSIG-1); i++ {
+		sighandlers[i] = defaultSighandler
+	}
 	go process_signals()
 }
 
@@ -67,6 +73,10 @@ func process_signals() {
 }
 
 func Signal(signr int, newh SignalHandler) (SignalHandler, int) {
+	if signr < 1 || signr >= NSIG {
+		return nil, -1
+	}
+
 	oldh := sighandlers[signr-1]
 	sighandlers[signr-1] = newh
 
