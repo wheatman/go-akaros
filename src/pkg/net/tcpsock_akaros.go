@@ -62,12 +62,18 @@ func (c *TCPConn) SetLinger(sec int) error {
 // SetKeepAlive sets whether the operating system should send
 // keepalive messages on the connection.
 func (c *TCPConn) SetKeepAlive(keepalive bool) error {
-	return syscall.EMORON
+	if !c.ok() {
+		return syscall.EMORON
+	}
+	return setKeepAlive(c.fd, keepalive)
 }
 
 // SetKeepAlivePeriod sets period between keep alives.
 func (c *TCPConn) SetKeepAlivePeriod(d time.Duration) error {
-	return syscall.EMORON
+	if !c.ok() {
+		return syscall.EMORON
+	}
+	return setKeepAlivePeriod(c.fd, d)
 }
 
 // SetNoDelay controls whether the operating system should delay
