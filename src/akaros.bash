@@ -14,6 +14,7 @@ export GOOS=akaros
 
 # Always build with cgo support
 export CGO_ENABLED=1
+DEFAULT_TARGET_CGO_LDFLAGS="-lpthread -lbenchutil -lm"
 
 # Print the usage information for this script
 usage()
@@ -140,10 +141,12 @@ prepare_host_env()
   OLD_CC=$CC
   OLD_CXX=$CXX
   OLD_GO_LDFLAGS="$GO_LDFLAGS"
+  OLD_CGO_LDFLAGS="$CGO_LDFLAGS"
   export GOOS=$GOHOSTOS
   export GOARCH=$GOHOSTARCH
   export CC=$CC
   export CXX=$CXX
+  export CGO_LDFLAGS="$CGO_LDFLAGS"
   export GO_LDFLAGS="$GO_LDFLAGS"
 }
 
@@ -155,10 +158,12 @@ prepare_target_env()
   OLD_CC=$CC
   OLD_CXX=$CXX
   OLD_GO_LDFLAGS="$GO_LDFLAGS"
+  OLD_CGO_LDFLAGS="$CGO_LDFLAGS"
   export GOOS=$GOOS
   export GOARCH=$GOARCH
   export CC=$TARGETCC
   export CXX=$TARGETCXX
+  export CGO_LDFLAGS="$DEFAULT_TARGET_CGO_LDFLAGS $TARGET_CGO_LDFLAGS"
   export GO_LDFLAGS="-extld=$TARGETCC $GO_LDFLAGS"
 }
 
@@ -169,8 +174,8 @@ restore_env()
   export GOARCH=$OLD_GOARCH
   export CC=$OLD_CC
   export CXX=$OLD_CXX
-  export GO_LDFLAGS="$OLD_GO_LDFLAGS"
   export CGO_LDFLAGS="$OLD_CGO_LDFLAGS"
+  export GO_LDFLAGS="$OLD_GO_LDFLAGS"
 }
 
 # Clean old generated file that will cause problems in the build.
@@ -270,7 +275,8 @@ export GOARCH=$GOARCH
 export CGO_ENABLED=1
 export CC=$TARGETCC
 export CXX=$TARGETCXX
-export GO_LDFLAGS=$GO_LDFLAGS
+export CGO_LDFLAGS="$CGO_LDFLAGS"
+export GO_LDFLAGS="$GO_LDFLAGS"
 
 ARGS=\$1
 if [[ "\$1" = "build" ]] &&

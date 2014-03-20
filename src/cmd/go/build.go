@@ -1878,6 +1878,7 @@ func (b *builder) ccompilerCmd(envvar, defcmd, objdir string) []string {
 	// for multithreading with pthread library.
 	if buildContext.CgoEnabled {
 		switch goos {
+		case "akaros":
 		case "windows":
 			a = append(a, "-mthreads")
 		default:
