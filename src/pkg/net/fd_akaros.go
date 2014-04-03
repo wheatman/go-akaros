@@ -33,7 +33,7 @@ func sysInit() {
 }
 
 func dial(net string, ra Addr, dialer func(time.Time) (Conn, error), deadline time.Time) (Conn, error) {
-	// On plan9, use the relatively inefficient
+	// On akaros, use the relatively inefficient
 	// goroutine-racing implementation.
 	return dialChannel(net, ra, dialer, deadline)
 }

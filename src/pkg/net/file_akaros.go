@@ -26,7 +26,7 @@ func (fd *netFD) status(ln int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return os.KernelString(buf[:n]), nil
+	return string(buf[:n]), nil
 }
 
 func newFileFD(f *os.File) (net *netFD, err error) {

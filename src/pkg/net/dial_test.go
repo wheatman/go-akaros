@@ -48,7 +48,7 @@ func TestDialTimeout(t *testing.T) {
 	// TODO(bradfitz): It's hard to test this in a portable
 	// way. This is unfortunate, but works for now.
 	switch runtime.GOOS {
-	case "linux":
+	case "linux", "akaros":
 		// The kernel will start accepting TCP connections before userspace
 		// gets a chance to not accept them, so fire off a bunch to fill up
 		// the kernel's backlog.  Then we test we get a failure after that.

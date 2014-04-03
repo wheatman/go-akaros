@@ -706,7 +706,7 @@ func TestProlongTimeout(t *testing.T) {
 
 func TestDeadlineRace(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9":
+	case "plan9", "akaros":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 
