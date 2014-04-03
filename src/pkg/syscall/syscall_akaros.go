@@ -257,6 +257,16 @@ func Pipe(p []int, flags int) (err error) {
 	return
 }
 
+//sys	unlink(path string, pathlen int) (err error)
+func Unlink(path string) (err error) {
+	return unlink(path, len(path))
+}
+
+//sys	rmdir(path string, pathlen int) (err error)
+func Rmdir(path string) (err error) {
+	return rmdir(path, len(path))
+}
+
 //sys	stat(path string, pathlen int, stat *Stat_t) (err error)
 func Stat(path string, s *Stat_t) (err error) {
 	return stat(path, len(path), s)
@@ -1203,7 +1213,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Removexattr(path string, attr string) (err error)
 //sys	Rename(oldpath string, newpath string) (err error)
 //sys	Renameat(olddirfd int, oldpath string, newdirfd int, newpath string) (err error)
-//sys	Rmdir(path string) (err error)
 //sys	Setdomainname(p []byte) (err error)
 //sys	Sethostname(p []byte) (err error)
 //sysnb	Setpgid(pid int, pgid int) (err error)
@@ -1220,7 +1229,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sysnb	Times(tms *Tms) (ticks uintptr, err error)
 //sysnb	Umask(mask int) (oldmask int)
 //sysnb	Uname(buf *Utsname) (err error)
-//sys	Unlink(path string) (err error)
 //sys	Unlinkat(dirfd int, path string) (err error)
 //sys	Unmount(target string, flags int) (err error) = SYS_UMOUNT2
 //sys	Unshare(flags int) (err error)
