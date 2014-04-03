@@ -210,6 +210,7 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	Write(fd int, p []byte) (n int, err error)
 //sys	Block(usec int) (err error)
 //sys	Fstat(fd int, stat *Stat_t) (err error)
+//sys	fcntl(fd int, cmd int, arg int) (val int, err error)
 
 // Locally wrapped syscalls
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
@@ -352,11 +353,6 @@ func ParseDirent(buf []byte, max int, names []string) (consumed int, count int, 
 		return len(buf), 0, names
 	}
 	return len(buf), 1, append(names, name)
-}
-
-//sys	fcntl(fd int, cmd int, arg int) (val int, err error)
-func Fcntl(fd int, cmd int, arg int) (val int, err error) {
-	return fcntl(fd, cmd, arg)
 }
 
 func Dup(oldfd int) (fd int, err error) {
