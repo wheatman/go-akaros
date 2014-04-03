@@ -360,7 +360,7 @@ func Fcntl(fd int, cmd int, arg int) (val int, err error) {
 }
 
 func Dup(oldfd int) (fd int, err error) {
-  return fcntl(fd, F_DUPFD, 0)
+  return fcntl(oldfd, F_DUPFD, 0)
 }
 
 //sys	fd2path(fd int, buf []byte) (err error)
