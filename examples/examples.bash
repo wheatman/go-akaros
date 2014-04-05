@@ -143,7 +143,7 @@ if [[ "$TESTS" != "" ]]; then
            | sed 's#\(.*\)/.*#\1#' \
            | sed 's/^pkg\///' \
            | grep -v 'runtime/race' \
-           | grep -v 'net' \
+           | grep -v 'net/http/cgi' \
            | grep -v 'os/exec' \
            | sort -u)
     cd - > /dev/null
