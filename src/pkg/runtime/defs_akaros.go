@@ -21,6 +21,7 @@ package parlib
 #include <mcs.h>
 #include <futex.h>
 #include <signal.h>
+#include <alarm.h>
 #include <ros/mman.h>
 #include <ros/memlayout.h>
 #include <ros/errno.h>
@@ -120,6 +121,8 @@ type Siginfo C.siginfo_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe
 type UserContext C.struct_user_context
+type AlarmWaiterTailQEntry C.parlib_alarm_waiter_tailq_entry_t
+type AlarmWaiter C.struct_parlib_alarm_waiter
 
 type SyscallArg C.gcc_syscall_arg_t
 type FutexArg C.gcc_futex_arg_t

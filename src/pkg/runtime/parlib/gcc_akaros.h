@@ -5,6 +5,7 @@
 #include <sys/syscall.h>
 #include <signal.h>
 #include <time.h>
+#include <alarm.h>
 
 typedef struct syscall gcc_syscall_arg_t;
 
@@ -33,3 +34,13 @@ typedef struct gcc_sigaction_arg {
 	struct parlib_sigaction *oact;
 	int ret;
 } gcc_sigaction_arg_t;
+
+typedef TAILQ_ENTRY(parlib_alarm_waiter) parlib_alarm_waiter_tailq_entry_t;
+struct parlib_alarm_waiter {
+    uint64_t                          wake_up_time;   /* tsc time */
+    void (*func) (struct parlib_alarm_waiter *waiter);
+    void                              *data;
+    parlib_alarm_waiter_tailq_entry_t next;
+    bool                              on_tchain;
+};
+
