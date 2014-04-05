@@ -22,6 +22,10 @@ type netFD struct {
 	dir          string
 	ctl, data    *os.File
 	laddr, raddr Addr
+
+	// Deadline stuff
+	readDeadline int64
+	writeDeadline int64
 }
 
 var (
@@ -131,7 +135,9 @@ func (fd *netFD) Read(b []byte) (n int, err error) {
 		return 0, err
 	}
 	defer fd.readUnlock()
-	n, err = fd.data.Read(b)
+	syscall.RunWithDeadline(func() {
+		n, err = fd.data.Read(b)
+	}, fd.readDeadline)
 	if fd.proto == "udp" && err == io.EOF {
 		n = 0
 		err = nil
@@ -147,7 +153,10 @@ func (fd *netFD) Write(b []byte) (n int, err error) {
 		return 0, err
 	}
 	defer fd.writeUnlock()
-	return fd.data.Write(b)
+	syscall.RunWithDeadline(func() {
+		n, err = fd.data.Write(b)
+	}, fd.readDeadline)
+	return
 }
 
 func (fd *netFD) CloseRead() error {
@@ -208,15 +217,19 @@ func (fd *netFD) file(f *os.File, s string) (*os.File, error) {
 }
 
 func (fd *netFD) setDeadline(t time.Time) error {
-	return syscall.EMORON
+	fd.readDeadline = t.UnixNano()/1000
+	fd.writeDeadline = fd.readDeadline
+	return nil
 }
 
 func (fd *netFD) setReadDeadline(t time.Time) error {
-	return syscall.EMORON
+	fd.readDeadline = t.UnixNano()/1000
+	return nil
 }
 
 func (fd *netFD) setWriteDeadline(t time.Time) error {
-	return syscall.EMORON
+	fd.writeDeadline = t.UnixNano()/1000
+	return nil
 }
 
 func setReadBuffer(fd *netFD, bytes int) error {
