@@ -286,7 +286,7 @@ struct	G
 	uintptr	gopc;		// pc of go statement that created this goroutine
 	uintptr	racectx;
 #ifdef GOOS_akaros
-	int8	sysc[88];
+	int8	sysc[216];
 #endif
 	uintptr	end[];
 };

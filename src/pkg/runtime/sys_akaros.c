@@ -36,14 +36,19 @@ static intgo strlen(int8 *string)
 // Wrapper for making an akaros syscall through gcc
 #define __akaros_syscall(sysc, n, a0, a1, a2, a3, a4, a5, perrno) \
 do { \
-	sysc->num = n;   \
-	sysc->ev_q = 0;  \
-	sysc->arg0 = a0; \
-	sysc->arg1 = a1; \
-	sysc->arg2 = a2; \
-	sysc->arg3 = a3; \
-	sysc->arg4 = a4; \
-	sysc->arg5 = a5; \
+	sysc->num = n;       \
+	sysc->err = 0;       \
+	sysc->retval = 0;    \
+	sysc->flags = 0;     \
+	sysc->ev_q = 0;      \
+	sysc->u_data = 0;    \
+	sysc->arg0 = a0;     \
+	sysc->arg1 = a1;     \
+	sysc->arg2 = a2;     \
+	sysc->arg3 = a3;     \
+	sysc->arg4 = a4;     \
+	sysc->arg5 = a5;     \
+	sysc->errstr[0] = 0; \
 	runtime·asmcgocall(gcc_syscall, sysc); \
 	if(perrno != nil) \
     	*perrno = sysc->err; \
@@ -104,11 +109,9 @@ int32 runtime·close(int32 fd)
 uint8* runtime·mmap(byte* addr, uintptr len, int32 prot,
                     int32 flags, int32 fd, uint32 offset)
 {
-	/* TODO: For now we force a MAP_POPULATE on all mmaps because demand paging
-	 * seems to break things.  Need to look into why and fix it. */
 	int32 errno;
 	SyscallArg *sysc = (SyscallArg *)(g->sysc);
-	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags|MAP_POPULATE, fd, offset, &errno);
+	akaros_syscall(sysc, SYS_mmap, addr, len, prot, flags, fd, offset, &errno);
 	return (uint8*)sysc->retval;
 }
 
