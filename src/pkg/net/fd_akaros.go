@@ -127,6 +127,19 @@ func (fd *netFD) writeUnlock() {
 	}
 }
 
+func convertErr(e error) error {
+	switch e := e.(type) {
+	case *os.PathError:
+		switch e := e.Err.(type) {
+		case *syscall.AkaError:
+			if e.Timeout() {
+				return errTimeout
+			}
+		}
+	}
+	return e
+}
+
 func (fd *netFD) Read(b []byte) (n int, err error) {
 	if !fd.ok() || fd.data == nil {
 		return 0, syscall.EINVAL
@@ -138,6 +151,7 @@ func (fd *netFD) Read(b []byte) (n int, err error) {
 	syscall.RunWithDeadline(func() {
 		n, err = fd.data.Read(b)
 	}, fd.readDeadline)
+	err = convertErr(err)
 	if fd.proto == "udp" && err == io.EOF {
 		n = 0
 		err = nil
@@ -156,6 +170,7 @@ func (fd *netFD) Write(b []byte) (n int, err error) {
 	syscall.RunWithDeadline(func() {
 		n, err = fd.data.Write(b)
 	}, fd.readDeadline)
+	err = convertErr(err)
 	return
 }
 
