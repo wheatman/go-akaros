@@ -169,7 +169,7 @@ func (fd *netFD) Write(b []byte) (n int, err error) {
 	defer fd.writeUnlock()
 	syscall.RunWithDeadline(func() {
 		n, err = fd.data.Write(b)
-	}, fd.readDeadline)
+	}, fd.writeDeadline)
 	err = convertErr(err)
 	return
 }
