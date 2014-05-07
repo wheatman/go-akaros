@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROS_KFS_DIR="\$ROSROOT/kern/kfs/bin/"
 ERRORSTRINGS_FILE="$DIR/zerrorstrings_${GOOS}_${GOARCH}.go"

@@ -205,6 +205,10 @@ then
   run_helper eval $(./cmd/dist/dist env -p)
   echo
 
+  # Touch this file as it may not exist the first time through on a new install
+  # and we need it to be there when building the bootstrap tool.
+  touch pkg/runtime/defs_${GOOS}_${GOARCH}.h
+
   # Build the compilers and go bootstrap tool
   echo "# Building compilers and Go bootstrap tool for host, $GOHOSTOS/$GOHOSTARCH."
   # Build go bootstrap
@@ -270,6 +274,8 @@ then
 
 # Install a wrapper script for building Go applications for Akaros on $GOARCH
 cat > $GOBIN/go-$GOOS-$GOARCH << EOF
+#!/usr/bin/env bash
+
 export GOOS=$GOOS
 export GOARCH=$GOARCH
 export CGO_ENABLED=1
