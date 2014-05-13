@@ -189,6 +189,9 @@ if [[ "$TESTS" != "" ]]; then
     if [ $t = 'go/printer' ]; then
       run_helper cp ${PKGTESTDIR}/printer.go ${SUBTESTDIR}
     fi
+    if [ $t = 'go/scanner' ]; then
+      run_helper cp ${PKGTESTDIR}/scanner.go ${SUBTESTDIR}
+    fi
     if [ $t = 'time' ]; then
       TIMEZONEDIR="${GOROOT}/lib/time"
       mkdir -p ${KFSROOT}/${TIMEZONEDIR}
