@@ -546,6 +546,7 @@ func TestOnlyWriteTimeout(t *testing.T) {
 			errc <- err
 			return
 		}
+		time.Sleep(250 * time.Millisecond)
 		_, err = io.Copy(ioutil.Discard, res.Body)
 		errc <- err
 	}()
@@ -1414,6 +1415,11 @@ func TestRequestBodyLimit(t *testing.T) {
 // TestClientWriteShutdown tests that if the client shuts down the write
 // side of their TCP connection, the server doesn't send a 400 Bad Request.
 func TestClientWriteShutdown(t *testing.T) {
+	switch runtime.GOOS {
+	case "akaros":
+		// akaros doesn't support a write shutdown, and never will...
+		t.Skipf("skipping test on %q", runtime.GOOS)
+	}
 	defer afterTest(t)
 	ts := httptest.NewServer(HandlerFunc(func(w ResponseWriter, r *Request) {}))
 	defer ts.Close()
@@ -1469,6 +1475,13 @@ func TestServerBufferedChunking(t *testing.T) {
 // closing the TCP connection, causing the client to get a RST.
 // See http://golang.org/issue/3595
 func TestServerGracefulClose(t *testing.T) {
+	switch runtime.GOOS {
+	case "akaros":
+		// under the hood, the http server uses a write shutdown, followed by a
+		// timeout, followed by a true close(), but
+		// akaros doesn't support a write shutdown, and never will...
+		t.Skipf("skipping test on %q", runtime.GOOS)
+	}
 	defer afterTest(t)
 	ts := httptest.NewServer(HandlerFunc(func(w ResponseWriter, r *Request) {
 		Error(w, "bye", StatusUnauthorized)
