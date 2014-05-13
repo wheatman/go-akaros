@@ -56,7 +56,7 @@ func (e AkaError) Temporary() bool {
 	return e.errno.Temporary()
 }
 func (e AkaError) Timeout() bool {
-	return e.errno == EUNSPECIFIED && e.errstr == "syscall aborted"
+	return e.errno == EINTR
 }
 func NewAkaError(errno Errno, errstr string) error { return &AkaError{errno, errstr} }
 
