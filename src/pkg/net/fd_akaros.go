@@ -195,8 +195,10 @@ func (fd *netFD) Close() error {
 	if !fd.ok() {
 		return syscall.EINVAL
 	}
+	fd.ctl.AbortOutstandingSyscalls()
 	err := fd.ctl.Close()
 	if fd.data != nil {
+		fd.data.AbortOutstandingSyscalls()
 		if err1 := fd.data.Close(); err1 != nil && err == nil {
 			err = err1
 		}

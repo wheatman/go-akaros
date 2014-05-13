@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd
-
 package os
 
 import (
 	"runtime"
 	"sync/atomic"
 	"syscall"
+	"time"
 )
 
 // File represents an open file descriptor.
@@ -26,6 +25,7 @@ type file struct {
 	name    string
 	dirinfo *dirInfo // nil unless directory being read
 	nepipe  int32    // number of consecutive EPIPE in Write
+	iocount int32    // Count of outstanding I/O on this file
 }
 
 // Fd returns the integer Unix file descriptor referencing the open file.
@@ -124,7 +124,9 @@ func (f *File) Stat() (fi FileInfo, err error) {
 		return nil, ErrInvalid
 	}
 	var stat syscall.Stat_t
+	atomic.AddInt32(&f.file.iocount, 1)
 	err = syscall.Fstat(f.fd, &stat)
+	atomic.AddInt32(&f.file.iocount, -1)
 	if err != nil {
 		return nil, &PathError{"stat", f.name, err}
 	}
@@ -177,21 +179,29 @@ func (f *File) readdir(n int) (fi []FileInfo, err error) {
 // read reads up to len(b) bytes from the File.
 // It returns the number of bytes read and an error, if any.
 func (f *File) read(b []byte) (n int, err error) {
-	return syscall.Read(f.fd, b)
+	atomic.AddInt32(&f.file.iocount, 1)
+	n, err = syscall.Read(f.fd, b)
+	atomic.AddInt32(&f.file.iocount, -1)
+	return
 }
 
 // pread reads len(b) bytes from the File starting at byte offset off.
 // It returns the number of bytes read and the error, if any.
 // EOF is signaled by a zero count with err set to 0.
 func (f *File) pread(b []byte, off int64) (n int, err error) {
-	return syscall.Pread(f.fd, b, off)
+	atomic.AddInt32(&f.file.iocount, 1)
+	n, err = syscall.Pread(f.fd, b, off)
+	atomic.AddInt32(&f.file.iocount, -1)
+	return
 }
 
 // write writes len(b) bytes to the File.
 // It returns the number of bytes written and an error, if any.
 func (f *File) write(b []byte) (n int, err error) {
 	for {
+		atomic.AddInt32(&f.file.iocount, 1)
 		m, err := syscall.Write(f.fd, b)
+		atomic.AddInt32(&f.file.iocount, -1)
 		n += m
 
 		// If the syscall wrote some data but not all (short write)
@@ -209,7 +219,10 @@ func (f *File) write(b []byte) (n int, err error) {
 // pwrite writes len(b) bytes to the File starting at byte offset off.
 // It returns the number of bytes written and an error, if any.
 func (f *File) pwrite(b []byte, off int64) (n int, err error) {
-	return syscall.Pwrite(f.fd, b, off)
+	atomic.AddInt32(&f.file.iocount, 1)
+	n, err = syscall.Pwrite(f.fd, b, off)
+	atomic.AddInt32(&f.file.iocount, -1)
+	return
 }
 
 // seek sets the offset for the next Read or Write on file to offset, interpreted
@@ -217,7 +230,10 @@ func (f *File) pwrite(b []byte, off int64) (n int, err error) {
 // relative to the current offset, and 2 means relative to the end.
 // It returns the new offset and an error, if any.
 func (f *File) seek(offset int64, whence int) (ret int64, err error) {
-	return syscall.Seek(f.fd, offset, whence)
+	atomic.AddInt32(&f.file.iocount, 1)
+	ret, err = syscall.Seek(f.fd, offset, whence)
+	atomic.AddInt32(&f.file.iocount, -1)
+	return
 }
 
 // Truncate changes the size of the named file.
@@ -287,3 +303,11 @@ func TempDir() string {
 	}
 	return dir
 }
+
+func (file *File) AbortOutstandingSyscalls() {
+	for (file.file.iocount > 0) {
+		syscall.AbortSyscFd(file.file.fd)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+

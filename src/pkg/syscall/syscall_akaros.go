@@ -211,6 +211,7 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	Block(usec int) (err error)
 //sys	Fstat(fd int, stat *Stat_t) (err error)
 //sys	fcntl(fd int, cmd int, arg int) (val int, err error)
+//sys	AbortSyscFd(fd int) (val int, err error)
 
 // Locally wrapped syscalls
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
