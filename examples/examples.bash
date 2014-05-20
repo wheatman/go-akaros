@@ -129,7 +129,7 @@ append_test_script()
 # Testing pkg${2#/gotests}
 echo ""; echo "Testing pkg${2#/gotests}"
 cd $2
-./$3 -test.short -test.timeout=120s
+./$3 -test.short -test.timeout=120s -test.bench="."
 cd - > /dev/null
 EOF
 ) >> $1
@@ -143,8 +143,16 @@ if [[ "$TESTS" != "" ]]; then
            | sed 's#\(.*\)/.*#\1#' \
            | sed 's/^pkg\///' \
            | grep -v 'runtime/race' \
-           | grep -v 'net/http/cgi' \
+           | grep -v 'debug/gosym' \
+           | grep -v 'go/build' \
+           | grep -v 'log/syslog' \
+           | grep -v 'net/http' \
+           | grep -v 'os' \
            | grep -v 'os/exec' \
+           | grep -v 'os/user' \
+           | grep -v 'path/filepath' \
+           | grep -v 'runtime' \
+           | grep -v 'runtime/pprof' \
            | sort -u)
     cd - > /dev/null
   fi
