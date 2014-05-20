@@ -23,6 +23,27 @@ sigfig(Mpflt *a)
 }
 
 /*
+ * sets the exponent.
+ * a too large exponent is an error.
+ * a too small exponent rounds the number to zero.
+ */
+void
+mpsetexp(Mpflt *a, int exp) {
+	if((short)exp != exp) {
+		if(exp > 0) {
+			yyerror("float constant is too large");
+			a->exp = 0x7fff;
+		}
+		else {
+			mpmovecflt(a, 0);
+		}
+	}
+	else {
+		a->exp = exp;
+	}
+}
+
+/*
  * shifts the leading non-zero
  * word of the number to Mpnorm
  */
@@ -60,7 +81,7 @@ mpnorm(Mpflt *a)
 	}
 
 	mpshiftfix(&a->val, s);
-	a->exp -= s;
+	mpsetexp(a, a->exp-s);
 }
 
 /// implements float arihmetic
@@ -95,7 +116,7 @@ mpaddfltflt(Mpflt *a, Mpflt *b)
 	if(s < 0) {
 		// b is larger, shift a right
 		mpshiftfix(&a->val, s);
-		a->exp -= s;
+		mpsetexp(a, a->exp-s);
 		mpaddfixfix(&a->val, &b->val, 0);
 		goto out;
 	}
@@ -131,7 +152,7 @@ mpmulfltflt(Mpflt *a, Mpflt *b)
 	}
 
 	mpmulfract(&a->val, &b->val);
-	a->exp = (a->exp + b->exp) + Mpscale*Mpprec - Mpscale - 1;
+	mpsetexp(a, (a->exp + b->exp) + Mpscale*Mpprec - Mpscale - 1);
 
 	mpnorm(a);
 	if(Mpdebug)
@@ -171,17 +192,17 @@ mpdivfltflt(Mpflt *a, Mpflt *b)
 
 	// divide
 	mpdivfract(&a->val, &c.val);
-	a->exp = (a->exp-c.exp) - Mpscale*(Mpprec-1) + 1;
+	mpsetexp(a, (a->exp-c.exp) - Mpscale*(Mpprec-1) + 1);
 
 	mpnorm(a);
 	if(Mpdebug)
 		print(" = %F\n\n", a);
 }
 
-double
-mpgetflt(Mpflt *a)
+static double
+mpgetfltN(Mpflt *a, int prec, int bias)
 {
-	int s, i, e;
+	int s, i, e, minexp;
 	uvlong v, vm;
 	double f;
 
@@ -199,15 +220,14 @@ mpgetflt(Mpflt *a)
 
 	while((a->val.a[Mpnorm-1] & Mpsign) == 0) {
 		mpshiftfix(&a->val, 1);
-		a->exp -= 1;
+		mpsetexp(a, a->exp-1);	// can set 'a' to zero
+		s = sigfig(a);
+		if(s == 0)
+			return 0;
 	}
 
-	// the magic numbers (64, 63, 53, 10, -1074) are
-	// IEEE specific. this should be done machine
-	// independently or in the 6g half of the compiler
-
 	// pick up the mantissa and a rounding bit in a uvlong
-	s = 53+1;
+	s = prec+1;
 	v = 0;
 	for(i=Mpnorm-1; s>=Mpscale; i--) {
 		v = (v<<Mpscale) | a->val.a[i];
@@ -227,14 +247,15 @@ mpgetflt(Mpflt *a)
 		v = (v<<s) | (a->val.a[i]>>(Mpscale-s));
 
 	// gradual underflow
-	e = Mpnorm*Mpscale + a->exp - 53;
-	if(e < -1074) {
-		s = -e - 1074;
-		if(s > 54)
-			s = 54;
+	e = Mpnorm*Mpscale + a->exp - prec;
+	minexp = bias+1-prec+1;
+	if(e < minexp) {
+		s = minexp - e;
+		if(s > prec+1)
+			s = prec+1;
 		v |= vm & ((1ULL<<s) - 1);
 		vm >>= s;
-		e = -1074;
+		e = minexp;
 	}
 
 //print("vm=%.16llux v=%.16llux\n", vm, v);
@@ -250,6 +271,18 @@ mpgetflt(Mpflt *a)
 	if(a->val.neg)
 		f = -f;
 	return f;
+}
+
+double
+mpgetflt(Mpflt *a)
+{
+	return mpgetfltN(a, 53, -1023);
+}
+
+double
+mpgetflt32(Mpflt *a)
+{
+	return mpgetfltN(a, 24, -127);
 }
 
 void

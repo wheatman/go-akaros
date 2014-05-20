@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	nByte = 65 // %b of an int64, plus a sign.
+	// %b of an int64, plus a sign.
+	// Hex can add 0x and we handle it specially.
+	nByte = 65
 
 	ldigits = "0123456789abcdef"
 	udigits = "0123456789ABCDEF"
@@ -160,9 +162,16 @@ func (f *fmt) integer(a int64, base uint64, signedness bool, digits string) {
 	}
 
 	var buf []byte = f.intbuf[0:]
-	if f.widPresent && f.wid > nByte {
-		// We're going to need a bigger boat.
-		buf = make([]byte, f.wid)
+	if f.widPresent {
+		width := f.wid
+		if base == 16 && f.sharp {
+			// Also adds "0x".
+			width += 2
+		}
+		if width > nByte {
+			// We're going to need a bigger boat.
+			buf = make([]byte, width)
+		}
 	}
 
 	negative := signedness == signed && a < 0
@@ -360,7 +369,7 @@ func (f *fmt) formatFloat(v float64, verb byte, prec, n int) {
 	switch slice[1] {
 	case '-', '+':
 		// If we're zero padding, want the sign before the leading zeros.
-		// Achieve this by writing the sign out and padding the postive number.
+		// Achieve this by writing the sign out and padding the positive number.
 		if f.zero && f.widPresent && f.wid > len(slice) {
 			f.buf.WriteByte(slice[1])
 			f.wid--
@@ -372,7 +381,10 @@ func (f *fmt) formatFloat(v float64, verb byte, prec, n int) {
 	default:
 		// There's no sign, but we might need one.
 		if f.plus {
-			slice[0] = '+'
+			f.buf.WriteByte('+')
+			f.wid--
+			f.pad(slice[1:])
+			return
 		} else if f.space {
 			// space is already there
 		} else {
@@ -435,7 +447,7 @@ func (f *fmt) fmt_c64(v complex64, verb rune) {
 			f.fmt_e32(r)
 		case 'E':
 			f.fmt_E32(r)
-		case 'f':
+		case 'f', 'F':
 			f.fmt_f32(r)
 		case 'g':
 			f.fmt_g32(r)
@@ -465,7 +477,7 @@ func (f *fmt) fmt_c128(v complex128, verb rune) {
 			f.fmt_e64(r)
 		case 'E':
 			f.fmt_E64(r)
-		case 'f':
+		case 'f', 'F':
 			f.fmt_f64(r)
 		case 'g':
 			f.fmt_g64(r)

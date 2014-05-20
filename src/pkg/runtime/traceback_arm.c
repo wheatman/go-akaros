@@ -10,15 +10,29 @@
 void runtime·sigpanic(void);
 
 int32
-runtime·gentraceback(uintptr pc0, uintptr sp0, uintptr lr0, G *gp, int32 skip, uintptr *pcbuf, int32 max, void (*callback)(Stkframe*, void*), void *v, bool printall)
+runtime·gentraceback(uintptr pc0, uintptr sp0, uintptr lr0, G *gp, int32 skip, uintptr *pcbuf, int32 max, bool (*callback)(Stkframe*, void*), void *v, bool printall)
 {
-	int32 i, n, nprint, line;
+	int32 i, n, nprint, line, gotraceback;
 	uintptr x, tracepc;
 	bool waspanic, printing;
 	Func *f, *flr;
 	Stkframe frame;
 	Stktop *stk;
 	String file;
+	
+	gotraceback = runtime·gotraceback(nil);
+
+	if(pc0 == ~(uintptr)0 && sp0 == ~(uintptr)0) { // Signal to fetch saved values from gp.
+		if(gp->syscallstack != (uintptr)nil) {
+			pc0 = gp->syscallpc;
+			sp0 = gp->syscallsp;
+			lr0 = 0;
+		} else {
+			pc0 = gp->sched.pc;
+			sp0 = gp->sched.sp;
+			lr0 = gp->sched.lr;
+		}
+	}
 
 	nprint = 0;
 	runtime·memclr((byte*)&frame, sizeof frame);
@@ -128,8 +142,10 @@ runtime·gentraceback(uintptr pc0, uintptr sp0, uintptr lr0, G *gp, int32 skip, 
 
 		if(pcbuf != nil)
 			pcbuf[n] = frame.pc;
-		if(callback != nil)
-			callback(&frame, v);
+		if(callback != nil) {
+			if(!callback(&frame, v))
+				return n;
+		}
 		if(printing) {
 			if(printall || runtime·showframe(f, gp)) {
 				// Print during crash.
@@ -140,7 +156,7 @@ runtime·gentraceback(uintptr pc0, uintptr sp0, uintptr lr0, G *gp, int32 skip, 
 					tracepc -= sizeof(uintptr);
 				runtime·printf("%s(", runtime·funcname(f));
 				for(i = 0; i < frame.arglen/sizeof(uintptr); i++) {
-					if(i >= 5) {
+					if(i >= 10) {
 						runtime·prints(", ...");
 						break;
 					}
@@ -153,7 +169,7 @@ runtime·gentraceback(uintptr pc0, uintptr sp0, uintptr lr0, G *gp, int32 skip, 
 				runtime·printf("\t%S:%d", file, line);
 				if(frame.pc > f->entry)
 					runtime·printf(" +%p", (uintptr)(frame.pc - f->entry));
-				if(m->throwing > 0 && gp == m->curg)
+				if(m->throwing > 0 && gp == m->curg || gotraceback >= 2)
 					runtime·printf(" fp=%p", frame.fp);
 				runtime·printf("\n");
 				nprint++;
@@ -219,6 +235,8 @@ runtime·printcreatedby(G *gp)
 void
 runtime·traceback(uintptr pc, uintptr sp, uintptr lr, G *gp)
 {
+	int32 n;
+
 	if(gp->status == Gsyscall) {
 		// Override signal registers if blocked in system call.
 		pc = gp->syscallpc;
@@ -228,8 +246,11 @@ runtime·traceback(uintptr pc, uintptr sp, uintptr lr, G *gp)
 
 	// Print traceback. By default, omits runtime frames.
 	// If that means we print nothing at all, repeat forcing all frames printed.
-	if(runtime·gentraceback(pc, sp, lr, gp, 0, nil, 100, nil, nil, false) == 0)
-		runtime·gentraceback(pc, sp, lr, gp, 0, nil, 100, nil, nil, true);
+	n = runtime·gentraceback(pc, sp, lr, gp, 0, nil, TracebackMaxFrames, nil, nil, false);
+	if(n == 0)
+		runtime·gentraceback(pc, sp, lr, gp, 0, nil, TracebackMaxFrames, nil, nil, true);
+	if(n == TracebackMaxFrames)
+		runtime·printf("...additional frames elided...\n");
 	runtime·printcreatedby(gp);
 }
 

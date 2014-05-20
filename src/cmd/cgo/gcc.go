@@ -1327,9 +1327,12 @@ func (c *typeConv) Type(dtype dwarf.Type, pos token.Pos) *Type {
 		// be correct, so calling dtype.Size again will produce the correct value.
 		t.Size = dtype.Size()
 		if t.Size < 0 {
-			// Unsized types are [0]byte
+			// Unsized types are [0]byte, unless they're typedefs of other types.
+			// if so, use the name of the typedef for the go name.
 			t.Size = 0
-			t.Go = c.Opaque(0)
+			if _, ok := dtype.(*dwarf.TypedefType); !ok {
+				t.Go = c.Opaque(0)
+			}
 			if t.C.Empty() {
 				t.C.Set("void")
 			}
@@ -1496,7 +1499,7 @@ func (c *typeConv) Struct(dt *dwarf.StructType, pos token.Pos) (expr *ast.Struct
 		t := c.Type(f.Type, pos)
 		tgo := t.Go
 		size := t.Size
-
+		talign := t.Align
 		if f.BitSize > 0 {
 			if f.BitSize%8 != 0 {
 				continue
@@ -1509,8 +1512,17 @@ func (c *typeConv) Struct(dt *dwarf.StructType, pos token.Pos) (expr *ast.Struct
 				name = "uint"
 			}
 			tgo = ast.NewIdent(name + fmt.Sprint(f.BitSize))
+			talign = size
 		}
 
+		if talign > 0 && f.ByteOffset%talign != 0 {
+			// Drop misaligned fields, the same way we drop integer bit fields.
+			// The goal is to make available what can be made available.
+			// Otherwise one bad and unneeded field in an otherwise okay struct
+			// makes the whole program not compile. Much of the time these
+			// structs are in system headers that cannot be corrected.
+			continue
+		}
 		n := len(fld)
 		fld = fld[0 : n+1]
 		name := f.Name
@@ -1525,8 +1537,8 @@ func (c *typeConv) Struct(dt *dwarf.StructType, pos token.Pos) (expr *ast.Struct
 		buf.WriteString(" ")
 		buf.WriteString(name)
 		buf.WriteString("; ")
-		if t.Align > align {
-			align = t.Align
+		if talign > align {
+			align = talign
 		}
 	}
 	if off < dt.ByteSize {

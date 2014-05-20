@@ -286,8 +286,8 @@ staticcopy(Node *l, Node *r, NodeList **out)
 
 	if(r->op != ONAME || r->class != PEXTERN || r->sym->pkg != localpkg)
 		return 0;
-	if(r->defn == N)	// zeroed
-		return 1;
+	if(r->defn == N)	// probably zeroed but perhaps supplied externally and of unknown value
+		return 0;
 	if(r->defn->op != OAS)
 		return 0;
 	orig = r;
@@ -359,6 +359,7 @@ staticcopy(Node *l, Node *r, NodeList **out)
 					// copying someone else's computation.
 					rr = nod(OXXX, N, N);
 					*rr = *orig;
+					rr->orig = rr; // completely separate copy
 					rr->type = ll->type;
 					rr->xoffset += e->xoffset;
 					*out = list(*out, nod(OAS, ll, rr));
@@ -378,6 +379,7 @@ staticassign(Node *l, Node *r, NodeList **out)
 	InitPlan *p;
 	InitEntry *e;
 	int i;
+	Strlit *sval;
 	
 	switch(r->op) {
 	default:
@@ -426,6 +428,14 @@ staticassign(Node *l, Node *r, NodeList **out)
 		}
 		break;
 
+	case OSTRARRAYBYTE:
+		if(l->class == PEXTERN && r->left->op == OLITERAL) {
+			sval = r->left->val.u.sval;
+			slicebytes(l, sval->s, sval->len);
+			return 1;
+		}
+		break;
+
 	case OARRAYLIT:
 		initplan(r);
 		if(isslice(r->type)) {
@@ -459,6 +469,7 @@ staticassign(Node *l, Node *r, NodeList **out)
 			else {
 				a = nod(OXXX, N, N);
 				*a = n1;
+				a->orig = a; // completely separate copy
 				if(!staticassign(a, e->expr, out))
 					*out = list(*out, nod(OAS, a, e->expr));
 			}
@@ -756,11 +767,24 @@ slicelit(int ctxt, Node *n, Node *var, NodeList **init)
 	vauto = temp(ptrto(t));
 
 	// set auto to point at new temp or heap (3 assign)
-	if(n->esc == EscNone) {
-		a = nod(OAS, temp(t), N);
-		typecheck(&a, Etop);
-		*init = list(*init, a);  // zero new temp
-		a = nod(OADDR, a->left, N);
+	if(n->alloc != N) {
+		// temp allocated during order.c for dddarg
+		n->alloc->type = t;
+		if(vstat == N) {
+			a = nod(OAS, n->alloc, N);
+			typecheck(&a, Etop);
+			*init = list(*init, a);  // zero new temp
+		}
+		a = nod(OADDR, n->alloc, N);
+	} else if(n->esc == EscNone) {
+		a = temp(t);
+		if(vstat == N) {
+			a = nod(OAS, temp(t), N);
+			typecheck(&a, Etop);
+			*init = list(*init, a);  // zero new temp
+			a = a->left;
+		}
+		a = nod(OADDR, a, N);
 	} else {
 		a = nod(ONEW, N, N);
 		a->list = list1(typenod(t));
@@ -827,7 +851,7 @@ maplit(int ctxt, Node *n, Node *var, NodeList **init)
 	int nerr;
 	int64 b;
 	Type *t, *tk, *tv, *t1;
-	Node *vstat, *index, *value;
+	Node *vstat, *index, *value, *key, *val;
 	Sym *syma, *symb;
 
 USED(ctxt);
@@ -846,7 +870,7 @@ ctxt = 0;
 		r = l->n;
 
 		if(r->op != OKEY)
-			fatal("slicelit: rhs not OKEY: %N", r);
+			fatal("maplit: rhs not OKEY: %N", r);
 		index = r->left;
 		value = r->right;
 
@@ -890,7 +914,7 @@ ctxt = 0;
 			r = l->n;
 
 			if(r->op != OKEY)
-				fatal("slicelit: rhs not OKEY: %N", r);
+				fatal("maplit: rhs not OKEY: %N", r);
 			index = r->left;
 			value = r->right;
 
@@ -941,8 +965,7 @@ ctxt = 0;
 
 		a->ninit = list1(nod(OAS, index, nodintconst(0)));
 		a->ntest = nod(OLT, index, nodintconst(t->bound));
-		a->nincr = nod(OASOP, index, nodintconst(1));
-		a->nincr->etype = OADD;
+		a->nincr = nod(OAS, index, nod(OADD, index, nodintconst(1)));
 
 		typecheck(&a, Etop);
 		walkstmt(&a);
@@ -950,25 +973,49 @@ ctxt = 0;
 	}
 
 	// put in dynamic entries one-at-a-time
+	key = nil;
+	val = nil;
 	for(l=n->list; l; l=l->next) {
 		r = l->n;
 
 		if(r->op != OKEY)
-			fatal("slicelit: rhs not OKEY: %N", r);
+			fatal("maplit: rhs not OKEY: %N", r);
 		index = r->left;
 		value = r->right;
 
 		if(isliteral(index) && isliteral(value))
 			continue;
-
-		// build list of var[c] = expr
-		a = nod(OINDEX, var, r->left);
-		a = nod(OAS, a, r->right);
+			
+		// build list of var[c] = expr.
+		// use temporary so that mapassign1 can have addressable key, val.
+		if(key == nil) {
+			key = temp(var->type->down);
+			val = temp(var->type->type);
+		}
+		a = nod(OAS, key, r->left);
 		typecheck(&a, Etop);
-		walkexpr(&a, init);
+		walkstmt(&a);
+		*init = list(*init, a);
+		a = nod(OAS, val, r->right);
+		typecheck(&a, Etop);
+		walkstmt(&a);
+		*init = list(*init, a);
+
+		a = nod(OAS, nod(OINDEX, var, key), val);
+		typecheck(&a, Etop);
+		walkstmt(&a);
+		*init = list(*init, a);
+
 		if(nerr != nerrors)
 			break;
-
+	}
+	
+	if(key != nil) {
+		a = nod(OVARKILL, key, N);
+		typecheck(&a, Etop);
+		*init = list(*init, a);
+		a = nod(OVARKILL, val, N);
+		typecheck(&a, Etop);
 		*init = list(*init, a);
 	}
 }
@@ -988,12 +1035,16 @@ anylit(int ctxt, Node *n, Node *var, NodeList **init)
 		if(!isptr[t->etype])
 			fatal("anylit: not ptr");
 
-		r = nod(ONEW, N, N);
-		r->typecheck = 1;
-		r->type = t;
-		r->esc = n->esc;
+		if(n->right != N) {
+			r = nod(OADDR, n->right, N);
+			typecheck(&r, Erv);
+		} else {
+			r = nod(ONEW, N, N);
+			r->typecheck = 1;
+			r->type = t;
+			r->esc = n->esc;
+		}
 		walkexpr(&r, init);
-
 		a = nod(OAS, var, r);
 
 		typecheck(&a, Etop);

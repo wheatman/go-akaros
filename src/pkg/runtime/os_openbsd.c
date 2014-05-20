@@ -82,7 +82,7 @@ runtime·semasleep(int64 ns)
 				// NOTE: tv_nsec is int64 on amd64, so this assumes a little-endian system.
 				ts.tv_nsec = 0;
 				ts.tv_sec = runtime·timediv(ns, 1000000000, (int32*)&ts.tv_nsec);
-				runtime·thrsleep(&m->waitsemacount, CLOCK_REALTIME, &ts, &m->waitsemalock, nil);
+				runtime·thrsleep(&m->waitsemacount, CLOCK_MONOTONIC, &ts, &m->waitsemalock, nil);
 			}
 			// reacquire lock
 			while(runtime·xchg(&m->waitsemalock, 1))
@@ -214,9 +214,12 @@ runtime·unminit(void)
 void
 runtime·sigpanic(void)
 {
+	if(!runtime·canpanic(g))
+		runtime·throw("unexpected signal during runtime execution");
+
 	switch(g->sig) {
 	case SIGBUS:
-		if(g->sigcode0 == BUS_ADRERR && g->sigcode1 < 0x1000) {
+		if(g->sigcode0 == BUS_ADRERR && g->sigcode1 < 0x1000 || g->paniconfault) {
 			if(g->sigpc == 0)
 				runtime·panicstring("call of nil func value");
 			runtime·panicstring("invalid memory address or nil pointer dereference");
@@ -224,7 +227,7 @@ runtime·sigpanic(void)
 		runtime·printf("unexpected fault address %p\n", g->sigcode1);
 		runtime·throw("fault");
 	case SIGSEGV:
-		if((g->sigcode0 == 0 || g->sigcode0 == SEGV_MAPERR || g->sigcode0 == SEGV_ACCERR) && g->sigcode1 < 0x1000) {
+		if((g->sigcode0 == 0 || g->sigcode0 == SEGV_MAPERR || g->sigcode0 == SEGV_ACCERR) && g->sigcode1 < 0x1000 || g->paniconfault) {
 			if(g->sigpc == 0)
 				runtime·panicstring("call of nil func value");
 			runtime·panicstring("invalid memory address or nil pointer dereference");
@@ -299,4 +302,10 @@ runtime·signalstack(byte *p, int32 n)
 	if(p == nil)
 		st.ss_flags = SS_DISABLE;
 	runtime·sigaltstack(&st, nil);
+}
+
+void
+runtime·unblocksignals(void)
+{
+	runtime·sigprocmask(SIG_SETMASK, sigset_none);
 }

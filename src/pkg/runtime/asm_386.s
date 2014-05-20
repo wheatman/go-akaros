@@ -247,6 +247,10 @@ TEXT runtime·morestack(SB),NOSPLIT,$0-0
 	MOVL	$0, 0x1003	// crash if newstack returns
 	RET
 
+TEXT runtime·morestack_noctxt(SB),NOSPLIT,$0-0
+	MOVL	$0, DX
+	JMP runtime·morestack(SB)
+
 // Called from panic.  Mimics morestack,
 // reuses stack growth code to create a frame
 // with the desired args running the desired function.
@@ -307,7 +311,7 @@ TEXT runtime·newstackcall(SB), NOSPLIT, $0-12
 	JMP	AX
 // Note: can't just "JMP runtime·NAME(SB)" - bad inlining results.
 
-TEXT reflect·call(SB), NOSPLIT, $0-12
+TEXT reflect·call(SB), NOSPLIT, $0-16
 	MOVL	argsize+8(FP), CX
 	DISPATCH(call16, 16)
 	DISPATCH(call32, 32)
@@ -340,7 +344,7 @@ TEXT reflect·call(SB), NOSPLIT, $0-12
 	JMP	AX
 
 #define CALLFN(NAME,MAXSIZE)			\
-TEXT runtime·NAME(SB), WRAPPER, $MAXSIZE-12;		\
+TEXT runtime·NAME(SB), WRAPPER, $MAXSIZE-16;	\
 	/* copy arguments to stack */		\
 	MOVL	argptr+4(FP), SI;		\
 	MOVL	argsize+8(FP), CX;		\
@@ -348,11 +352,16 @@ TEXT runtime·NAME(SB), WRAPPER, $MAXSIZE-12;		\
 	REP;MOVSB;				\
 	/* call function */			\
 	MOVL	f+0(FP), DX;			\
-	CALL	(DX);				\
+	MOVL	(DX), AX; 			\
+	CALL	AX;				\
 	/* copy return values back */		\
 	MOVL	argptr+4(FP), DI;		\
 	MOVL	argsize+8(FP), CX;		\
+	MOVL	retoffset+12(FP), BX;		\
 	MOVL	SP, SI;				\
+	ADDL	BX, DI;				\
+	ADDL	BX, SI;				\
+	SUBL	BX, CX;				\
 	REP;MOVSB;				\
 	RET
 
@@ -478,6 +487,12 @@ TEXT runtime·xadd(SB), NOSPLIT, $0-8
 	RET
 
 TEXT runtime·xchg(SB), NOSPLIT, $0-8
+	MOVL	4(SP), BX
+	MOVL	8(SP), AX
+	XCHGL	AX, 0(BX)
+	RET
+
+TEXT runtime·xchgp(SB), NOSPLIT, $0-8
 	MOVL	4(SP), BX
 	MOVL	8(SP), AX
 	XCHGL	AX, 0(BX)
@@ -646,7 +661,6 @@ havem:
 	// Save current sp in m->g0->sched.sp in preparation for
 	// switch back to m->curg stack.
 	// NOTE: unwindm knows that the saved g->sched.sp is at 0(SP).
-	// On Windows, the SEH is at 4(SP) and 8(SP).
 	MOVL	m_g0(BP), SI
 	MOVL	(g_sched+gobuf_sp)(SI), AX
 	MOVL	AX, 0(SP)
@@ -745,21 +759,6 @@ TEXT runtime·stackcheck(SB), NOSPLIT, $0-0
 	CMPL	SP, g_stackguard(AX)
 	JHI	2(PC)
 	INT	$3
-	RET
-
-TEXT runtime·memclr(SB),NOSPLIT,$0-8
-	MOVL	4(SP), DI		// arg 1 addr
-	MOVL	8(SP), CX		// arg 2 count
-	MOVL	CX, BX
-	ANDL	$3, BX
-	SHRL	$2, CX
-	MOVL	$0, AX
-	CLD
-	REP
-	STOSL
-	MOVL	BX, CX
-	REP
-	STOSB
 	RET
 
 TEXT runtime·getcallerpc(SB),NOSPLIT,$0-4
@@ -1353,3 +1352,800 @@ cmp_allsame:
 	SETEQ	CX	// 1 if alen == blen
 	LEAL	-1(CX)(AX*2), AX	// 1,0,-1 result
 	RET
+
+// A Duff's device for zeroing memory.
+// The compiler jumps to computed addresses within
+// this routine to zero chunks of memory.  Do not
+// change this code without also changing the code
+// in ../../cmd/8g/ggen.c:clearfat.
+// AX: zero
+// DI: ptr to memory to be zeroed
+// DI is updated as a side effect.
+TEXT runtime·duffzero(SB), NOSPLIT, $0-0
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	STOSL
+	RET
+
+// A Duff's device for copying memory.
+// The compiler jumps to computed addresses within
+// this routine to copy chunks of memory.  Source
+// and destination must not overlap.  Do not
+// change this code without also changing the code
+// in ../../cmd/6g/cgen.c:sgen.
+// SI: ptr to source memory
+// DI: ptr to destination memory
+// SI and DI are updated as a side effect.
+
+// NOTE: this is equivalent to a sequence of MOVSL but
+// for some reason MOVSL is really slow.
+TEXT runtime·duffcopy(SB), NOSPLIT, $0-0
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	MOVL	(SI),CX
+	ADDL	$4,SI
+	MOVL	CX,(DI)
+	ADDL	$4,DI
+	
+	RET
+
+TEXT runtime·timenow(SB), NOSPLIT, $0-0
+	JMP	time·now(SB)

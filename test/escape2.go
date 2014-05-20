@@ -80,7 +80,7 @@ func foo12(yyy **int) { // ERROR "leaking param: yyy"
 	xxx = yyy
 }
 
-// Must treat yyy as leaking because *yyy leaks, and the escape analysis 
+// Must treat yyy as leaking because *yyy leaks, and the escape analysis
 // summaries in exported metadata do not distinguish these two cases.
 func foo13(yyy **int) { // ERROR "leaking param: yyy"
 	*xxx = *yyy
@@ -1294,15 +1294,15 @@ func F4(x []byte)
 func G() {
 	var buf1 [10]byte
 	F1(buf1[:]) // ERROR "buf1 does not escape"
-	
+
 	var buf2 [10]byte // ERROR "moved to heap: buf2"
-	F2(buf2[:]) // ERROR "buf2 escapes to heap"
+	F2(buf2[:])       // ERROR "buf2 escapes to heap"
 
 	var buf3 [10]byte
 	F3(buf3[:]) // ERROR "buf3 does not escape"
-	
+
 	var buf4 [10]byte // ERROR "moved to heap: buf4"
-	F4(buf4[:]) // ERROR "buf4 escapes to heap"
+	F4(buf4[:])       // ERROR "buf4 escapes to heap"
 }
 
 type Tm struct {
@@ -1314,9 +1314,9 @@ func (t *Tm) M() { // ERROR "t does not escape"
 
 func foo141() {
 	var f func()
-	
+
 	t := new(Tm) // ERROR "escapes to heap"
-	f = t.M // ERROR "t.M does not escape"
+	f = t.M      // ERROR "t.M does not escape"
 	_ = f
 }
 
@@ -1324,7 +1324,7 @@ var gf func()
 
 func foo142() {
 	t := new(Tm) // ERROR "escapes to heap"
-	gf = t.M // ERROR "t.M escapes to heap"
+	gf = t.M     // ERROR "t.M escapes to heap"
 }
 
 // issue 3888.
@@ -1357,3 +1357,89 @@ func foo144() {
 //go:noescape
 
 func foo144b(*int)
+
+// issue 7313: for loop init should not be treated as "in loop"
+
+type List struct {
+	Next *List
+}
+
+func foo145(l List) { // ERROR "l does not escape"
+	var p *List
+	for p = &l; p.Next != nil; p = p.Next { // ERROR "&l does not escape"
+	}
+}
+
+func foo146(l List) { // ERROR "l does not escape"
+	var p *List
+	p = &l // ERROR "&l does not escape"
+	for ; p.Next != nil; p = p.Next {
+	}
+}
+
+func foo147(l List) { // ERROR "l does not escape"
+	var p *List
+	p = &l // ERROR "&l does not escape"
+	for p.Next != nil {
+		p = p.Next
+	}
+}
+
+func foo148(l List) { // ERROR " l does not escape"
+	for p := &l; p.Next != nil; p = p.Next { // ERROR "&l does not escape"
+	}
+}
+
+// related: address of variable should have depth of variable, not of loop
+
+func foo149(l List) { // ERROR " l does not escape"
+	var p *List
+	for {
+		for p = &l; p.Next != nil; p = p.Next { // ERROR "&l does not escape"
+		}
+	}
+}
+
+// issue 7934: missed ... if element type had no pointers
+
+var save150 []byte
+
+func foo150(x ...byte) { // ERROR "leaking param: x"
+	save150 = x
+}
+
+func bar150() {
+	foo150(1, 2, 3) // ERROR "[.][.][.] argument escapes to heap"
+}
+
+// issue 7931: bad handling of slice of array
+
+var save151 *int
+
+func foo151(x *int) { // ERROR "leaking param: x"
+	save151 = x
+}
+
+func bar151() {
+	var a [64]int // ERROR "moved to heap: a"
+	a[4] = 101
+	foo151(&(&a)[4:8][0]) // ERROR "&\(&a\)\[4:8\]\[0\] escapes to heap" "&a escapes to heap"
+}
+
+func bar151b() {
+	var a [10]int      // ERROR "moved to heap: a"
+	b := a[:]          // ERROR "a escapes to heap"
+	foo151(&b[4:8][0]) // ERROR "&b\[4:8\]\[0\] escapes to heap"
+}
+
+func bar151c() {
+	var a [64]int // ERROR "moved to heap: a"
+	a[4] = 101
+	foo151(&(&a)[4:8:8][0]) // ERROR "&\(&a\)\[4:8:8\]\[0\] escapes to heap" "&a escapes to heap"
+}
+
+func bar151d() {
+	var a [10]int        // ERROR "moved to heap: a"
+	b := a[:]            // ERROR "a escapes to heap"
+	foo151(&b[4:8:8][0]) // ERROR "&b\[4:8:8\]\[0\] escapes to heap"
+}

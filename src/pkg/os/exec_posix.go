@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build akaros darwin dragonfly freebsd linux netbsd openbsd windows
+// +build akaros darwin dragonfly freebsd linux nacl netbsd openbsd solaris windows
 
 package os
 

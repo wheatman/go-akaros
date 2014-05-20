@@ -25,6 +25,7 @@ build.out
 test.out
 doc/tmpltohtml
 doc/articles/wiki/*.bin
+include/plan9/libc_plan9.h
 misc/cgo/life/run.out
 misc/cgo/stdio/run.out
 misc/cgo/testso/main
@@ -33,7 +34,7 @@ misc/goplay/goplay
 misc/osx/*.pkg
 misc/osx/*.dmg
 src/cmd/?a/y.output
-src/cmd/?l/enam.c
+src/liblink/anames?.c
 src/cmd/cc/y.output
 src/cmd/cgo/zdefaultcc.go
 src/cmd/dist/dist.dSYM
