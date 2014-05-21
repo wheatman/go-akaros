@@ -49,6 +49,7 @@ static struct {
 	"elf",		Helf,
 	"freebsd",	Hfreebsd,
 	"linux",	Hlinux,
+	"akaros",	Hakaros,
 	"nacl",		Hnacl,
 	"netbsd",	Hnetbsd,
 	"openbsd",	Hopenbsd,
@@ -131,6 +132,7 @@ linknew(LinkArch *arch)
 		break;
 	case Hwindows:
 		break;
+	case Hakaros:
 	case Hlinux:
 	case Hfreebsd:
 	case Hnetbsd:

@@ -1896,6 +1896,7 @@ prefixof(Link *ctxt, Addr *a)
 		switch(ctxt->headtype) {
 		default:
 			sysfatal("unknown TLS base register for %s", headstr(ctxt->headtype));
+		case Hakaros:
 		case Hdragonfly:
 		case Hfreebsd:
 		case Hlinux:

@@ -480,6 +480,7 @@ struct LinkArch
 /* executable header types */
 enum {
 	Hunknown = 0,
+	Hakaros,
 	Hdarwin,
 	Hdragonfly,
 	Helf,

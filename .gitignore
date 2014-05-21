@@ -38,6 +38,7 @@ src/cmd/dist/dist.dSYM
 src/cmd/gc/mkbuiltin1
 src/cmd/gc/opnames.h
 src/cmd/gc/y.output
+src/liblink/anames?.c
 src/cmd/go/zdefaultcc.go
 src/pkg/go/doc/headscan
 src/pkg/runtime/goc2c
