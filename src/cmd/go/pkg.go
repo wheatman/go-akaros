@@ -139,6 +139,7 @@ type PackageError struct {
 	Pos           string   // position of error
 	Err           string   // the error itself
 	isImportCycle bool     // the error is an import cycle
+	hard          bool     // whether the error is soft or hard; soft errors are ignored in some places
 }
 
 func (p *PackageError) Error() string {
@@ -716,6 +717,7 @@ func loadPackage(arg string, stk *importStack) *Package {
 				Error: &PackageError{
 					ImportStack: stk.copy(),
 					Err:         fmt.Sprintf("invalid import path: cmd/... is reserved for Go commands"),
+					hard:        true,
 				},
 			}
 			return p
