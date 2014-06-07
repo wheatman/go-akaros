@@ -20,11 +20,15 @@
 #pragma cgo_import_static gcc_futex
 #pragma cgo_import_static gcc_myield
 #pragma cgo_import_static gcc_sigprocmask
+#pragma cgo_import_static gcc_enable_profalarm
+#pragma cgo_import_static gcc_disable_profalarm
 typedef void (*gcc_call_t)(void *arg);
 extern gcc_call_t gcc_syscall;
 extern gcc_call_t gcc_futex;
 extern gcc_call_t gcc_myield;
 extern gcc_call_t gcc_sigprocmask;
+extern gcc_call_t gcc_enable_profalarm;
+extern gcc_call_t gcc_disable_profalarm;
 
 // Helper strlen function
 static intgo strlen(int8 *string)
@@ -192,13 +196,6 @@ void runtime·raise(int32 sig)
 }
 
 #pragma textflag NOSPLIT
-void runtime·setitimer(int32 which, Itimerval *new_value, Itimerval *old_value)
-{
-	USED(which);
-	USED(new_value);
-	USED(old_value);
-}
-
 int32 runtime·sigprocmask(int32 how, Sigset *set, Sigset *oldset)
 {
 	SigprocmaskArg a;
@@ -207,6 +204,18 @@ int32 runtime·sigprocmask(int32 how, Sigset *set, Sigset *oldset)
 	a.oset = oldset;
 	runtime·asmcgocall(gcc_sigprocmask, &a);
 	return a.retval;
+}
+
+#pragma textflag NOSPLIT
+void runtime·enable_profalarm(uint64 usecs)
+{
+	runtime·asmcgocall(gcc_enable_profalarm, &usecs);
+}
+
+#pragma textflag NOSPLIT
+void runtime·disable_profalarm()
+{
+	runtime·asmcgocall(gcc_disable_profalarm, nil);
 }
 
 //TEXT runtime·exit1(SB),7,$0

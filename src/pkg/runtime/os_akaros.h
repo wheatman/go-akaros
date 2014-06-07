@@ -9,6 +9,8 @@
 // Akaros-specific system calls
 int32	runtime·futex(uint32*, int32, uint32, Timespec*, uint32*, uint32);
 int32	runtime·clone(int32, void*, M*, G*, void(*)(void));
+void runtime·enable_profalarm(uint64 usecs);
+void runtime·disable_profalarm(void);
 
 struct Sigaction;
 int32	runtime·sigaction(int32, struct Sigaction*, struct Sigaction*);

@@ -5,6 +5,7 @@
 #include <sys/syscall.h>
 #include <futex.h>
 #include <pthread.h>
+#include <profalarm.h>
 #include "gcc_akaros.h"
 
 // Akaros syscalls
@@ -53,3 +54,16 @@ static void __gcc_sigprocmask(void *__arg)
 	a->retval = pthread_sigmask(a->how, a->set, a->oset);
 }
 const gcc_call_t gcc_sigprocmask = __gcc_sigprocmask;
+
+// enable_profalarm() and disable_profalarm()
+static void __gcc_enable_profalarm(void *__arg)
+{
+	enable_profalarm(*((uint64_t*)__arg));
+}
+const gcc_call_t gcc_enable_profalarm = __gcc_enable_profalarm;
+
+static void __gcc_disable_profalarm(void *__arg)
+{
+	disable_profalarm();
+}
+const gcc_call_t gcc_disable_profalarm = __gcc_disable_profalarm;
