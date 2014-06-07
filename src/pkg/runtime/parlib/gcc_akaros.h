@@ -35,6 +35,13 @@ typedef struct gcc_sigaction_arg {
 	int ret;
 } gcc_sigaction_arg_t;
 
+typedef struct gcc_sigprocmask_arg {
+	int how;
+	sigset_t *set;
+	sigset_t *oset;
+	int retval;
+} gcc_sigprocmask_arg_t;
+
 typedef TAILQ_ENTRY(parlib_alarm_waiter) parlib_alarm_waiter_tailq_entry_t;
 struct parlib_alarm_waiter {
     uint64_t                          wake_up_time;   /* tsc time */

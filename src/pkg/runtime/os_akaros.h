@@ -6,24 +6,16 @@
 
 #define SS_DISABLE 2
 
-// Linux-specific system calls
+// Akaros-specific system calls
 int32	runtime·futex(uint32*, int32, uint32, Timespec*, uint32*, uint32);
 int32	runtime·clone(int32, void*, M*, G*, void(*)(void));
 
 struct Sigaction;
-int32	runtime·rt_sigaction(uintptr, struct Sigaction*, void*, uintptr);
+int32	runtime·sigaction(int32, struct Sigaction*, struct Sigaction*);
 void	runtime·sigpanic(void);
 void runtime·setitimer(int32, Itimerval*, Itimerval*);
 
-// It's hard to tease out exactly how big a Sigset is, but
-// rt_sigprocmask crashes if we get it wrong, so if binaries
-// are running, this is right.
-typedef struct Sigset Sigset;
-struct Sigset
-{
-	uint32 mask[2];
-};
-void	runtime·rtsigprocmask(int32, Sigset*, Sigset*, int32);
+int32	runtime·sigprocmask(int32, Sigset*, Sigset*);
 void	runtime·unblocksignals(void);
 #define SIG_SETMASK 2
 

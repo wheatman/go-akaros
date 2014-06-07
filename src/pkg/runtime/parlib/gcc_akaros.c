@@ -46,3 +46,10 @@ static void __gcc_sigaction(void *__arg)
 }
 const gcc_call_t gcc_sigaction = __gcc_sigaction;
 
+// Akaros sigprocmask
+static void __gcc_sigprocmask(void *__arg)
+{
+	gcc_sigprocmask_arg_t *a = (gcc_sigprocmask_arg_t*)__arg;
+	a->retval = pthread_sigmask(a->how, a->set, a->oset);
+}
+const gcc_call_t gcc_sigprocmask = __gcc_sigprocmask;

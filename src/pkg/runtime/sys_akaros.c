@@ -19,10 +19,12 @@
 #pragma cgo_import_static gcc_syscall
 #pragma cgo_import_static gcc_futex
 #pragma cgo_import_static gcc_myield
+#pragma cgo_import_static gcc_sigprocmask
 typedef void (*gcc_call_t)(void *arg);
 extern gcc_call_t gcc_syscall;
 extern gcc_call_t gcc_futex;
 extern gcc_call_t gcc_myield;
+extern gcc_call_t gcc_sigprocmask;
 
 // Helper strlen function
 static intgo strlen(int8 *string)
@@ -195,6 +197,16 @@ void runtime·setitimer(int32 which, Itimerval *new_value, Itimerval *old_value)
 	USED(which);
 	USED(new_value);
 	USED(old_value);
+}
+
+int32 runtime·sigprocmask(int32 how, Sigset *set, Sigset *oldset)
+{
+	SigprocmaskArg a;
+	a.how = how;
+	a.set = set;
+	a.oset = oldset;
+	runtime·asmcgocall(gcc_sigprocmask, &a);
+	return a.retval;
 }
 
 //TEXT runtime·exit1(SB),7,$0

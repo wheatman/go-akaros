@@ -118,6 +118,7 @@ type Timeval C.struct_timeval
 type Itimerval C.struct_itimerval
 type Sigaction C.struct_parlib_sigaction
 type Siginfo C.siginfo_t
+type Sigset C.sigset_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe
 type UserContext C.struct_user_context
@@ -127,4 +128,5 @@ type AlarmWaiter C.struct_parlib_alarm_waiter
 type SyscallArg C.gcc_syscall_arg_t
 type FutexArg C.gcc_futex_arg_t
 type SigactionArg C.gcc_sigaction_arg_t
+type SigprocmaskArg C.gcc_sigprocmask_arg_t
 

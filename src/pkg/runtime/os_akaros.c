@@ -84,7 +84,8 @@ runtime·mpreinit(M *mp)
 void
 runtime·minit(void)
 {
-	// Do nothing for now.
+	// Initialize signal handling.
+	runtime·unblocksignals();
 }
 
 // Called from dropm to undo the effect of an minit.
@@ -110,6 +111,8 @@ typedef void (*gcc_call_t)(void *arg);
 extern gcc_call_t gcc_sigaction;
 extern void runtime·sigtramp(void);
 extern SigTab runtime·sigtab[];
+static Sigset sigset_none;
+static Sigset sigset_all = { ~(uint32)0 };
 
 void
 runtime·setsig(int32 i, GoSighandler *fn, bool restart)
@@ -189,5 +192,5 @@ runtime·sigpanic(void)
 void
 runtime·unblocksignals(void)
 {
-	// Singals are all unblocked by default on Akaros
+	runtime·sigprocmask(SIG_SETMASK, &sigset_none, nil);
 }
