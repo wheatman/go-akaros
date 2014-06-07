@@ -31,7 +31,7 @@ func dotest(self bool) bool {
 		return false
 	}
 	// Command below expects "sh", so Unix.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return false
 	}
 	if pclinetestBinary != "" {
@@ -52,9 +52,6 @@ func dotest(self bool) bool {
 	command := fmt.Sprintf("go tool 6a -o %s.6 pclinetest.asm && go tool 6l -H linux -E main -o %s %s.6",
 		pclinetestBinary, pclinetestBinary, pclinetestBinary)
 	cmd := exec.Command("sh", "-c", command)
-	if runtime.GOOS == "akaros" {
-		cmd = exec.Command("/bin/ash", "-c", command)
-	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
