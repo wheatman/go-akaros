@@ -35,6 +35,9 @@ func executeTest(t *testing.T, templ string, data interface{}) string {
 	if runtime.GOOS == "nacl" {
 		t.Skip("skipping on nacl")
 	}
+	if runtime.GOOS == "akaros" {
+		t.Skip("skipping on akaros")
+	}
 
 	checkStaleRuntime(t)
 

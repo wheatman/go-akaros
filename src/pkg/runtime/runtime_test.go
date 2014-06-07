@@ -98,6 +98,9 @@ func TestRuntimeGogoBytes(t *testing.T) {
 	if GOOS == "nacl" {
 		t.Skip("skipping on nacl")
 	}
+	if GOOS == "akaros" {
+		t.Skip("skipping on akaros")
+	}
 
 	dir, err := ioutil.TempDir("", "go-build")
 	if err != nil {
