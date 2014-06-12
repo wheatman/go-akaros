@@ -52,7 +52,7 @@ func readHosts() {
 			}
 		}
 		// Update the data cache.
-		hosts.expire = time.Now().Add(cacheMaxAge)
+		hosts.expire = now.Add(cacheMaxAge)
 		hosts.path = hp
 		hosts.byName = hs
 		hosts.byAddr = is
