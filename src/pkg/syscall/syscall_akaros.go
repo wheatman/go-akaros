@@ -52,6 +52,12 @@ func (e AkaError) Error() string {
 	}
 	return e.errstr;
 }
+func (e AkaError) Errno() Errno {
+	return e.errno
+}
+func (e AkaError) Errstr() string {
+	return e.errstr
+}
 func (e AkaError) Temporary() bool {
 	return e.errno.Temporary()
 }
@@ -217,9 +223,16 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
 func Open(path string, flags int, mode ...uint32) (fd int, err error) {
 	if len(path) == 0 {
-		return -1, EINVAL
+		return -1, NewAkaError(Errno(EINVAL), "Path length 0")
 	}
 	return open(path, len(path), flags, mode[0])
+}
+//sys	chdir(path string, pathlen int) (err error)
+func Chdir(path string) (err error) {
+	if len(path) == 0 {
+		return NewAkaError(Errno(EINVAL), "Path length 0")
+	}
+	return chdir(path, len(path))
 }
 
 //sys	llseek(fd int, offset_hi int32, offset_lo int32, result *int64, whence int) (err error)
@@ -1170,7 +1183,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Access(path string, mode uint32) (err error)
 //sys	Acct(path string) (err error)
 //sys	Adjtimex(buf *Timex) (state int, err error)
-//sys	Chdir(path string) (err error)
 //sys	Chmod(path string, mode uint32) (err error)
 //sys	Chroot(path string) (err error)
 //sys	Creat(path string, mode uint32) (fd int, err error)
