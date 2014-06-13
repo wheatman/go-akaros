@@ -168,7 +168,7 @@ func TestRemoveAll(t *testing.T) {
 
 func TestMkdirAllWithSymlink(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "windows":
+	case "akaros", "nacl", "plan9", "windows":
 		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 
