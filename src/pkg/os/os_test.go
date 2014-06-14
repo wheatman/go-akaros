@@ -1317,6 +1317,8 @@ func TestGetppid(t *testing.T) {
 	case "plan9":
 		// TODO: golang.org/issue/8206
 		t.Skipf("skipping test on plan9; see issue 8206")
+	if runtime.GOOS == "nacl" {
+		t.Skip("skipping on nacl")
 	}
 
 	if Getenv("GO_WANT_HELPER_PROCESS") == "1" {
