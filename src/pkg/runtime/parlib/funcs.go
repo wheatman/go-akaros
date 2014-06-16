@@ -12,6 +12,8 @@ package parlib
 #include <vcore.h>
 #include <mcs.h>
 #include <futex.h>
+
+#cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
 */
 import "C"
 import (
