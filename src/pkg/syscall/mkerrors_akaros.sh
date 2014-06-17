@@ -5,11 +5,13 @@ ROS_KFS_DIR="\$ROSROOT/kern/kfs/bin/"
 ERRORSTRINGS_FILE="$DIR/zerrorstrings_${GOOS}_${GOARCH}.go"
 
 export uname=Akaros
-export GCC=$TARGETCC
+export CC=$CC_FOR_TARGET
 export GORUN=false
 $DIR/mkerrors.sh
-mv _errors $ROSROOT/kern/kfs/bin/go_errors
-rm -rf _const.go  _error.grep  _error.out  _errors.c  _signal.grep _event.grep
+if [ "$ROSROOT" != "" ]; then
+	mv _errors $ROSROOT/kern/kfs/bin/go_errors
+fi
+rm -rf _errors _const.go  _error.grep  _error.out  _errors.c  _signal.grep _event.grep
 
 if [ ! -f $ERRORSTRINGS_FILE ]; then
 (
@@ -37,7 +39,8 @@ fi
 
 cat > /dev/stderr << EOF
   Don't forget to launch Akaros and run the go_errors script that's been placed
-  in $ROS_KFS_DIR for you.  See the comments in the
-  zerrorstrings_${GOOS}_${GOARCH}.go file for more information.
+  in $ROS_KFS_DIR for you.  If \$ROSROOT was not set, set it now, and then
+  rerun this command.  See the comments in the zerrorstrings_${GOOS}_${GOARCH}.go
+  file for more information.
 EOF
 

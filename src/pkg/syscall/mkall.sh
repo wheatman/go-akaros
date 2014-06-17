@@ -177,14 +177,14 @@ linux_arm)
 	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
 	;;
 akaros_386)
-	rosinc=$($CC_FOR_TARGET --print-sysroot)/usr/include
+	rosinc=$(dirname $(which $CC_FOR_TARGET))/../x86_64-ros/sys-include/
 	mkerrors="./mkerrors_akaros.sh -m32"
 	mksyscall="./mksyscall.pl -l32 -akaros"
 	mksysnum="./mksysnum_akaros.pl $rosinc/ros/bits/syscall.h"
 	mktypes="go tool cgo -godefs"
 	;;
 akaros_amd64)
-	rosinc=$($CC_FOR_TARGET --print-sysroot)/usr/include
+	rosinc=$(dirname $(which $CC_FOR_TARGET))/../x86_64-ros/sys-include/
 	mkerrors="./mkerrors_akaros.sh -m64"
 	mksyscall="./mksyscall.pl -akaros"
 	mksysnum="./mksysnum_akaros.pl $rosinc/ros/bits/syscall.h"
