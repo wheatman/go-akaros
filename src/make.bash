@@ -54,10 +54,6 @@ if [ ! -f run.bash ]; then
 	exit 1
 fi
 
-if [ -f local.bash ]; then
-    source local.bash
-fi
-
 # Test for Windows.
 case "$(uname)" in
 *MINGW* | *WIN32* | *CYGWIN*)
@@ -154,6 +150,9 @@ if [ "$1" = "--dist-tool" ]; then
 fi
 
 echo "# Building compilers and Go bootstrap tool for host, $GOHOSTOS/$GOHOSTARCH."
+if [ "$(type -t pre_host_build)" = "function" ]; then
+	pre_host_build
+fi
 buildall="-a"
 if [ "$1" = "--no-clean" ]; then
 	buildall=""
@@ -173,10 +172,19 @@ if [ "$GOHOSTARCH" != "$GOARCH" -o "$GOHOSTOS" != "$GOOS" ]; then
 		"$GOTOOLDIR"/go_bootstrap install -ccflags "$GO_CCFLAGS" -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
 	echo
 fi
+if [ "$(type -t post_host_build)" = "function" ]; then
+	post_host_build
+fi
 
 echo "# Building packages and commands for $GOOS/$GOARCH."
+if [ "$(type -t pre_target_build)" = "function" ]; then
+	pre_target_build
+fi
 CC=$CC_FOR_TARGET "$GOTOOLDIR"/go_bootstrap install $GO_FLAGS -ccflags "$GO_CCFLAGS" -gcflags "$GO_GCFLAGS" -ldflags "$GO_LDFLAGS" -v std
 echo
+if [ "$(type -t post_target_build)" = "function" ]; then
+	post_target_build
+fi
 
 rm -f "$GOTOOLDIR"/go_bootstrap
 
