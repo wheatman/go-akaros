@@ -46,7 +46,7 @@ var (
 	// letter is the build.ArchChar
 	letter string
 	
-	goos, goarch string
+	goos, goarch, goextlinkenabled, ccfortarget string
 
 	// dirs are the directories to look for *.go files in.
 	// TODO(bradfitz): just use all directories?
@@ -78,6 +78,8 @@ func main() {
 
 	goos = os.Getenv("GOOS")
 	goarch = os.Getenv("GOARCH")
+	ccfortarget = os.Getenv("CC_FOR_TARGET")
+	goextlinkenabled = os.Getenv("GO_EXTLINK_ENABLED")
 	findExecCmd()
 
 	ratec = make(chan bool, *numParallel)
@@ -206,7 +208,12 @@ func compileInDir(runcmd runCmd, dir string, names ...string) (out []byte, err e
 
 func linkFile(runcmd runCmd, goname string) (err error) {
 	pfile := strings.Replace(goname, ".go", "."+letter, -1)
-	_, err = runcmd("go", "tool", ld, "-w", "-o", "a.exe", "-L", ".", pfile)
+	args := []string{"go", "tool", ld, "-w", "-o", "a.exe", "-L", "."}
+	if goextlinkenabled == "1" && ccfortarget != "" {
+		args = append(args, []string{"-extld", ccfortarget}...)
+	}
+	args = append(args, pfile)
+	_, err = runcmd(args...)
 	return
 }
 
