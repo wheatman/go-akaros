@@ -191,6 +191,8 @@ loadlib(void)
 		loadinternal("math");
 	if(flag_race)
 		loadinternal("runtime/race");
+	if(strcmp(goos, "akaros") == 0)
+		loadinternal("runtime/parlib");
 
 	for(i=0; i<ctxt->libraryp; i++) {
 		if(debug['v'] > 1)
