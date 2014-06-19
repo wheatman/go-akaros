@@ -3,38 +3,83 @@ eval $(go env)
 
 AKAROS_SERVER=localhost
 AKAROS_PORT=5555
-CPIO_FILE=gotests.cpio
+TIMEOUT=300
 
 AKAROS_GOROOT=/go
-AKAROS_TMP=/tmp
 AKAROS_MNT=/mnt
+HOST_MNT=$GOROOT/misc/akaros/mnt
 AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
-HOST_MNT=$GOROOT/examples/kfs
 
-# Comment this out to print the output of various commands
-QUIET="> /dev/null"
+EXEC_DIR=$(dirname $1)
+BUILD_DIR=${EXEC_DIR%_test}
+EXEC_FILE=$(basename $1)
+CPIO_FILE=${EXEC_FILE%.test}.cpio
+LOCK_FILE=$HOST_MNT/lockfile
 
-# Remove $CPIO_FILE from the host
-rm -rf $HOST_MNT/$CPIO_FILE
+# Execute a set of commands remotely on akaros
+rpc()
+{
+	echo "$@" | netcat -w $TIMEOUT $AKAROS_SERVER $AKAROS_PORT
+}
 
-# Create a cpio archive of the folder where the go test resides and put it in $HOST_MNT
-find $(dirname $1) | cpio --no-absolute-filenames -H newc -o > $HOST_MNT/$CPIO_FILE 2>/dev/null
+# Whenever the go program is done executing, remove the $BUILD_DIR on both the
+# host and the client. We encapsulate this in a function here so that it will
+# also happen upon pressing Ctrl-C, or otherwise exiting.
+cleanup()
+{
+	rm -rf $HOST_MNT/$BUILD_DIR
+	echo "rm -rf $BUILD_DIR 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
+	kill $LOCK_FILE_TOUCH_PID > /dev/null 2>&1 
+	lockfile-check --use-pid --lock-name $LOCK_FILE
+	if [ "$?" = "0" ]; then
+		lockfile-remove --lock-name $LOCK_FILE
+	fi
+}
+die()
+{
+	cleanup
+	echo "Program execution interrupted early"
+	exit 1
+}
+trap die SIGINT
+trap die SIGTERM
+trap die SIGKILL
 
-# Remove the entire contents of $AKAROS_TMP
-echo "rm -rf $AKAROS_TMP/* >/dev/null" | netcat $AKAROS_SERVER $AKAROS_PORT
+# Synchronize to only allow one instance of this script to execute at any given time
+lockfile-create --use-pid --lock-name $LOCK_FILE
+lockfile-touch --lock-name $LOCK_FILE &
+LOCK_FILE_TOUCH_PID="$!"
 
-# Copy the cpio archive into $AKAROS_TMP on akaros
-echo "cp $AKAROS_MNT/$CPIO_FILE $AKAROS_TMP >/dev/null" | netcat $AKAROS_SERVER $AKAROS_PORT
+# Create a cpio archive of the folder where the go program resides and put it
+# in $HOST_MNT/$BUILD_DIR
+mkdir -p $HOST_MNT/$BUILD_DIR
+find $BUILD_DIR | cpio -H newc -o > $HOST_MNT/$BUILD_DIR/$CPIO_FILE 2>/dev/null
 
-# Extract the cpio archive in place
-echo "cd $AKAROS_TMP; cpio -d -i < $CPIO_FILE 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
+# Create $BUILD_DIR on akaros
+echo "mkdir -p ${BUILD_DIR#/}" | netcat $AKAROS_SERVER $AKAROS_PORT
 
-# Execute the go test, printing its output, followed by its exit code. Store this in a bash variable.
-OUTPUT=$(echo "cd $AKAROS_PWD; $AKAROS_TMP/$1 ${@:2}; EXIT=\$?; echo ""; echo \$EXIT" | netcat $AKAROS_SERVER $AKAROS_PORT)
+# Copy the cpio archive into $BUILD_DIR on akaros
+rpc "cp $AKAROS_MNT/$BUILD_DIR/$CPIO_FILE $BUILD_DIR >/dev/null"
 
-# If there was no output from the go test, something went wrong, so error out
+# Extract the cpio archive into / on akaros
+rpc "cpio -d -i < $BUILD_DIR/$CPIO_FILE 2>/dev/null;"
+
+# Execute the go program on akaros, printing its output, followed by its exit
+# code. Store this in a bash variable.
+OUTPUT=$(rpc "export GOROOT=$AKAROS_GOROOT; \
+              cd $AKAROS_PWD; \
+              $1 ${@:2}; \
+              EXIT=\$?; \
+              echo ""; \
+              echo \$EXIT")
+
+# Manually do the cleanup if we reach this point, unlocking the synchronization
+# in the process
+cleanup
+
+# If there was no output from the go program, something went wrong, so error out
 if [ "$OUTPUT" = "" ]; then
-	echo "Could not execute test on Akaros client. Make sure the listen1 program is running."
+	echo "Could not execute binary on Akaros client. Make sure the listen1 program is running."
 	exit 1
 fi
 
