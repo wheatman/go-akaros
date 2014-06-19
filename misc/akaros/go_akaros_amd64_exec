@@ -1,4 +1,46 @@
 #!/bin/bash
-
 eval $(go env)
-exit
+
+AKAROS_SERVER=localhost
+AKAROS_PORT=5555
+CPIO_FILE=gotests.cpio
+
+AKAROS_GOROOT=/go
+AKAROS_TMP=/tmp
+AKAROS_MNT=/mnt
+AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
+HOST_MNT=$GOROOT/examples/kfs
+
+# Comment this out to print the output of various commands
+QUIET="> /dev/null"
+
+# Remove $CPIO_FILE from the host
+rm -rf $HOST_MNT/$CPIO_FILE
+
+# Create a cpio archive of the folder where the go test resides and put it in $HOST_MNT
+find $(dirname $1) | cpio --no-absolute-filenames -H newc -o > $HOST_MNT/$CPIO_FILE 2>/dev/null
+
+# Remove the entire contents of $AKAROS_TMP
+echo "rm -rf $AKAROS_TMP/* >/dev/null" | netcat $AKAROS_SERVER $AKAROS_PORT
+
+# Copy the cpio archive into $AKAROS_TMP on akaros
+echo "cp $AKAROS_MNT/$CPIO_FILE $AKAROS_TMP >/dev/null" | netcat $AKAROS_SERVER $AKAROS_PORT
+
+# Extract the cpio archive in place
+echo "cd $AKAROS_TMP; cpio -d -i < $CPIO_FILE 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
+
+# Execute the go test, printing its output, followed by its exit code. Store this in a bash variable.
+OUTPUT=$(echo "cd $AKAROS_PWD; $AKAROS_TMP/$1 ${@:2}; echo \$?" | netcat $AKAROS_SERVER $AKAROS_PORT)
+
+# If there was no output from the go test, something went wrong, so error out
+if [ "$OUTPUT" = "" ]; then
+	echo "Could not execute test on Akaros client. Make sure the listen1 program is running."
+	exit 1
+fi
+
+# Otherwise, print all output other than the exit code from the go test to stdout
+echo "$OUTPUT" | head -n -1
+
+# And finally, exit this script with the same exit code as the go test
+exit $(echo "$OUTPUT" | tail -1)
+
