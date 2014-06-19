@@ -10,10 +10,10 @@ AKAROS_MNT=/mnt
 HOST_MNT=$GOROOT/misc/akaros/mnt
 AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
 
-EXEC_DIR=$(dirname $1)
+EXEC=$1
+ARGS=${@:2}
+EXEC_DIR=$(dirname $EXEC)
 BUILD_DIR=${EXEC_DIR%_test}
-EXEC_FILE=$(basename $1)
-CPIO_FILE=${EXEC_FILE%.test}.cpio
 
 # Execute a set of commands remotely on akaros
 rpc()
@@ -27,7 +27,7 @@ rpc()
 cleanup()
 {
 	rm -rf $HOST_MNT/$BUILD_DIR
-	echo "rm -rf $BUILD_DIR 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
+	rpc "rm -rf $BUILD_DIR 2>/dev/null;" 
 }
 die()
 {
@@ -39,25 +39,23 @@ trap die SIGINT
 trap die SIGTERM
 trap die SIGKILL
 
-# Create a cpio archive of the folder where the go program resides and put it
-# in $HOST_MNT/$BUILD_DIR
-mkdir -p $HOST_MNT/$BUILD_DIR
-find $BUILD_DIR | cpio -H newc -o > $HOST_MNT/$BUILD_DIR/$CPIO_FILE 2>/dev/null
+# Create a copy of $EXEC_DIR under $HOST_MNT on the server
+mkdir -p $HOST_MNT/$EXEC_DIR
 
-# Create $BUILD_DIR on akaros
-echo "mkdir -p ${BUILD_DIR#/}" | netcat $AKAROS_SERVER $AKAROS_PORT
+# Copy the go executable into $HOST_MNT/$EXEC_DIR
+cp $EXEC $HOST_MNT/$EXEC_DIR >/dev/null
 
-# Copy the cpio archive into $BUILD_DIR on akaros
-rpc "cp $AKAROS_MNT/$BUILD_DIR/$CPIO_FILE $BUILD_DIR >/dev/null"
+# Create $EXEC_DIR on akaros
+echo "mkdir -p ${EXEC_DIR#/}" | netcat $AKAROS_SERVER $AKAROS_PORT
 
-# Extract the cpio archive into / on akaros
-rpc "cpio -d -i < $BUILD_DIR/$CPIO_FILE 2>/dev/null;"
+# Copy the go executable into $EXEC_DIR on akaros
+rpc "cp $AKAROS_MNT/$EXEC $EXEC_DIR >/dev/null"
 
 # Execute the go program on akaros, printing its output, followed by its exit
 # code. Store this in a bash variable.
 OUTPUT=$(rpc "export GOROOT=$AKAROS_GOROOT; \
               cd $AKAROS_PWD; \
-              $1 ${@:2}; \
+              $EXEC $ARGS; \
               EXIT=\$?; \
               echo ""; \
               echo \$EXIT")
