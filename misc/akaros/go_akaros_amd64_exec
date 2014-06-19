@@ -14,7 +14,6 @@ EXEC_DIR=$(dirname $1)
 BUILD_DIR=${EXEC_DIR%_test}
 EXEC_FILE=$(basename $1)
 CPIO_FILE=${EXEC_FILE%.test}.cpio
-LOCK_FILE=$HOST_MNT/lockfile
 
 # Execute a set of commands remotely on akaros
 rpc()
@@ -29,11 +28,6 @@ cleanup()
 {
 	rm -rf $HOST_MNT/$BUILD_DIR
 	echo "rm -rf $BUILD_DIR 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
-	kill $LOCK_FILE_TOUCH_PID > /dev/null 2>&1 
-	lockfile-check --use-pid --lock-name $LOCK_FILE
-	if [ "$?" = "0" ]; then
-		lockfile-remove --lock-name $LOCK_FILE
-	fi
 }
 die()
 {
@@ -44,11 +38,6 @@ die()
 trap die SIGINT
 trap die SIGTERM
 trap die SIGKILL
-
-# Synchronize to only allow one instance of this script to execute at any given time
-lockfile-create --use-pid --lock-name $LOCK_FILE
-lockfile-touch --lock-name $LOCK_FILE &
-LOCK_FILE_TOUCH_PID="$!"
 
 # Create a cpio archive of the folder where the go program resides and put it
 # in $HOST_MNT/$BUILD_DIR
@@ -73,8 +62,7 @@ OUTPUT=$(rpc "export GOROOT=$AKAROS_GOROOT; \
               echo ""; \
               echo \$EXIT")
 
-# Manually do the cleanup if we reach this point, unlocking the synchronization
-# in the process
+# Manually do the cleanup if we reach this point
 cleanup
 
 # If there was no output from the go program, something went wrong, so error out
