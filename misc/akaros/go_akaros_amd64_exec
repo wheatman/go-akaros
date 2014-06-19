@@ -30,7 +30,7 @@ echo "cp $AKAROS_MNT/$CPIO_FILE $AKAROS_TMP >/dev/null" | netcat $AKAROS_SERVER 
 echo "cd $AKAROS_TMP; cpio -d -i < $CPIO_FILE 2>/dev/null;" | netcat $AKAROS_SERVER $AKAROS_PORT
 
 # Execute the go test, printing its output, followed by its exit code. Store this in a bash variable.
-OUTPUT=$(echo "cd $AKAROS_PWD; $AKAROS_TMP/$1 ${@:2}; echo \$?" | netcat $AKAROS_SERVER $AKAROS_PORT)
+OUTPUT=$(echo "cd $AKAROS_PWD; $AKAROS_TMP/$1 ${@:2}; EXIT=\$?; echo ""; echo \$EXIT" | netcat $AKAROS_SERVER $AKAROS_PORT)
 
 # If there was no output from the go test, something went wrong, so error out
 if [ "$OUTPUT" = "" ]; then
@@ -38,9 +38,20 @@ if [ "$OUTPUT" = "" ]; then
 	exit 1
 fi
 
-# Otherwise, print all output other than the exit code from the go test to stdout
-echo "$OUTPUT" | head -n -1
+# Otherwise, Extract the exit code from the output
+EXIT=$(echo "$OUTPUT" | tail -1)
+OUTPUT=$(echo "$OUTPUT" | head -n -1)
 
-# And finally, exit this script with the same exit code as the go test
-exit $(echo "$OUTPUT" | tail -1)
+# If the last line in the output is blank, remove it (this is necessary for
+# making sure the exit code was printed on a line by itself, when the actual
+# output of the go executable doesn't end in a newline)
+if [ "$(echo "$OUTPUT" | tail -1)" = "" ]; then
+	OUTPUT=$(echo "$OUTPUT" | head -n -1)
+fi
+
+# Print the remaining output of the go program to stdout
+echo "$OUTPUT"
+
+# And exit this script with the exit code from the go program
+exit $EXIT
 
