@@ -1,9 +1,9 @@
 #!/bin/bash
 eval $(go env)
 
-AKAROS_SERVER=localhost
-AKAROS_PORT=5555
-TIMEOUT=300
+: ${AKAROS_SERVER:="localhost"}
+: ${AKAROS_PORT:="5555"}
+: ${TIMEOUT:="300"}
 
 AKAROS_GOROOT=/go
 AKAROS_MNT=/mnt
@@ -46,7 +46,7 @@ mkdir -p $HOST_MNT/$EXEC_DIR
 cp $EXEC $HOST_MNT/$EXEC_DIR >/dev/null
 
 # Create $EXEC_DIR on akaros
-echo "mkdir -p ${EXEC_DIR#/}" | netcat $AKAROS_SERVER $AKAROS_PORT
+rpc "mkdir -p ${EXEC_DIR#/}"
 
 # Copy the go executable into $EXEC_DIR on akaros
 rpc "cp $AKAROS_MNT/$EXEC $EXEC_DIR >/dev/null"
