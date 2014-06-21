@@ -53,8 +53,8 @@ The required path elements are::
 	PATH=$GOROOT/misc/akaros/bin -- the path where the go_${GOOS}_${GOARCH}_exec
 	                                exists. (Other scripts exist here too)
 	PATH=/path/to/x86_64-ros-gcc/bin -- the path to the akaros x86_64 cross 
-										compiler's bin directory as installed
-										as part of the akaros setup described
+	                                    compiler's bin directory as installed
+	                                    as part of the akaros setup described
 	                                    below
 
 The settings in my (klueska's) .bashrc, for example are::
