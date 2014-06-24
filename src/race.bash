@@ -9,7 +9,7 @@
 set -e
 
 function usage {
-	echo 'race detector is only supported on linux/amd64, akaros/amd64, and darwin/amd64' 1>&2
+	echo 'race detector is only supported on linux/amd64, akaros/amd64, freebsd/amd64, and darwin/amd64' 1>&2
 	exit 1
 }
 
@@ -25,8 +25,13 @@ case $(uname) in
 		usage
 	fi
 	;;
+<<<<<<< HEAD
 "Akaros")
 	if [ $(uname -m) != "x86_64" ]; then
+=======
+"FreeBSD")
+	if [ $(uname -m) != "amd64" ]; then
+>>>>>>> race.bash: support freebsd
 		usage
 	fi
 	;;
