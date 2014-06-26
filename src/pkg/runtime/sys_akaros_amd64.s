@@ -16,9 +16,9 @@ TEXT runtime·settls(SB), NOSPLIT, $0
 TEXT sigtramp_real(SB),NOSPLIT,$40
     get_tls(BX)
 
-    // check that m exists
-    MOVQ    m(BX), BP
-    CMPQ    BP, $0
+    // check that g exists
+    MOVQ    g(BX), R10
+    CMPQ    R10, $0
     JNE     4(PC)
 	// The sig_hand function is actually declared at the top of
 	// runtime/parlib/signal.go inside of a cgo function! This is our normal
@@ -29,10 +29,10 @@ TEXT sigtramp_real(SB),NOSPLIT,$40
     RET
 
     // save g
-    MOVQ    g(BX), R10
     MOVQ    R10, 32(SP)
 
     // g = m->gsignal
+    MOVQ    g_m(R10), BP
     MOVQ    m_gsignal(BP), BP
     MOVQ    BP, g(BX)
 

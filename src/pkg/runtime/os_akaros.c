@@ -77,6 +77,7 @@ void
 runtime·mpreinit(M *mp)
 {
 	mp->gsignal = runtime·malg(32*1024);	// OS X wants >=8K, Akaros >=2K
+        mp->gsignal->m = mp;
 }
 
 // Called to initialize a new m (including the bootstrap m).

@@ -81,7 +81,7 @@ runtime·resetcpuprofiler(int32 hz)
 	} else {
 		runtime·enable_profalarm(1000000 / hz);
 	}
-	m->profilehz = hz;
+	g->m->profilehz = hz;
 	return;
 }
 

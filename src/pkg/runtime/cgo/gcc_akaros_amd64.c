@@ -8,15 +8,15 @@
 #include "libcgo.h"
 
 static void* threadentry(void*);
-static void (*setmg_gcc)(void*, void*);
+static void (*setg_gcc)(void*);
 
 void
-x_cgo_init(G* g, void (*setmg)(void*, void*))
+x_cgo_init(G* g, void (*setg)(void*))
 {
 	int dummy;
 	// The system stack is set to a fixed size of 256 pages
 	g->stackguard = (uintptr)&dummy - 256*4096 + 4096;
-	setmg_gcc = setmg;
+	setg_gcc = setg;
 }
 
 
@@ -64,7 +64,7 @@ threadentry(void *v)
 	/*
 	 * Set specific keys.
 	 */
-	setmg_gcc((void*)ts.m, (void*)ts.g);
+	setg_gcc((void*)ts.g);
 
 	crosscall_amd64(ts.fn);
 	return nil;
