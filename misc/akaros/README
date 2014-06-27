@@ -123,10 +123,11 @@ the location of the busybox sources on your machine.
 
 	cd $BUSYBOXDIR/..
 	tar -jxvf busybox-1.17.3.tar.bz2
-	cp $ROSROOT/tools/patches/busybox/busybox-1.17.3.config $BUSYBOXDIR/.config
-	for p in $ROSROOT/tools/patches/busybox/busybox-1.17.3/*.patch; do \
+	cp $ROSROOT/tools/patches/busybox/busybox-1.17.3-config $BUSYBOXDIR/.config
+	for p in $ROSROOT/tools/patches/busybox/*.patch; do \
 		patch -p1 < $p \
 	done
+	make oldconfig
 	make
 	cp $BUSYBOXDIR/busybox_unstripped $ROSROOT/kern/kfs/bin/busybox
 
@@ -162,7 +163,7 @@ process for getting go set up is fairly straight forward.
 - Build and install the go runtime for akaros
 
 	cd $GOROOT/src
-	./akaros make
+	./akaros.bash make
 
 As per normal, you will need to set GOOS and GOARCH appropriately in order to
 build binaries for akaros.  Additionally, I like to always set CGO_ENABLED

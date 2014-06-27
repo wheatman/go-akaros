@@ -29,11 +29,13 @@ if [ "$(which $QEMU)" = "" ]; then
 	exit 1
 fi
 
-groups $USER | grep &>/dev/null '\bkvm\b'
-if [ "$?" != "0" ]; then
-	echo "You are not part of the kvm group!"
-	echo "    This may cause problems with running qemu with kvm enabled."
-	echo "    To disable kvm, rerun this script with QEMU_KVM=\"\""
+if [ "$QEMU_KVM" == "-enable-kvm" ]; then
+	groups $USER | grep &>/dev/null '\bkvm\b'
+	if [ "$?" != "0" ]; then
+		echo "You are not part of the kvm group!"
+		echo "    This may cause problems with running qemu with kvm enabled."
+		echo "    To disable kvm, rerun this script with QEMU_KVM=\"-no-kvm\""
+	fi
 fi
 
 # Copy the go-bootstrap script into $AKAROS_BIN

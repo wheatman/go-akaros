@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 eval $(go env)
 
+: ${REBUILD_SERVER:=true}
 : ${UFS_PORT:="1025"}
 
 HOST_MNT=$GOROOT/misc/akaros/mnt
@@ -12,13 +13,15 @@ if [ "$GOPATH" = "" ]; then
 fi
 
 # Get the latest 9p server which supports akaros
-echo "Downloading and installing the latest supported 9p server"
-GOOS=$GOHOSTOS
-GOARCH=$GOHOSTARCH
-CGO_ENABLED=0
-go get -a github.com/rminnich/go9p
-go get -a github.com/rminnich/go9p/ufs
-go install -a github.com/rminnich/go9p/ufs
+if [ $REBUILD_SERVER = true ]; then
+	echo "Downloading and installing the latest supported 9p server"
+	export GOOS=$GOHOSTOS
+	export GOARCH=$GOHOSTARCH
+	export CGO_ENABLED=0
+	go get -d github.com/rminnich/go9p
+	go get -d github.com/rminnich/go9p/ufs
+	go install -a github.com/rminnich/go9p/ufs
+fi
 
 # Clear out the $HOST_MNT directory
 echo "Clearing out ${HOST_MNT/$GOROOT/\$GOROOT}"
@@ -32,6 +35,4 @@ $ARCHIVE_SCRIPT go 2>/dev/null
 echo "Starting the 9p server port=$UFS_PORT root=${HOST_MNT/$GOROOT/\$GOROOT}"
 ps aux | grep "ufs -addr=:$UFS_PORT" | head -1 | awk '{print $2}' | xargs kill >/dev/null 2>&1
 nohup ufs -addr=:$UFS_PORT -root=$HOST_MNT >/dev/null 2>&1 &
-
-echo "Done"
 
