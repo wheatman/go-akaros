@@ -18,7 +18,7 @@ BUILD_DIR=${EXEC_DIR%_test}
 # Execute a set of commands remotely on akaros
 rpc()
 {
-	echo "$@" | netcat -c -w $TIMEOUT $AKAROS_SERVER $AKAROS_PORT
+	echo "$@" | netcat -w $TIMEOUT $AKAROS_SERVER $AKAROS_PORT
 }
 
 # Whenever the go program is done executing, remove the $BUILD_DIR on both the
