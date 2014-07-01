@@ -50,6 +50,7 @@ static struct {
 	"freebsd",	Hfreebsd,
 	"linux",	Hlinux,
 	"akaros",	Hakaros,
+	"android",	Hlinux,
 	"nacl",		Hnacl,
 	"netbsd",	Hnetbsd,
 	"openbsd",	Hopenbsd,
