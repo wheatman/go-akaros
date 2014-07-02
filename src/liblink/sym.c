@@ -129,8 +129,6 @@ linknew(LinkArch *arch)
 	default:
 		sysfatal("unknown thread-local storage offset for %s", headstr(ctxt->headtype));
 	case Hplan9:
-		ctxt->tlsoffset = -2*ctxt->arch->ptrsize;
-		break;
 	case Hwindows:
 		break;
 	case Hakaros:
