@@ -26,12 +26,15 @@ package parlib
 #include <ros/memlayout.h>
 #include <ros/errno.h>
 #include <ros/trapframe.h>
+#include <ros/procinfo.h>
 #include "parlib/gcc_akaros.h"
 */
 import "C"
 
 const (
 	MAX_VCORES = C.MAX_VCORES
+
+	PROC_DUP_FGRP = C.PROC_DUP_FGRP
 
 	FUTEX_WAIT = C.FUTEX_WAIT
 	FUTEX_WAKE = C.FUTEX_WAKE

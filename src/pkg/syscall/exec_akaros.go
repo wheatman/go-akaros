@@ -56,7 +56,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	__pi := uintptr(unsafe.Pointer(&pi))
 
 	// Call proc create.
-	r1, _, err1 = RawSyscall(SYS_PROC_CREATE, __cmd, __cmdlen, __pi)
+	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, parlib.PROC_DUP_FGRP, 0, 0)
 	if err1 != nil {
 		return 0, err1
 	}
