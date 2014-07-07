@@ -17,6 +17,7 @@
 #include "typekind.h"
 #include "funcdata.h"
 #include "zaexperiment.h"
+#include "../../cmd/ld/textflag.h"
 
 extern byte data[];
 extern byte edata[];
@@ -67,6 +68,7 @@ static uintptr dumpfd;
 enum {
 	BufSize = 4096,
 };
+#pragma dataflag NOPTR
 static byte buf[BufSize];
 static uintptr nbuf;
 
@@ -346,6 +348,7 @@ dumpframe(Stkframe *s, void *arg)
 	dumpmemrange((byte*)s->sp, s->fp - s->sp);  // frame contents
 	dumpint(f->entry);
 	dumpint(s->pc);
+	dumpint(s->continpc);
 	name = runtime·funcname(f);
 	if(name == nil)
 		name = "unknown function";

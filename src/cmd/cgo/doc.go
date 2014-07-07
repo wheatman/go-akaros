@@ -52,6 +52,14 @@ these directives.  Package-specific flags should be set using the
 directives, not the environment variables, so that builds work in
 unmodified environments.
 
+All the cgo CPPFLAGS and CFLAGS directives in a package are concatenated and
+used to compile C files in that package.  All the CPPFLAGS and CXXFLAGS
+directives in a package are concatenated and used to compile C++ files in that
+package.  All the LDFLAGS directives in any package in the program are
+concatenated and used at link time.  All the pkg-config directives are
+concatenated and sent to pkg-config simultaneously to add to each appropriate
+set of command-line flags.
+
 When the Go tool sees that one or more Go files use the special import
 "C", it will look for other non-Go files in the directory and compile
 them as part of the Go package.  Any .c, .s, or .S files will be
@@ -98,6 +106,11 @@ As Go doesn't have support for C's union type in the general case,
 C's union types are represented as a Go byte array with the same length.
 
 Go structs cannot embed fields with C types.
+
+Cgo translates C types into equivalent unexported Go types.
+Because the translations are unexported, a Go package should not
+expose C types in its exported API: a C type used in one Go package
+is different from the same C type used in another.
 
 Any C function (even void functions) may be called in a multiple
 assignment context to retrieve both the return value (if any) and the

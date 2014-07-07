@@ -230,7 +230,7 @@ runtime·main(void)
 	d.fn = &initDone;
 	d.siz = 0;
 	d.link = g->defer;
-	d.argp = (void*)-1;
+	d.argp = NoArgs;
 	d.special = true;
 	g->defer = &d;
 
@@ -1459,6 +1459,12 @@ goexit0(G *gp)
 	gp->m = nil;
 	gp->lockedm = nil;
 	gp->paniconfault = 0;
+	gp->defer = nil; // should be true already but just in case.
+	gp->panic = nil; // non-nil for Goexit during panic. points at stack-allocated data.
+	gp->writenbuf = 0;
+	gp->writebuf = nil;
+	gp->waitreason = nil;
+	gp->param = nil;
 	m->curg = nil;
 	m->lockedg = nil;
 	if(m->locked & ~LockExternal) {
@@ -1816,6 +1822,10 @@ runtime·newproc1(FuncVal *fn, byte *argp, int32 narg, int32 nret, void *callerp
 	int32 siz;
 
 //runtime·printf("newproc1 %p %p narg=%d nret=%d\n", fn->fn, argp, narg, nret);
+	if(fn == nil) {
+		m->throwing = -1;  // do not dump full stacks
+		runtime·throw("go of nil func value");
+	}
 	m->locks++;  // disable preemption because it can be holding p in a local var
 	siz = narg + nret;
 	siz = (siz+7) & ~7;
@@ -2593,6 +2603,7 @@ struct Pdesc
 	uint32	syscalltick;
 	int64	syscallwhen;
 };
+#pragma dataflag NOPTR
 static Pdesc pdesc[MaxGomaxprocs];
 
 static uint32

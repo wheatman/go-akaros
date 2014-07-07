@@ -140,7 +140,7 @@ var x86Need = []string{
 var armNeed = []string{
 	"fmthello.go:6",
 	"TEXT main.main(SB)",
-	"B main.main(SB)",
+	"B.LS main.main(SB)",
 	"BL fmt.Println(SB)",
 	"RET",
 }
@@ -155,10 +155,6 @@ var armNeed = []string{
 // can handle that one.
 
 func TestDisasm(t *testing.T) {
-	if runtime.GOOS == "plan9" {
-		t.Skip("skipping test; see http://golang.org/issue/7947")
-	}
-
 	tmp, exe := buildObjdump(t)
 	defer os.RemoveAll(tmp)
 
@@ -176,7 +172,6 @@ func TestDisasm(t *testing.T) {
 		need = append(need, x86Need...)
 	case "arm":
 		need = append(need, armNeed...)
-		t.Skip("disassembler not ready on arm yet")
 	}
 
 	out, err = exec.Command(exe, "-s", "main.main", hello).CombinedOutput()
