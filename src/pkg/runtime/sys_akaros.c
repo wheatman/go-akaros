@@ -84,7 +84,7 @@ int32 runtime·read(int32 fd, void* buf, int32 count)
 }
 
 #pragma textflag NOSPLIT
-int32 runtime·write(int32 fd, void* buf, int32 count)
+int32 runtime·write(uintptr fd, void* buf, int32 count)
 {
 	int32 errno;
 	SyscallArg *sysc = (SyscallArg *)(g->sysc);

@@ -44,7 +44,7 @@ func Futex(uaddr *int32, op int32, val int32,
 }
 
 func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
-	p_pi := (*_Ctype_procinfo_t)(unsafe.Pointer(&pi))
+	p_pi := (*_Ctype_struct_procinfo)(unsafe.Pointer(&pi))
     p_argv := (**_Ctype_char)(unsafe.Pointer(&argv[0]))
     p_envp := (**_Ctype_char)(unsafe.Pointer(&envp[0]))
 
