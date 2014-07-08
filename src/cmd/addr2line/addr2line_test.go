@@ -92,8 +92,9 @@ func testAddr2Line(t *testing.T, exepath, addr string) {
 
 // This is line 93. The test depends on that.
 func TestAddr2Line(t *testing.T) {
-	if runtime.GOOS == "akaros" || runtime.GOOS == "nacl" {
-		t.Skip("skipping on " + runtime.GOOS)
+	switch runtime.GOOS {
+	case "nacl", "android", "akaros":
+		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 
 	syms := loadSyms(t)
