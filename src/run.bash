@@ -105,6 +105,13 @@ xcd() {
 # Strictly speaking, the test may be unnecessary on the final command of
 # the subshell, but it aids later editing and may avoid future bash bugs.
 
+if [ "$GOOS" == "android" ]; then
+	# Disable cgo tests on android.
+	# They are not designed to run off the host.
+	# golang.org/issue/8345
+	CGO_ENABLED=0
+fi
+
 [ "$CGO_ENABLED" != 1 ] ||
 [ "$GOHOSTOS" == windows ] ||
 (xcd ../misc/cgo/stdio
@@ -134,7 +141,7 @@ darwin-386 | darwin-amd64)
 	*) go test -ldflags '-linkmode=external'  || exit 1;;
 	esac
 	;;
-akaros-386 | akaros-amd64 | dragonfly-386 | dragonfly-amd64 | freebsd-386 | freebsd-amd64 | freebsd-arm | linux-386 | linux-amd64 | linux-arm | netbsd-386 | netbsd-amd64)
+akaros-386 | akaros-amd64 | android-arm | dragonfly-386 | dragonfly-amd64 | freebsd-386 | freebsd-amd64 | freebsd-arm | linux-386 | linux-amd64 | linux-arm | netbsd-386 | netbsd-amd64)
 	go test -ldflags '-linkmode=external' || exit 1
 	go test -ldflags '-linkmode=auto' ../testtls || exit 1
 	go test -ldflags '-linkmode=external' ../testtls || exit 1
@@ -190,11 +197,13 @@ go run main.go || exit 1
 
 [ "$GOOS" == akaros ] ||
 [ "$GOOS" == nacl ] ||
+[ "$GOOS" == android ] ||
 (xcd ../doc/progs
 time ./run || exit 1
 ) || exit $?
 
 [ "$GOOS" == akaros ] ||
+[ "$GOOS" == android ] ||
 [ "$GOOS" == nacl ] ||
 [ "$GOARCH" == arm ] ||  # uses network, fails under QEMU
 (xcd ../doc/articles/wiki
@@ -202,6 +211,7 @@ time ./run || exit 1
 ) || exit $?
 
 [ "$GOOS" == akaros ] ||
+[ "$GOOS" == android ] ||
 [ "$GOOS" == nacl ] ||
 (xcd ../doc/codewalk
 time ./run || exit 1
@@ -214,6 +224,7 @@ time ./run || exit 1
 time ./timing.sh -test || exit 1
 ) || exit $?
 
+[ "$GOOS" == android ] || # TODO(crawshaw): get this working
 [ "$GOOS" == openbsd ] || # golang.org/issue/5057
 (
 echo
@@ -221,6 +232,7 @@ echo '#' ../test/bench/go1
 go test ../test/bench/go1 || exit 1
 ) || exit $?
 
+[ "$GOOS" == android ] ||
 (xcd ../test
 unset GOMAXPROCS
 GOOS=$GOHOSTOS GOARCH=$GOHOSTARCH go build -o runtest run.go || exit 1
@@ -229,6 +241,7 @@ rm -f runtest
 ) || exit $?
 
 [ "$GOOS" == akaros ] ||
+[ "$GOOS" == android ] ||
 [ "$GOOS" == nacl ] ||
 (
 echo
