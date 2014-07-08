@@ -55,8 +55,9 @@ func checkSymbols(t *testing.T, nmoutput []byte) {
 }
 
 func TestNM(t *testing.T) {
-	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
-		t.Skip("skipping on " + runtime.GOOS)
+	switch runtime.GOOS {
+	case "android", "nacl", "akaros":
+		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 
 	tmpDir, err := ioutil.TempDir("", "TestNM")
