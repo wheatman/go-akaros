@@ -43,6 +43,14 @@ type sysDir struct {
 
 var sysdir = func() (sd *sysDir) {
 	switch runtime.GOOS {
+	case "android":
+		sd = &sysDir{
+			"/system/etc",
+			[]string{
+				"audio_policy.conf",
+				"system_fonts.xml",
+			},
+		}
 	case "windows":
 		sd = &sysDir{
 			Getenv("SystemRoot") + "\\system32\\drivers\\etc",
@@ -110,7 +118,7 @@ func newFile(testName string, t *testing.T) (f *File) {
 	// On Unix, override $TMPDIR in case the user
 	// has it set to an NFS-mounted directory.
 	dir := ""
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "android" && runtime.GOOS != "windows" {
 		dir = "/tmp"
 	}
 	f, err := ioutil.TempFile(dir, "_Go_"+testName)
@@ -286,11 +294,13 @@ func TestReaddirnamesOneAtATime(t *testing.T) {
 	// big directory that doesn't change often.
 	dir := "/usr/bin"
 	switch runtime.GOOS {
-	case "windows":
-		dir = Getenv("SystemRoot") + "\\system32"
+	case "android":
+		dir = "/system/bin"
 	case "plan9":
 	case "akaros":
 		dir = "/bin"
+	case "windows":
+		dir = Getenv("SystemRoot") + "\\system32"
 	}
 	file, err := Open(dir)
 	if err != nil {
@@ -501,7 +511,7 @@ func TestHardLink(t *testing.T) {
 
 func TestSymlink(t *testing.T) {
 	switch runtime.GOOS {
-	case "windows", "plan9", "nacl", "akaros":
+	case "android", "nacl", "plan9", "windows", "akaros":
 		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 	from, to := "symlinktestfrom", "symlinktestto"
@@ -633,8 +643,9 @@ func exec(t *testing.T, dir, cmd string, args []string, expect string) {
 }
 
 func TestStartProcess(t *testing.T) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	switch runtime.GOOS {
+	case "android", "nacl":
+		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 	if runtime.GOOS == "akaros" {
 		t.Skip("skipping on akaros")
@@ -798,8 +809,11 @@ func TestChdirAndGetwd(t *testing.T) {
 	// These are chosen carefully not to be symlinks on a Mac
 	// (unlike, say, /var, /etc, and /tmp).
 	dirs := []string{"/", "/usr/bin"}
-	// /usr/bin does not usually exist on Plan 9 or akaros.
-	if runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
+	// /usr/bin does not usually exist on Plan 9 or Android.
+	switch runtime.GOOS {
+	case "android":
+		dirs = []string{"/", "/system/bin"}
+	case "plan9", "akaros":
 		dirs = []string{"/", "/usr"}
 	}
 	for mode := 0; mode < 2; mode++ {
@@ -984,9 +998,9 @@ func run(t *testing.T, cmd []string) string {
 
 func TestHostname(t *testing.T) {
 	// There is no other way to fetch hostname on windows, but via winapi.
-	// On Plan 9 it is can be taken from #c/sysname as Hostname() does.
+	// On Plan 9 it can be taken from #c/sysname as Hostname() does.
 	switch runtime.GOOS {
-	case "windows", "plan9", "nacl", "akaros":
+	case "android", "nacl", "plan9", "windows", "akaros":
 		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 
@@ -1246,8 +1260,9 @@ func TestReadAtEOF(t *testing.T) {
 }
 
 func testKillProcess(t *testing.T, processKiller func(p *Process)) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	switch runtime.GOOS {
+	case "android", "nacl":
+		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 	if runtime.GOOS == "akaros" {
 		t.Skip("skipping on akaros")
