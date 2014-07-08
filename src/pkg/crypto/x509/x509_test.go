@@ -728,8 +728,9 @@ func TestParsePEMCRL(t *testing.T) {
 }
 
 func TestImports(t *testing.T) {
-	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
-		t.Skip("skipping on " + runtime.GOOS)
+	switch runtime.GOOS {
+	case "android", "nacl", "akaros":
+		t.Skipf("skipping on %s", runtime.GOOS)
 	}
 
 	if err := exec.Command("go", "run", "x509_test_import.go").Run(); err != nil {
