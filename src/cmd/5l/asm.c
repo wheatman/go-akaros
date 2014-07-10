@@ -663,6 +663,7 @@ asmb(void)
 	case Hfreebsd:
 	case Hnetbsd:
 	case Hopenbsd:
+	case Hnacl:
 		asmbelf(symo);
 		break;
 	}

@@ -63,6 +63,7 @@ archinit(void)
 		break;
 	case Hlinux:
 	case Hfreebsd:
+	case Hnacl:
 		break;
 	}
 
@@ -83,7 +84,6 @@ archinit(void)
 	case Hakaros:
 	case Hfreebsd:
 	case Hnetbsd:
-	case Hnacl:
 		debug['d'] = 0;	// with dynamic linking
 		elfinit();
 		HEADR = ELFRESERVE;
@@ -93,6 +93,17 @@ archinit(void)
 			INITDAT = 0;
 		if(INITRND == -1)
 			INITRND = 4096;
+		break;
+	case Hnacl:
+		elfinit();
+		HEADR = 0x10000;
+		funcalign = 16;
+		if(INITTEXT == -1)
+			INITTEXT = 0x20000;
+		if(INITDAT == -1)
+			INITDAT = 0;
+		if(INITRND == -1)
+			INITRND = 0x10000;
 		break;
 	}
 	if(INITDAT != 0 && INITRND != 0)
