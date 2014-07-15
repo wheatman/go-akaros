@@ -18,8 +18,8 @@ if [ $REBUILD_SERVER = true ]; then
 	export GOOS=$GOHOSTOS
 	export GOARCH=$GOHOSTARCH
 	export CGO_ENABLED=0
-	go get -d github.com/rminnich/go9p
-	go get -d github.com/rminnich/go9p/ufs
+	go get -d -u github.com/rminnich/go9p
+	go get -d -u github.com/rminnich/go9p/ufs
 	go install -a github.com/rminnich/go9p/ufs
 fi
 
