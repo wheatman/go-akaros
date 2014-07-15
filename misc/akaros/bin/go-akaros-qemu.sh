@@ -7,13 +7,14 @@ eval $(go env)
 : ${MEMORY:="4096"}
 : ${NETWORK_CARD:="e1000"}
 : ${HOST_PORT:="5555"}
-: ${AKAROS_PORT:="23"}
+: ${AKAROS_PORT:="5555"}
 : ${QEMU_KVM:="-enable-kvm"}
 : ${QEMU_MONITOR_TTY:=""}
 
 AKAROS_BIN=$ROSROOT/kern/kfs/bin
-GO_BOOTSTRAP_SCRIPT=$GOROOT/misc/akaros/akaros-bin/go-bootstrap.sh
+GO_SCRIPTS_DIR=$GOROOT/misc/akaros/akaros-bin
 
+#QEMU_NETWORK="-net nic,model=$NETWORK_CARD -net tap,ifname=tap0,script=no"
 QEMU_NETWORK="-net nic,model=$NETWORK_CARD -net user,hostfwd=tcp::$HOST_PORT-:$AKAROS_PORT"
 if [ "$QEMU_MONITOR_TTY" != "" ]; then
 	QEMU_MONITOR="-monitor $QEMU_MONITOR_TTY"
@@ -38,9 +39,9 @@ if [ "$QEMU_KVM" == "-enable-kvm" ]; then
 	fi
 fi
 
-# Copy the go-bootstrap script into $AKAROS_BIN
-echo "Copy $(basename $GO_BOOTSTRAP_SCRIPT) into ${AKAROS_BIN/$ROSROOT/\$ROSROOT}"
-cp $GO_BOOTSTRAP_SCRIPT $AKAROS_BIN
+# Copy the go scripts into $AKAROS_BIN
+echo "Copying scripts from ${GO_SCRIPTS_DIR/$GOROOT/\$GOROOT} into ${AKAROS_BIN/$ROSROOT/\$ROSROOT}"
+cp $GO_SCRIPTS_DIR/* $AKAROS_BIN
 
 # Rebuilding akaros
 echo "Rebuilding akaros"
