@@ -591,8 +591,14 @@ func Getwd() (wd string, err error) {
 		return "", err
 	}
 	// Getcwd returns the number of bytes written to buf, including the NUL.
-	if n < 1 || n > len(buf) || buf[n-1] != 0 {
-		return "", EINVAL
+	if n < 1 {
+		return "", ENOTDIR
+	}
+	if n > len(buf) {
+		return "", ENAMETOOLONG
+	}
+	if buf[n-1] != 0 {
+		return "", ENOBUFS
 	}
 	return string(buf[0 : n-1]), nil
 }
