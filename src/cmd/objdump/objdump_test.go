@@ -19,8 +19,8 @@ import (
 )
 
 func loadSyms(t *testing.T) map[string]string {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	cmd := exec.Command("go", "tool", "nm", os.Args[0])
@@ -44,8 +44,8 @@ func loadSyms(t *testing.T) map[string]string {
 }
 
 func runObjDump(t *testing.T, exe, startaddr, endaddr string) (path, lineno string) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	cmd := exec.Command(exe, os.Args[0], startaddr, endaddr)
@@ -111,8 +111,8 @@ func TestObjDump(t *testing.T) {
 }
 
 func buildObjdump(t *testing.T) (tmp, exe string) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	tmp, err := ioutil.TempDir("", "TestObjDump")
