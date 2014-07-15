@@ -2,18 +2,19 @@
 # Copyright 2013 The Go Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
+eval $(go env)
 
 # Trap and exit script if ^C sent
 trap "exit 1" INT TERM
-source ../misc/akaros/source_amd64.bash
 
+MNTDIR=$GOROOT/misc/akaros/mnt
 KFSROOT="kfs"
 BINROOT="bin"
 TESTSROOT="gotests"
 
 BINDIR="${KFSROOT}/${BINROOT}"
 TESTSDIR="${KFSROOT}/${TESTSROOT}"
-eval $(go tool dist env)
+source $GOROOT/misc/akaros/setup.sh
 
 # Print the usage information for this script
 usage()
@@ -136,7 +137,7 @@ append_test_script()
 # Testing ${2#/${TESTSROOT}}
 echo ""; echo "Testing ${2#/${TESTSROOT}/}"
 cd $2
-./$3 -test.short -test.timeout=120s
+./$3 -test.short -test.timeout=120s -test.v \$@
 cd - > /dev/null
 EOF
 ) >> $1
@@ -208,9 +209,8 @@ build_and_install_tests()
 
 build_cpio()
 {
-  local HERE=${PWD}
   cd ${KFSROOT}
-  find * | cpio -H newc -o > ${HERE}/gotests.cpio
+  find * | cpio -H newc -o > ${MNTDIR}/gotests.cpio
   cd - > /dev/null
 }
 
