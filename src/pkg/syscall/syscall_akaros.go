@@ -582,25 +582,20 @@ func Futimes(fd int, tv []Timeval) (err error) {
 
 const ImplementsGetwd = true
 
-//sys	Getcwd(buf []byte) (n int, err error)
+//sys	Getcwd(buf []byte, length int) (n int, err error)
 
 func Getwd() (wd string, err error) {
 	var buf [PathMax]byte
-	n, err := Getcwd(buf[0:])
+	n, err := Getcwd(buf[0:], len(buf))
 	if err != nil {
 		return "", err
 	}
 	// Getcwd returns the number of bytes written to buf, including the NUL.
-	if n < 1 {
+	if n < 0 {
 		return "", ENOTDIR
 	}
-	if n > len(buf) {
-		return "", ENAMETOOLONG
-	}
-	if buf[n-1] != 0 {
-		return "", ENOBUFS
-	}
-	return string(buf[0 : n-1]), nil
+
+	return string(buf[:]), err
 }
 
 func Setgroups(gids []int) (err error) {
