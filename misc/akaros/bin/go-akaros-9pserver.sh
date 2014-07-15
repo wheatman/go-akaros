@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 eval $(go env)
 
+: ${CLEAR_MOUNT:=false}
 : ${REBUILD_SERVER:=true}
 : ${UFS_PORT:="1025"}
 
@@ -24,9 +25,11 @@ if [ $REBUILD_SERVER = true ]; then
 fi
 
 # Clear out the $HOST_MNT directory
-echo "Clearing out ${HOST_MNT/$GOROOT/\$GOROOT}"
-rm -rf $HOST_MNT
-mkdir -p $HOST_MNT
+if [ $CLEAR_MOUNT = true ]; then
+	echo "Clearing out ${HOST_MNT/$GOROOT/\$GOROOT}"
+	rm -rf $HOST_MNT
+	mkdir -p $HOST_MNT
+fi
 
 # Leverage the archive script to put an archive of the go tree at $HOST_MNT
 $ARCHIVE_SCRIPT go 2>/dev/null
