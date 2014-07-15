@@ -13,7 +13,6 @@ AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
 EXEC=$1
 ARGS=${@:2}
 EXEC_DIR=$(dirname $EXEC)
-BUILD_DIR=${EXEC_DIR%_test}
 
 # Execute a set of commands remotely on akaros
 rpc()
@@ -21,13 +20,13 @@ rpc()
 	echo "$@; exit;" | netcat -w $TIMEOUT $AKAROS_SERVER $AKAROS_PORT
 }
 
-# Whenever the go program is done executing, remove the $BUILD_DIR on both the
-# host and the client. We encapsulate this in a function here so that it will
-# also happen upon pressing Ctrl-C, or otherwise exiting.
+# Whenever the go program is done executing, remove the $EXEC on both the host
+# and the client. We encapsulate this in a function here so that it will also
+# happen upon pressing Ctrl-C, or otherwise exiting.
 cleanup()
 {
-	rm -rf $HOST_MNT/$BUILD_DIR
-	rpc "rm -rf $BUILD_DIR 2>/dev/null"
+	rm -rf $HOST_MNT/$EXEC
+	rpc "rm -rf $EXEC 2>/dev/null"
 }
 die()
 {
