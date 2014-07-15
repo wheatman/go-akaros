@@ -186,8 +186,8 @@ func TestExtract(t *testing.T) {
 
 // Test that pack-created archives can be understood by the tools.
 func TestHello(t *testing.T) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	dir := tmpDir(t)
@@ -222,8 +222,8 @@ func TestHello(t *testing.T) {
 
 // Test that pack works with very long lines in PKGDEF.
 func TestLargeDefs(t *testing.T) {
-	if runtime.GOOS == "nacl" {
-		t.Skip("skipping on nacl")
+	if runtime.GOOS == "nacl" || runtime.GOOS == "akaros" {
+		t.Skip("skipping on " + runtime.GOOS)
 	}
 
 	dir := tmpDir(t)
