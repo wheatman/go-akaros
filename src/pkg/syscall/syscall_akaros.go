@@ -580,6 +580,22 @@ func Futimes(fd int, tv []Timeval) (err error) {
 	return Utimes("/proc/self/fd/"+itoa(fd), tv)
 }
 
+//sys	symlink(oldpath string, a int, newpath string, b int) (err error)
+
+func Symlink(oldpath string, newpath string) (err error) {
+	return symlink(oldpath, len(oldpath), newpath, len(newpath))
+}
+
+//sys	readlink(path string, pl int, buf []byte, bl int) (n int)
+
+func Readlink(path string, b []byte) (int, error) {
+	if err := readlink(path, len(path), b, len(b)); err < 0 {
+		return -1, NewAkaError(Errno(err), "Readlink failed")
+	} else {
+		return err, nil
+	}
+}
+
 const ImplementsGetwd = true
 
 //sys	Getcwd(buf []byte, length int) (n int, err error)
@@ -1222,7 +1238,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Pause() (err error)
 //sys	PivotRoot(newroot string, putold string) (err error) = SYS_PIVOT_ROOT
 //sysnb prlimit(pid int, resource int, old *Rlimit, newlimit *Rlimit) (err error) = SYS_PRLIMIT64
-//sys	Readlink(path string, buf []byte) (n int, err error)
 //sys	Removexattr(path string, attr string) (err error)
 //sys	Rename(oldpath string, newpath string) (err error)
 //sys	Renameat(olddirfd int, oldpath string, newdirfd int, newpath string) (err error)
@@ -1234,7 +1249,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sysnb	Setuid(uid int) (err error)
 //sys	Setpriority(which int, who int, prio int) (err error)
 //sys	Setxattr(path string, attr string, data []byte, flags int) (err error)
-//sys	Symlink(oldpath string, newpath string) (err error)
 //sys	Sync()
 //sysnb	Sysinfo(info *Sysinfo_t) (err error)
 //sys	Tee(rfd int, wfd int, len int, flags int) (n int64, err error)
