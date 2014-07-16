@@ -594,8 +594,7 @@ func Getwd() (wd string, err error) {
 	if n < 0 {
 		return "", ENOTDIR
 	}
-
-	return string(buf[:]), err
+	return string(buf[0:n]), err
 }
 
 func Setgroups(gids []int) (err error) {
