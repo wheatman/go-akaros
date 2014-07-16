@@ -154,7 +154,7 @@ func TestDialTimeout(t *testing.T) {
 	}
 
 	if !strings.Contains(err.Error(), "timed out") && !strings.Contains(err.Error(), "i/o timeout") {
-		t.Errorf("resulting error not a timeout: %s", "shit" + err.Error())
+		t.Errorf("resulting error not a timeout: %s", err.Error())
 	}
 }
 
