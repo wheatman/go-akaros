@@ -76,3 +76,12 @@ func Errno() (int) {
 func Errstr() (string) {
 	return C.GoString(C.go_parlib_errstr())
 }
+
+func Chmod(path string, mode uint32) (int) {
+	return int(C.chmod(C.CString(path), C.__mode_t(mode)))
+}
+
+func Fchmod(fd int, mode uint32) (int) {
+	return int(C.fchmod(C.int(fd), C.__mode_t(mode)))
+}
+
