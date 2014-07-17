@@ -7,13 +7,25 @@
 package parlib
 
 /*
+#cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
+
 #include <parlib.h>
 #include <uthread.h>
 #include <vcore.h>
 #include <mcs.h>
 #include <futex.h>
+#include <sys/stat.h>
 
-#cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
+int go_parlib_errno(void)
+{
+	return current_uthread->err_no;
+}
+
+char *go_parlib_errstr(void)
+{
+	return current_uthread->err_str;
+}
+
 */
 import "C"
 import (
@@ -57,3 +69,10 @@ func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
 	return pi, err
 }
 
+func Errno() (int) {
+	return int(C.go_parlib_errno())
+}
+
+func Errstr() (string) {
+	return C.GoString(C.go_parlib_errstr())
+}
