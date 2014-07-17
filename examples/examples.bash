@@ -250,6 +250,6 @@ if [[ "$TESTS" != "" ]]; then
       fi
     done
   fi
-  build_cpio
 fi
+build_cpio
 
