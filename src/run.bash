@@ -117,7 +117,6 @@ go run $GOROOT/test/run.go - . || exit 1
 ) || exit $?
 
 [ "$CGO_ENABLED" != 1 ] ||
-[ "$GOOS" == akaros ] ||
 (xcd ../misc/cgo/test
 go test -ldflags '-linkmode=auto' || exit 1
 # linkmode=internal fails on dragonfly since errno is a TLS relocation.
@@ -166,28 +165,24 @@ esac
 # so it's okay if it doesn't work on some systems.
 # In particular, it works badly with clang on OS X.
 [ "$CGO_ENABLED" != 1 ] || 
-[ "$GOOS" == akaros ] ||
 [ "$GOOS" == darwin ] ||
 (xcd ../misc/cgo/testcdefs
 ./test.bash || exit 1
 ) || exit $?
 
 [ "$CGO_ENABLED" != 1 ] ||
-[ "$GOOS" == akaros ] ||
 [ "$GOHOSTOS" == windows ] ||
 (xcd ../misc/cgo/testso
 ./test.bash || exit 1
 ) || exit $?
 
 [ "$CGO_ENABLED" != 1 ] ||
-[ "$GOOS" == akaros ] ||
 [ "$GOHOSTOS-$GOARCH" != linux-amd64 ] ||
 (xcd ../misc/cgo/testasan
 go run main.go || exit 1
 ) || exit $?
 
 [ "$CGO_ENABLED" != 1 ] ||
-[ "$GOOS" == akaros ] ||
 [ "$GOHOSTOS" == windows ] ||
 (xcd ../misc/cgo/errors
 ./test.bash || exit 1
