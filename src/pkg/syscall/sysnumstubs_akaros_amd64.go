@@ -36,8 +36,6 @@ const (
 	SYS_EXIT_GROUP                   = 328
 	SYS_FACCESSAT                    = 329
 	SYS_FALLOCATE                    = 330
-	SYS_FCHDIR                       = 331
-	SYS_FCHMOD                       = 332
 	SYS_FCHMODAT                     = 333
 	SYS_FCHOWNAT                     = 334
 	SYS_FDATASYNC                    = 335
@@ -64,7 +62,6 @@ const (
 	SYS_PIVOT_ROOT                   = 356
 	SYS_PRLIMIT64                    = 357
 	SYS_REMOVEXATTR                  = 358
-	SYS_RENAME                       = 359
 	SYS_RENAMEAT                     = 360
 	SYS_SETDOMAINNAME                = 361
 	SYS_SETHOSTNAME                  = 362
