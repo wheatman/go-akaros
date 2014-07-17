@@ -493,6 +493,35 @@ func Kill(pid int, sig Signal) (err error) {
 }
 
 
+//sys	symlink(oldpath string, a int, newpath string, b int) (err error)
+func Symlink(oldpath string, newpath string) (err error) {
+	return symlink(oldpath, len(oldpath), newpath, len(newpath))
+}
+
+//sys	readlink(path string, pl int, buf []byte, bl int) (n int)
+func Readlink(path string, b []byte) (int, error) {
+	if err := readlink(path, len(path), b, len(b)); err < 0 {
+		return -1, NewAkaError(Errno(err), "Readlink failed")
+	} else {
+		return err, nil
+	}
+}
+
+//sys	Getcwd(buf []byte, length int) (n int, err error)
+const ImplementsGetwd = true
+func Getwd() (wd string, err error) {
+	var buf [PathMax]byte
+	n, err := Getcwd(buf[0:], len(buf))
+	if err != nil {
+		return "", err
+	}
+	// Getcwd returns the number of bytes written to buf, including the NUL.
+	if n < 0 {
+		return "", ENOTDIR
+	}
+	return string(buf[0:n]), err
+}
+
 func Getpid() (pid int) {
 	return int(parlib.Procinfo.Pid)
 }
@@ -578,39 +607,6 @@ func Futimes(fd int, tv []Timeval) (err error) {
 	// Believe it or not, this is the best we can do on Linux
 	// (and is what glibc does).
 	return Utimes("/proc/self/fd/"+itoa(fd), tv)
-}
-
-//sys	symlink(oldpath string, a int, newpath string, b int) (err error)
-
-func Symlink(oldpath string, newpath string) (err error) {
-	return symlink(oldpath, len(oldpath), newpath, len(newpath))
-}
-
-//sys	readlink(path string, pl int, buf []byte, bl int) (n int)
-
-func Readlink(path string, b []byte) (int, error) {
-	if err := readlink(path, len(path), b, len(b)); err < 0 {
-		return -1, NewAkaError(Errno(err), "Readlink failed")
-	} else {
-		return err, nil
-	}
-}
-
-const ImplementsGetwd = true
-
-//sys	Getcwd(buf []byte, length int) (n int, err error)
-
-func Getwd() (wd string, err error) {
-	var buf [PathMax]byte
-	n, err := Getcwd(buf[0:], len(buf))
-	if err != nil {
-		return "", err
-	}
-	// Getcwd returns the number of bytes written to buf, including the NUL.
-	if n < 0 {
-		return "", ENOTDIR
-	}
-	return string(buf[0:n]), err
 }
 
 func Setgroups(gids []int) (err error) {
