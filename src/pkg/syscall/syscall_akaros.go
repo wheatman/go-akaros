@@ -218,6 +218,8 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	Fstat(fd int, stat *Stat_t) (err error)
 //sys	fcntl(fd int, cmd int, arg int) (val int, err error)
 //sys	AbortSyscFd(fd int) (val int, err error)
+//sys	Getcwd(buf []byte, length int) (n int, err error)
+//sys	Fchdir(fd int) (err error)
 
 // Locally wrapped syscalls
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
@@ -227,6 +229,7 @@ func Open(path string, flags int, mode ...uint32) (fd int, err error) {
 	}
 	return open(path, len(path), flags, mode[0])
 }
+
 //sys	chdir(path string, pathlen int) (err error)
 func Chdir(path string) (err error) {
 	if len(path) == 0 {
@@ -507,7 +510,11 @@ func Readlink(path string, b []byte) (int, error) {
 	}
 }
 
-//sys	Getcwd(buf []byte, length int) (n int, err error)
+//sys	rename(oldpath string, ol int, newpath string, nl int) (err error)
+func Rename(oldpath string, newpath string) (err error) {
+	return NewAkaError(EMORON, "Rename not yet implemented")
+}
+
 const ImplementsGetwd = true
 func Getwd() (wd string, err error) {
 	var buf [PathMax]byte
@@ -520,6 +527,24 @@ func Getwd() (wd string, err error) {
 		return "", ENOTDIR
 	}
 	return string(buf[0:n]), err
+}
+
+func Chmod(path string, mode uint32) (err error) {
+	ret := parlib.Chmod(path, mode);
+    var akaerror error = nil
+    if ret == -1 {
+        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
+    }
+    return akaerror
+}
+
+func Fchmod(fd int, mode uint32) (err error) {
+	ret := parlib.Fchmod(fd, mode);
+    var akaerror error = nil
+    if ret == -1 {
+        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
+    }
+    return akaerror
 }
 
 func Getpid() (pid int) {
@@ -1195,7 +1220,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	Access(path string, mode uint32) (err error)
 //sys	Acct(path string) (err error)
 //sys	Adjtimex(buf *Timex) (state int, err error)
-//sys	Chmod(path string, mode uint32) (err error)
 //sys	Chroot(path string) (err error)
 //sys	Creat(path string, mode uint32) (fd int, err error)
 //sysnb	Dup2(oldfd int, newfd int) (err error)
@@ -1205,8 +1229,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
 //sys	Faccessat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fallocate(fd int, mode uint32, off int64, len int64) (err error)
-//sys	Fchdir(fd int) (err error)
-//sys	Fchmod(fd int, mode uint32) (err error)
 //sys	Fchmodat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fchownat(dirfd int, path string, uid int, gid int, flags int) (err error)
 //sys	Fdatasync(fd int) (err error)
@@ -1235,7 +1257,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sys	PivotRoot(newroot string, putold string) (err error) = SYS_PIVOT_ROOT
 //sysnb prlimit(pid int, resource int, old *Rlimit, newlimit *Rlimit) (err error) = SYS_PRLIMIT64
 //sys	Removexattr(path string, attr string) (err error)
-//sys	Rename(oldpath string, newpath string) (err error)
 //sys	Renameat(olddirfd int, oldpath string, newdirfd int, newpath string) (err error)
 //sys	Setdomainname(p []byte) (err error)
 //sys	Sethostname(p []byte) (err error)
