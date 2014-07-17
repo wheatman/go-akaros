@@ -24,6 +24,8 @@ import (
 	"time"
 )
 
+var supportsSymlinks = true
+
 var dot = []string{
 	"dir_unix.go",
 	"env.go",
@@ -477,8 +479,8 @@ func TestReaddirStatFailures(t *testing.T) {
 }
 
 func TestHardLink(t *testing.T) {
-	// Hardlinks are not supported under windows or Plan 9 or akaros.
-	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
+	// Hardlinks are not supported under Plan 9 or akaros.
+	if runtime.GOOS == "plan9" || runtime.GOOS == "akaros" {
 		return
 	}
 	from, to := "hardlinktestfrom", "hardlinktestto"
@@ -511,8 +513,12 @@ func TestHardLink(t *testing.T) {
 
 func TestSymlink(t *testing.T) {
 	switch runtime.GOOS {
-	case "android", "nacl", "plan9", "windows", "akaros":
+	case "android", "nacl", "plan9", "akaros":
 		t.Skipf("skipping on %s", runtime.GOOS)
+	case "windows":
+		if !supportsSymlinks {
+			t.Skipf("skipping on %s", runtime.GOOS)
+		}
 	}
 	from, to := "symlinktestfrom", "symlinktestto"
 	Remove(from) // Just in case.
@@ -573,8 +579,12 @@ func TestSymlink(t *testing.T) {
 
 func TestLongSymlink(t *testing.T) {
 	switch runtime.GOOS {
-	case "windows", "plan9", "nacl", "akaros":
+	case "plan9", "nacl", "akaros":
 		t.Skipf("skipping on %s", runtime.GOOS)
+	case "windows":
+		if !supportsSymlinks {
+			t.Skipf("skipping on %s", runtime.GOOS)
+		}
 	}
 	s := "0123456789abcdef"
 	// Long, but not too long: a common limit is 255.
