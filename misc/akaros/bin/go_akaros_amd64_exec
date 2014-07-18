@@ -80,7 +80,9 @@ if [ "$(echo "$OUTPUT" | tail -1)" = "" ]; then
 fi
 
 # Print the remaining output of the go program to stdout
-echo -n "$OUTPUT"
+if [ "$OUTPUT" != "" ]; then
+	echo "$OUTPUT"
+fi
 
 # And exit this script with the exit code from the go program
 exit $EXIT
