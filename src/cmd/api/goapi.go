@@ -111,6 +111,8 @@ func setContexts() {
 	}
 }
 
+var internalPkg = regexp.MustCompile(`(^|/)internal($|/)`)
+
 func main() {
 	flag.Parse()
 
@@ -136,7 +138,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		pkgNames = strings.Fields(string(stds))
+		for _, pkg := range strings.Fields(string(stds)) {
+			if !internalPkg.MatchString(pkg) {
+				pkgNames = append(pkgNames, pkg)
+			}
+		}
 	}
 
 	var featureCtx = make(map[string]map[string]bool) // feature -> context name -> true
