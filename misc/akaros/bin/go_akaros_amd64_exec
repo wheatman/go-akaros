@@ -25,7 +25,6 @@ rpc()
 # happen upon pressing Ctrl-C, or otherwise exiting.
 cleanup()
 {
-	rm -rf $HOST_MNT/$EXEC
 	rpc "rm -rf $EXEC 2>/dev/null"
 }
 die()
