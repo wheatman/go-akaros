@@ -13,6 +13,7 @@ AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
 EXEC=$1
 ARGS=${@:2}
 EXEC_DIR=$(dirname $EXEC)
+AKAROS_OUT=$EXEC_DIR/akaros.out
 
 # Execute a set of commands remotely on akaros
 rpc()
@@ -50,37 +51,45 @@ rpc "mkdir -p ${EXEC_DIR#/}"
 rpc "cp $AKAROS_MNT/$EXEC $EXEC_DIR >/dev/null"
 
 # Execute the go program on akaros, printing its output, followed by its exit
-# code. Store this in a bash variable.
-OUTPUT=$(rpc "export GOROOT=$AKAROS_GOROOT; \
+# code. Pipe this to $AKAROS_OUT. Previously I was storing this output in a
+# bash variable and parsing things from there. The problem, however, is that
+# certaion go tests purposefully print the '\0' character to stdout, which
+# bash variables silently ignore and strip from their output when echoed. This
+# causes us to fail at least one go test.  Creating an actual file in the file
+# system and always catting from there avoids this issue.
+rpc "export GOROOT=$AKAROS_GOROOT; \
+              export GOOS=akaros; \
+              export GOARCH=amd64; \
               cd $AKAROS_PWD; \
               $EXEC $ARGS; \
               EXIT=\$?; \
               echo ""; \
-              echo \$EXIT")
+              echo \$EXIT" > $AKAROS_OUT
 
 # Manually do the cleanup if we reach this point
 cleanup
 
 # If there was no output from the go program, something went wrong, so error out
-if [ "$OUTPUT" = "" ]; then
+if [ "$(cat $AKAROS_OUT)" = "" ]; then
 	echo "Could not execute binary on Akaros client. Make sure the listen1 program is running."
 	exit 1
 fi
 
-# Otherwise, Extract the exit code from the output
-EXIT=$(echo "$OUTPUT" | tail -1)
-OUTPUT=$(echo "$OUTPUT" | head -n -1)
+# Otherwise, extract the exit code from the output
+EXIT=$(cat $AKAROS_OUT | tail -1)
+# And remove the last line of the file
+sed -i '$d' $AKAROS_OUT 
 
-# If the last line in the output is blank, remove it (this is necessary for
-# making sure the exit code was printed on a line by itself, when the actual
-# output of the go executable doesn't end in a newline)
-if [ "$(echo "$OUTPUT" | tail -1)" = "" ]; then
-	OUTPUT=$(echo "$OUTPUT" | head -n -1)
+# If the last line in the output contains only the newline character, remove it
+# (this is necessary for making sure the exit code was printed on a line by
+# itself, when the actual output of the go executable doesn't end in a newline)
+if [ "$(cat $AKAROS_OUT | tail -1 | wc -c)" = "1" ]; then
+    sed -i '$d' $AKAROS_OUT
 fi
 
 # Print the remaining output of the go program to stdout
-if [ "$OUTPUT" != "" ]; then
-	echo "$OUTPUT"
+if [ "$(cat $AKAROS_OUT | wc -c)" != "0" ]; then
+	cat $AKAROS_OUT
 fi
 
 # And exit this script with the exit code from the go program
