@@ -194,6 +194,8 @@ evacuate(MapType *t, Hmap *h, uintptr oldbucket)
 		yk = (byte*)y->data;
 		xv = xk + h->keysize * BUCKETSIZE;
 		yv = yk + h->keysize * BUCKETSIZE;
+		x->overflow = nil;
+		y->overflow = nil;
 		for(; b != nil; b = b->overflow) {
 			for(i = 0, k = (byte*)b->data, v = k + h->keysize * BUCKETSIZE; i < BUCKETSIZE; i++, k += h->keysize, v += h->valuesize) {
 				top = b->tophash[i];
