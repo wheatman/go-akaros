@@ -45,8 +45,8 @@ var (
 
 	// letter is the build.ArchChar
 	letter string
-	
-	goos, goarch, goextlinkenabled, ccfortarget string
+
+	goos, goarch string
 
 	// dirs are the directories to look for *.go files in.
 	// TODO(bradfitz): just use all directories?
@@ -122,7 +122,7 @@ func main() {
 	failed := false
 	resCount := map[string]int{}
 	for _, test := range tests {
-		<-test.donec		
+		<-test.donec
 		status := "ok  "
 		errStr := ""
 		if _, isSkip := test.err.(skipError); isSkip {
@@ -231,8 +231,8 @@ func check(err error) {
 type test struct {
 	dir, gofile string
 	donec       chan bool // closed when done
-	dt time.Duration
-	
+	dt          time.Duration
+
 	src    string
 	action string // "compile", "build", etc.
 
@@ -706,7 +706,7 @@ func findExecCmd() []string {
 		execCmd = []string{path}
 	}
 	return execCmd
-}	
+}
 
 func (t *test) String() string {
 	return filepath.Join(t.dir, t.gofile)
@@ -840,11 +840,11 @@ func partitionStrings(prefix string, strs []string) (matched, unmatched []string
 }
 
 type wantedError struct {
-	reStr    string
-	re       *regexp.Regexp
-	lineNum  int
-	file     string
-	prefix string
+	reStr   string
+	re      *regexp.Regexp
+	lineNum int
+	file    string
+	prefix  string
 }
 
 var (
@@ -895,11 +895,11 @@ func (t *test) wantedErrors(file, short string) (errs []wantedError) {
 			}
 			prefix := fmt.Sprintf("%s:%d", short, lineNum)
 			errs = append(errs, wantedError{
-				reStr:    rx,
-				re:       re,
-				prefix: prefix,
-				lineNum:  lineNum,
-				file:     short,
+				reStr:   rx,
+				re:      re,
+				prefix:  prefix,
+				lineNum: lineNum,
+				file:    short,
 			})
 		}
 	}
