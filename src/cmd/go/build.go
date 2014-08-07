@@ -2359,7 +2359,7 @@ func (b *builder) cgo(p *Package, cgoExe, obj string, gccfiles, gxxfiles, mfiles
 	// systems likely to support it, which is to say, systems that
 	// normally use gold or the GNU linker.
 	switch goos {
-	case "android", "dragonfly", "linux", "netbsd":
+	case "akaros", "android", "dragonfly", "freebsd", "linux", "netbsd", "openbsd":
 		ldflags = append(ldflags, "-Wl,--build-id=none")
 	}
 
