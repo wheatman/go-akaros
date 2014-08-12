@@ -186,7 +186,7 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	}
 
 	// Kick off child.
-	pid, err1 = forkAndExecInChild(argv0p, argvp, envvp, chroot, dir, attr, sys, p[1])
+	pid, err1 = forkAndExecInChild(argv0p, len(argv0), argvp, envvp, chroot, dir, attr, sys, p[1])
 	if err1 != nil {
 		err = err1
 		goto error

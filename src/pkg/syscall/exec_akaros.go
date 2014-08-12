@@ -31,14 +31,13 @@ type SysProcAttr struct {
 // no rescheduling, no malloc calls, and no new stack segments.
 // The calls to RawSyscall are okay because they are assembly
 // functions that do not grow the stack.
-func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
+func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
 	// Declare all variables at top in case any
 	// declarations require heap allocation (e.g., err1).
 	var (
 		r1     uintptr
 		err1   error
 	)
-
 	// Make sure we aren't passing invalid arguments for Akaros (we should
 	// probably support these some day though...)
 	if chroot != nil {
@@ -49,10 +48,9 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Set up arguments for proc_create
-	bs_cmd := *((*[]byte)(unsafe.Pointer(&argv0)))
+	__cmd := uintptr(unsafe.Pointer(argv0))
 	pi, _ := parlib.ProcinfoPackArgs(argv, envv)
-	__cmd := uintptr(unsafe.Pointer(&bs_cmd[0]))
-    __cmdlen := uintptr(parlib.Cstrlen(bs_cmd))
+    __cmdlen := uintptr(argv0len)
 	__pi := uintptr(unsafe.Pointer(&pi))
 
 	// Call proc create.
