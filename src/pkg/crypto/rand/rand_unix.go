@@ -20,6 +20,8 @@ import (
 	"time"
 )
 
+const urandomDevice = "/dev/urandom"
+
 // Easy implementation: read from /dev/urandom.
 // This is sufficient on Linux, OS X, and FreeBSD.
 
@@ -29,7 +31,7 @@ func init() {
 	} else if runtime.GOOS == "akaros" {
 		Reader = newReader(&devReader{name: "#random/urandom"})
 	} else {
-		Reader = &devReader{name: "/dev/urandom"}
+		Reader = &devReader{name: urandomDevice}
 	}
 }
 
@@ -40,7 +42,14 @@ type devReader struct {
 	mu   sync.Mutex
 }
 
+// altGetRandom if non-nil specifies an OS-specific function to get
+// urandom-style randomness.
+var altGetRandom func([]byte) (ok bool)
+
 func (r *devReader) Read(b []byte) (n int, err error) {
+	if altGetRandom != nil && r.name == urandomDevice && altGetRandom(b) {
+		return len(b), nil
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.f == nil {
