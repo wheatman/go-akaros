@@ -274,6 +274,11 @@ func Pipe(p []int, flags int) (err error) {
 	return
 }
 
+//sys	rename(oldpath string, ol int, newpath string, nl int) (err error)
+func Rename(oldpath string, newpath string) (err error) {
+	return rename(oldpath, len(oldpath), newpath, len(newpath))
+}
+
 //sys	unlink(path string, pathlen int) (err error)
 func Unlink(path string) (err error) {
 	return unlink(path, len(path))
@@ -510,11 +515,6 @@ func Readlink(path string, b []byte) (int, error) {
 	}
 }
 
-//sys	rename(oldpath string, ol int, newpath string, nl int) (err error)
-func Rename(oldpath string, newpath string) (err error) {
-	return NewAkaError(EMORON, "Rename not yet implemented")
-}
-
 const ImplementsGetwd = true
 func Getwd() (wd string, err error) {
 	var buf [PathMax]byte
@@ -540,6 +540,24 @@ func Chmod(path string, mode uint32) (err error) {
 
 func Fchmod(fd int, mode uint32) (err error) {
 	ret := parlib.Fchmod(fd, mode);
+    var akaerror error = nil
+    if ret == -1 {
+        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
+    }
+    return akaerror
+}
+
+func Truncate(path string, size int64) (err error) {
+	ret := parlib.Truncate(path, size)
+    var akaerror error = nil
+    if ret == -1 {
+        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
+    }
+    return akaerror
+}
+
+func Ftruncate(fd int, size int64) (err error) {
+	ret := parlib.Ftruncate(fd, size)
     var akaerror error = nil
     if ret == -1 {
         akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())

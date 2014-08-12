@@ -9,12 +9,16 @@ package parlib
 /*
 #cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
 
+#define _LARGEFILE64_SOURCE
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+
 #include <parlib.h>
 #include <uthread.h>
 #include <vcore.h>
 #include <mcs.h>
 #include <futex.h>
-#include <sys/stat.h>
 
 int go_parlib_errno(void)
 {
@@ -83,5 +87,13 @@ func Chmod(path string, mode uint32) (int) {
 
 func Fchmod(fd int, mode uint32) (int) {
 	return int(C.fchmod(C.int(fd), C.__mode_t(mode)))
+}
+
+func Truncate(path string, size int64) (int) {
+	return int(C.truncate64(C.CString(path), C.__off64_t(size)))
+}
+
+func Ftruncate(fd int, size int64) (int) {
+	return int(C.ftruncate64(C.int(fd), C.__off64_t(size)))
 }
 
