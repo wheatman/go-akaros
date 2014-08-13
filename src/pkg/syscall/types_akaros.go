@@ -37,6 +37,14 @@ package syscall
 #include <bits/sockaddr.h>
 #include <ros/glibc-asm/ioctls.h>
 #include <ros/event.h>
+#include <ros/bits/syscall.h>
+
+#define BIT8SZ      1
+#define BIT16SZ     2
+#define BIT32SZ     4
+#define BIT64SZ     8
+#define QIDSZ   (BIT8SZ+BIT32SZ+BIT64SZ)
+#define STATFIXLEN  (BIT16SZ+QIDSZ+5*BIT16SZ+4*BIT32SZ+1*BIT64SZ)
 
 enum {
 	sizeofPtr = sizeof(void*),
@@ -117,6 +125,28 @@ const (
 	SEEK_SET = C.SEEK_SET
 	SEEK_CUR = C.SEEK_CUR
 	SEEK_END = C.SEEK_END
+)
+
+// 9p stuff
+
+const (
+	BIT8SZ = C.BIT8SZ
+	BIT16SZ = C.BIT16SZ
+	BIT32SZ = C.BIT32SZ
+	BIT64SZ = C.BIT64SZ
+	QIDSZ = C.QIDSZ
+	STATFIXLEN = C.STATFIXLEN
+)
+
+const (
+	WSTAT_MODE = C.WSTAT_MODE
+	WSTAT_ATIME = C.WSTAT_ATIME
+	WSTAT_MTIME = C.WSTAT_MTIME
+	WSTAT_LENGTH = C.WSTAT_LENGTH
+	WSTAT_NAME = C.WSTAT_NAME
+	WSTAT_UID = C.WSTAT_UID
+	WSTAT_GID = C.WSTAT_GID
+	WSTAT_MUID = C.WSTAT_MUID
 )
 
 // Sockets

@@ -220,6 +220,8 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	AbortSyscFd(fd int) (val int, err error)
 //sys	Getcwd(buf []byte, length int) (n int, err error)
 //sys	Fchdir(fd int) (err error)
+//sys	Wstat(path string, pathlen int, stat_m []byte, flags int) (err error)
+//sys	Fwstat(fd int, stat_m []byte, flags int) (err error)
 
 // Locally wrapped syscalls
 //sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
