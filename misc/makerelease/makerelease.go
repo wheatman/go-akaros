@@ -155,6 +155,7 @@ func main() {
 			log.Fatalln("setupOAuthClient:", err)
 		}
 	}
+	ok := true
 	for _, targ := range flag.Args() {
 		var b Build
 		if m := fileRe.FindStringSubmatch(targ); m != nil {
@@ -206,7 +207,11 @@ func main() {
 		}
 		if err := b.Do(); err != nil {
 			log.Printf("%s: %v", targ, err)
+			ok = false
 		}
+	}
+	if !ok {
+		os.Exit(1)
 	}
 }
 
