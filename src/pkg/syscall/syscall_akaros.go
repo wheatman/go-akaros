@@ -528,6 +528,10 @@ func Getwd() (wd string, err error) {
 	if n < 0 {
 		return "", ENOTDIR
 	}
+	// Remove the trailing slash if it's not just root '/'
+	if buf[n-1] == '/' && n > 1 {
+		n -= 1
+	}
 	return string(buf[0:n]), err
 }
 
