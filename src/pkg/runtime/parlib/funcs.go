@@ -80,20 +80,3 @@ func Errno() (int) {
 func Errstr() (string) {
 	return C.GoString(C.go_parlib_errstr())
 }
-
-func Chmod(path string, mode uint32) (int) {
-	return int(C.chmod(C.CString(path), C.__mode_t(mode)))
-}
-
-func Fchmod(fd int, mode uint32) (int) {
-	return int(C.fchmod(C.int(fd), C.__mode_t(mode)))
-}
-
-func Truncate(path string, size int64) (int) {
-	return int(C.truncate64(C.CString(path), C.__off64_t(size)))
-}
-
-func Ftruncate(fd int, size int64) (int) {
-	return int(C.ftruncate64(C.int(fd), C.__off64_t(size)))
-}
-
