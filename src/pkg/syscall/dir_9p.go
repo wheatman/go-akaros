@@ -3,15 +3,16 @@
 // license that can be found in the LICENSE file.
 
 // Plan 9 directory marshalling. See intro(5).
+// +build plan9 akaros
 
 package syscall
 
-import "errors"
+import errorsPkg "errors"
 
 var (
-	ErrShortStat = errors.New("stat buffer too short")
-	ErrBadStat   = errors.New("malformed stat buffer")
-	ErrBadName   = errors.New("bad character in file name")
+	ErrShortStat = errorsPkg.New("stat buffer too short")
+	ErrBadStat   = errorsPkg.New("malformed stat buffer")
+	ErrBadName   = errorsPkg.New("bad character in file name")
 )
 
 // A Qid represents a 9P server's unique identification for a file.
