@@ -54,6 +54,7 @@ type dirInfo struct {
 	bufp int    // location of next record in buf.
 }
 
+func sigpipe() // implemented in package runtime
 func epipecheck(file *File, e error) {
 	if e == syscall.EPIPE {
 		if atomic.AddInt32(&file.nepipe, 1) >= 10 {
@@ -67,6 +68,22 @@ func epipecheck(file *File, e error) {
 // DevNull is the name of the operating system's ``null device.''
 // On Unix-like systems, it is "/dev/null"; on Windows, "NUL".
 const DevNull = "/dev/null"
+
+// syscallMode returns the syscall-specific mode bits from Go's portable mode bits.
+func syscallMode(i FileMode) (o uint32) {
+	o |= uint32(i.Perm())
+	if i&ModeSetuid != 0 {
+		o |= syscall.S_ISUID
+	}
+	if i&ModeSetgid != 0 {
+		o |= syscall.S_ISGID
+	}
+	if i&ModeSticky != 0 {
+		o |= syscall.S_ISVTX
+	}
+	// No mapping for Go's ModeTemporary (plan9 only).
+	return
+}
 
 // OpenFile is the generalized open call; most users will use Open
 // or Create instead.  It opens the named file with specified flag
@@ -265,8 +282,40 @@ func (f *File) seek(offset int64, whence int) (ret int64, err error) {
 // If the file is a symbolic link, it changes the size of the link's target.
 // If there is an error, it will be of type *PathError.
 func Truncate(name string, size int64) error {
-	if e := syscall.Truncate(name, size); e != nil {
-		return &PathError{"truncate", name, e}
+	var d syscall.Dir
+
+	d.Null()
+	d.Length = size
+
+	var buf [syscall.STATFIXLEN]byte
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &PathError{"truncate", name, err}
+	}
+	if err = syscall.Wstat(name, len(name), buf[:n], syscall.WSTAT_LENGTH); err != nil {
+		return &PathError{"truncate", name, err}
+	}
+	return nil
+}
+// Truncate changes the size of the named file.
+// If the file is a symbolic link, it changes the size of the link's target.
+// If there is an error, it will be of type *PathError.
+func (f *File) Truncate(size int64) error {
+	if f == nil {
+		return ErrInvalid
+	}
+
+	var d syscall.Dir
+	d.Null()
+	d.Length = size
+
+	var buf [syscall.STATFIXLEN]byte
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &PathError{"truncate", f.name, err}
+	}
+	if err = syscall.Fwstat(f.fd, buf[:n], syscall.WSTAT_LENGTH); err != nil {
+		return &PathError{"truncate", f.name, err}
 	}
 	return nil
 }
@@ -300,6 +349,197 @@ func Remove(name string) error {
 		e = e1
 	}
 	return &PathError{"remove", name, e}
+}
+
+// Link creates newname as a hard link to the oldname file.
+// If there is an error, it will be of type *LinkError.
+func Link(oldname, newname string) error {
+	e := syscall.Link(oldname, newname)
+	if e != nil {
+		return &LinkError{"link", oldname, newname, e}
+	}
+	return nil
+}
+
+// Symlink creates newname as a symbolic link to oldname.
+// If there is an error, it will be of type *LinkError.
+func Symlink(oldname, newname string) error {
+	e := syscall.Symlink(oldname, newname)
+	if e != nil {
+		return &LinkError{"symlink", oldname, newname, e}
+	}
+	return nil
+}
+
+// Readlink returns the destination of the named symbolic link.
+// If there is an error, it will be of type *PathError.
+func Readlink(name string) (string, error) {
+	for len := 128; ; len *= 2 {
+		b := make([]byte, len)
+		n, e := syscall.Readlink(name, b)
+		if e != nil {
+			return "", &PathError{"readlink", name, e}
+		}
+		if n < len {
+			return string(b[0:n]), nil
+		}
+	}
+}
+
+// HasPrefix from the strings package.
+func hasPrefix(s, prefix string) bool {
+	return len(s) >= len(prefix) && s[0:len(prefix)] == prefix
+}
+
+// Variant of LastIndex from the strings package.
+func lastIndex(s string, sep byte) int {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == sep {
+			return i
+		}
+	}
+	return -1
+}
+
+func rename(oldname, newname string) error {
+	dirname := oldname[:lastIndex(oldname, '/')+1]
+	if hasPrefix(newname, dirname) {
+		newname = newname[len(dirname):]
+	} else {
+		return &LinkError{"rename", oldname, newname, ErrInvalid}
+	}
+
+	// If newname still contains slashes after removing the oldname
+	// prefix, the rename is cross-directory and must be rejected.
+	// This case is caught by d.Marshal below.
+
+	var d syscall.Dir
+
+	d.Null()
+	d.Name = newname
+
+	buf := make([]byte, syscall.STATFIXLEN+len(d.Name))
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &LinkError{"rename", oldname, newname, err}
+	}
+	if err = syscall.Wstat(oldname, len(oldname), buf[:n], syscall.WSTAT_NAME); err != nil {
+		return &LinkError{"rename", oldname, newname, err}
+	}
+	return nil
+}
+
+const chmodMask = uint32(syscall.S_ISUID | syscall.S_ISGID | syscall.S_ISVTX | ModePerm)
+
+// Chmod changes the mode of the named file to mode.
+// If the file is a symbolic link, it changes the mode of the link's target.
+// If there is an error, it will be of type *PathError.
+func Chmod(name string, mode FileMode) error {
+	var d syscall.Dir
+
+	d.Null()
+	d.Mode = syscallMode(mode)&chmodMask
+
+	var buf [syscall.STATFIXLEN]byte
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &PathError{"chmod", name, err}
+	}
+	if err = syscall.Wstat(name, len(name), buf[:n], syscall.WSTAT_MODE); err != nil {
+		return &PathError{"chmod", name, err}
+	}
+	return nil
+}
+
+// Chmod changes the mode of the file to mode.
+// If there is an error, it will be of type *PathError.
+func (f *File) Chmod(mode FileMode) error {
+	if f == nil {
+		return ErrInvalid
+	}
+	var d syscall.Dir
+
+	d.Null()
+	d.Mode = syscallMode(mode)&chmodMask
+
+	var buf [syscall.STATFIXLEN]byte
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &PathError{"chmod", f.name, err}
+	}
+	if err = syscall.Fwstat(f.fd, buf[:n], syscall.WSTAT_MODE); err != nil {
+		return &PathError{"chmod", f.name, err}
+	}
+	return nil
+}
+
+// Sync commits the current contents of the file to stable storage.
+// Typically, this means flushing the file system's in-memory copy
+// of recently written data to disk.
+func (f *File) Sync() (err error) {
+	if f == nil {
+		return ErrInvalid
+	}
+	if e := syscall.Fsync(f.fd); e != nil {
+		return NewSyscallError("fsync", e)
+	}
+	return nil
+}
+
+// Chown changes the numeric uid and gid of the named file.
+// If the file is a symbolic link, it changes the uid and gid of the link's target.
+// If there is an error, it will be of type *PathError.
+func Chown(name string, uid, gid int) error {
+	if e := syscall.Chown(name, uid, gid); e != nil {
+		return &PathError{"chown", name, e}
+	}
+	return nil
+}
+
+// Lchown changes the numeric uid and gid of the named file.
+// If the file is a symbolic link, it changes the uid and gid of the link itself.
+// If there is an error, it will be of type *PathError.
+func Lchown(name string, uid, gid int) error {
+	if e := syscall.Lchown(name, uid, gid); e != nil {
+		return &PathError{"lchown", name, e}
+	}
+	return nil
+}
+
+// Chown changes the numeric uid and gid of the named file.
+// If there is an error, it will be of type *PathError.
+func (f *File) Chown(uid, gid int) error {
+	if f == nil {
+		return ErrInvalid
+	}
+	if e := syscall.Fchown(f.fd, uid, gid); e != nil {
+		return &PathError{"chown", f.name, e}
+	}
+	return nil
+}
+
+// Chtimes changes the access and modification times of the named
+// file, similar to the Unix utime() or utimes() functions.
+//
+// The underlying filesystem may truncate or round the values to a
+// less precise time unit.
+// If there is an error, it will be of type *PathError.
+func Chtimes(name string, atime time.Time, mtime time.Time) error {
+	var d syscall.Dir
+
+	d.Null()
+	d.Atime = uint32(atime.Unix())
+	d.Mtime = uint32(mtime.Unix())
+
+	var buf [syscall.STATFIXLEN]byte
+	n, err := d.Marshal(buf[:])
+	if err != nil {
+		return &PathError{"chtimes", name, err}
+	}
+	if err = syscall.Wstat(name, len(name), buf[:n], syscall.WSTAT_MTIME | syscall.WSTAT_ATIME); err != nil {
+		return &PathError{"chtimes", name, err}
+	}
+	return nil
 }
 
 // basename removes trailing slashes and the leading directory name from path name
