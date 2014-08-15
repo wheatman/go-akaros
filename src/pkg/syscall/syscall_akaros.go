@@ -535,42 +535,6 @@ func Getwd() (wd string, err error) {
 	return string(buf[0:n]), err
 }
 
-func Chmod(path string, mode uint32) (err error) {
-	ret := parlib.Chmod(path, mode);
-    var akaerror error = nil
-    if ret == -1 {
-        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
-    }
-    return akaerror
-}
-
-func Fchmod(fd int, mode uint32) (err error) {
-	ret := parlib.Fchmod(fd, mode);
-    var akaerror error = nil
-    if ret == -1 {
-        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
-    }
-    return akaerror
-}
-
-func Truncate(path string, size int64) (err error) {
-	ret := parlib.Truncate(path, size)
-    var akaerror error = nil
-    if ret == -1 {
-        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
-    }
-    return akaerror
-}
-
-func Ftruncate(fd int, size int64) (err error) {
-	ret := parlib.Ftruncate(fd, size)
-    var akaerror error = nil
-    if ret == -1 {
-        akaerror = NewAkaError(Errno(parlib.Errno()), parlib.Errstr())
-    }
-    return akaerror
-}
-
 func Getpid() (pid int) {
 	return int(parlib.Procinfo.Pid)
 }
