@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build !akaros
+
 package net
 
 import (
@@ -39,8 +41,8 @@ func TestLookupStaticHost(t *testing.T) {
 		tt := hosttests[i]
 		ips := lookupStaticHost(tt.host)
 		if len(ips) != len(tt.ips) {
-			t.Errorf("# of hosts = %v; want %v",
-				len(ips), len(tt.ips))
+			t.Errorf("Lookup %v; # of hosts = %v; want %v",
+				tt.host, len(ips), len(tt.ips))
 			continue
 		}
 		for k, v := range ips {
