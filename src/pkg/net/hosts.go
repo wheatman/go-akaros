@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Read static host/IP entries from /etc/hosts.
+// +build !akaros
 
 package net
 
