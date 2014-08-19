@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"runtime"
 	"strings"
 	"syscall"
 	"testing"
@@ -17,7 +18,7 @@ import (
 var testIPv6 = flag.Bool("ipv6", false, "assume ipv6 tunnel is present")
 
 func TestResolveGoogle(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 
@@ -42,7 +43,7 @@ func TestResolveGoogle(t *testing.T) {
 }
 
 func TestDialGoogle(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 
@@ -108,7 +109,7 @@ var googleaddrsipv4 = []string{
 }
 
 func TestDialGoogleIPv4(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 
@@ -163,7 +164,7 @@ var googleaddrsipv6 = []string{
 }
 
 func TestDialGoogleIPv6(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 	// Only run tcp6 if the kernel will take it.
