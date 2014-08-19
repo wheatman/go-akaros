@@ -292,7 +292,6 @@ elfreloc1(Reloc *r, vlong sectoff)
 		break;
 		
 	case R_CALL:
-	case R_PCREL:
 		if(r->siz == 4) {
 			if(r->xsym->type == SDYNIMPORT)
 				VPUT(R_X86_64_GOTPCREL | (uint64)elfsym<<32);
@@ -301,7 +300,14 @@ elfreloc1(Reloc *r, vlong sectoff)
 		} else
 			return -1;
 		break;
-	
+
+	case R_PCREL:
+		if(r->siz == 4) {
+			VPUT(R_X86_64_PC32 | (uint64)elfsym<<32);
+		} else
+			return -1;
+		break;
+
 	case R_TLS:
 		if(r->siz == 4) {
 			if(flag_shared)
@@ -325,7 +331,7 @@ machoreloc1(Reloc *r, vlong sectoff)
 	
 	rs = r->xsym;
 
-	if(rs->type == SHOSTOBJ) {
+	if(rs->type == SHOSTOBJ || r->type == R_PCREL) {
 		if(rs->dynid < 0) {
 			diag("reloc %d to non-macho symbol %s type=%d", r->type, rs->name, rs->type);
 			return -1;
@@ -347,10 +353,13 @@ machoreloc1(Reloc *r, vlong sectoff)
 		v |= MACHO_X86_64_RELOC_UNSIGNED<<28;
 		break;
 	case R_CALL:
-	case R_PCREL:
 		v |= 1<<24; // pc-relative bit
 		v |= MACHO_X86_64_RELOC_BRANCH<<28;
 		break;
+	case R_PCREL:
+		// NOTE: Only works with 'external' relocation. Forced above.
+		v |= 1<<24; // pc-relative bit
+		v |= MACHO_X86_64_RELOC_SIGNED<<28;
 	}
 	
 	switch(r->siz) {
