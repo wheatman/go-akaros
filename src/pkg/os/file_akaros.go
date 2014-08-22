@@ -402,29 +402,9 @@ func lastIndex(s string, sep byte) int {
 }
 
 func rename(oldname, newname string) error {
-	dirname := oldname[:lastIndex(oldname, '/')+1]
-	if hasPrefix(newname, dirname) {
-		newname = newname[len(dirname):]
-	} else {
-		return &LinkError{"rename", oldname, newname, ErrInvalid}
-	}
-
-	// If newname still contains slashes after removing the oldname
-	// prefix, the rename is cross-directory and must be rejected.
-	// This case is caught by d.Marshal below.
-
-	var d syscall.Dir
-
-	d.Null()
-	d.Name = newname
-
-	buf := make([]byte, syscall.STATFIXLEN+len(d.Name))
-	n, err := d.Marshal(buf[:])
-	if err != nil {
-		return &LinkError{"rename", oldname, newname, err}
-	}
-	if err = syscall.Wstat(oldname, len(oldname), buf[:n], syscall.WSTAT_NAME); err != nil {
-		return &LinkError{"rename", oldname, newname, err}
+	e := syscall.Rename(oldname, newname)
+	if e != nil {
+		return &LinkError{"rename", oldname, newname, e}
 	}
 	return nil
 }
