@@ -13,7 +13,7 @@
 TEXT runtime·settls(SB), NOSPLIT, $0
 	RET
 
-TEXT sigtramp_real(SB),NOSPLIT,$64
+TEXT sigtramp_real(SB),NOSPLIT,$40
     get_tls(BX)
 
     // check that m exists
@@ -30,7 +30,7 @@ TEXT sigtramp_real(SB),NOSPLIT,$64
 
     // save g
     MOVQ    g(BX), R10
-    MOVQ    R10, 40(SP)
+    MOVQ    R10, 32(SP)
 
     // g = m->gsignal
     MOVQ    m_gsignal(BP), BP
@@ -45,7 +45,7 @@ TEXT sigtramp_real(SB),NOSPLIT,$64
 
     // restore g
     get_tls(BX)
-    MOVQ    40(SP), R10
+    MOVQ    32(SP), R10
     MOVQ    R10, g(BX)
 	RET
 
@@ -71,7 +71,7 @@ TEXT runtime·sigtramp(SB),NOSPLIT,$0
 // whether it is initiated by a user (i.e. a kill call), or by the kernel (i.e.
 // a trap such as SIGSEGV occurred).  Defining this function and assigning as
 // the default function called from go code ensures that this happens.
-TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0
+TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0-8
     MOVQ    8(SP), DI
     CALL    sigtramp_real(SB)
 	RET
