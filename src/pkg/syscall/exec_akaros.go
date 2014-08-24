@@ -77,7 +77,7 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 
 	child := int(r1)
 
-	r1, _, err1 = RawSyscall(126/*SYS_DUP_FDS_TO*/, uintptr(child), 
+	r1, _, err1 = RawSyscall(125/*SYS_DUP_FDS_TO*/, uintptr(child), 
 	    uintptr(unsafe.Pointer(&fdmap)), uintptr(len(fdmap)))
 	if int(r1) != len(fdmap) {
 		return 0, err1
