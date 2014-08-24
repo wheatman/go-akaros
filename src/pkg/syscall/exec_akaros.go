@@ -44,6 +44,10 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 		r1     uintptr
 		err1   error
 	)
+	// The pipe is meant to be used by the child of the fork.
+	// The runtime code checks error return and pipe.
+	// The pipe is not applicable to Akaros. Just close it.
+	RawSyscall(SYS_CLOSE, uintptr(pipe), uintptr(0), uintptr(0))
 	// Make sure we aren't passing invalid arguments for Akaros (we should
 	// probably support these some day though...)
 	if chroot != nil {
