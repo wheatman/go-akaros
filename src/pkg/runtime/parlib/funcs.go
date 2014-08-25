@@ -61,8 +61,8 @@ func Futex(uaddr *int32, op int32, val int32,
 
 func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
 	p_pi := (*_Ctype_struct_procinfo)(unsafe.Pointer(&pi))
-    p_argv := (**_Ctype_char)(unsafe.Pointer(&argv[0]))
-    p_envp := (**_Ctype_char)(unsafe.Pointer(&envp[0]))
+	p_argv := (**_Ctype_char)(unsafe.Pointer(&argv[0]))
+	p_envp := (**_Ctype_char)(unsafe.Pointer(&envp[0]))
 
 	__err := C.procinfo_pack_args(p_pi, p_argv, p_envp)
 	if __err == -1 {
@@ -73,6 +73,21 @@ func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
 	return pi, err
 }
 
+func ChildfdmapPack(fdlist []uintptr) (cfdmap unsafe.Pointer, err error) {
+	sz := len(fdlist)
+	__sz := (_Ctype_int) (4*sz)
+	buf := /*(*_Ctype_struct_childfdmap)*/ C.malloc(C.size_t(__sz)) // @@@@ me C.sizeof_struct_childfdmap*sz)
+	__buf := (*_Ctype_struct_childfdmap)(buf)
+	__fdlist := (*_Ctype_int)(unsafe.Pointer(&fdlist[0]))
+
+	__err := C.childfdmap_pack(__buf, __fdlist, __sz)
+	if __err == -1 {
+		err = nil
+	} else {
+		err = errors.New("Childfdmap: error packing argv and envp")
+	}
+	return unsafe.Pointer(__buf), err
+}
 func Errno() (int) {
 	return int(C.go_parlib_errno())
 }
