@@ -23,12 +23,6 @@ type SysProcAttr struct {
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 }
 
-// get this from C eventually.
-type cfdmap struct {
-     parent, child uintptr
-     ok int
-}
-
 // Fork, dup fd onto 0..len(fd), and exec(argv0, argvv, envv) in child.
 // If a dup or exec fails, write the errno error to pipe.
 // (Pipe is close-on-exec so if exec succeeds, it will be closed.)
@@ -62,13 +56,11 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 	pi, _ := parlib.ProcinfoPackArgs(argv, envv)
     __cmdlen := uintptr(argv0len)
 	__pi := uintptr(unsafe.Pointer(&pi))
-	fdmap := make([]cfdmap, len(attr.Files))
-	for i, ufd := range attr.Files {
-	    fdmap[i].parent = uintptr(ufd)
-	    fdmap[i].child = uintptr(i)
-	    fdmap[i].ok = -1
-	    }
-
+	__fdmap, err := parlib.ChildfdmapPack(attr.Files)
+	if err != nil {
+	   return 0, NewAkaError(EMORON, "ChildfdmapPack went badly")
+	   }
+	   //defer C.free(__fdmap)
 	// Call proc create.
 	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, 0, 0, 0)
 	if err1 != nil {
@@ -78,8 +70,8 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 	child := int(r1)
 
 	r1, _, err1 = RawSyscall(125/*SYS_DUP_FDS_TO*/, uintptr(child), 
-	    uintptr(unsafe.Pointer(&fdmap)), uintptr(len(fdmap)))
-	if int(r1) != len(fdmap) {
+	    uintptr(__fdmap), uintptr(len(attr.Files)))
+	if int(r1) != len(attr.Files) {
 		return 0, err1
 	}
 
