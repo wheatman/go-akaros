@@ -56,24 +56,13 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 	pi, _ := parlib.ProcinfoPackArgs(argv, envv)
     __cmdlen := uintptr(argv0len)
 	__pi := uintptr(unsafe.Pointer(&pi))
-	__fdmap, err := parlib.ChildfdmapPack(attr.Files)
-	if err != nil {
-	   return 0, NewAkaError(EMORON, "ChildfdmapPack went badly")
-	   }
-	   //defer C.free(__fdmap)
+
 	// Call proc create.
-	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, 0, 0, 0)
+	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, parlib.PROC_DUP_FGRP, 0, 0)
 	if err1 != nil {
 		return 0, err1
 	}
-
 	child := int(r1)
-
-	r1, _, err1 = RawSyscall(125/*SYS_DUP_FDS_TO*/, uintptr(child), 
-	    uintptr(__fdmap), uintptr(len(attr.Files)))
-	if int(r1) != len(attr.Files) {
-		return 0, err1
-	}
 
 	// Proc create succeeded, now run it!
 	r1, _, err1 = RawSyscall(SYS_PROC_RUN, r1, 0, 0)
