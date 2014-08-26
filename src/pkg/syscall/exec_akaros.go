@@ -7,6 +7,8 @@
 package syscall
 
 import (
+	"bytes"
+	"encoding/binary"
 	"unsafe"
 	"runtime/parlib"
 )
@@ -42,6 +44,7 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 	// The runtime code checks error return and pipe.
 	// The pipe is not applicable to Akaros. Just close it.
 	RawSyscall(SYS_CLOSE, uintptr(pipe), uintptr(0), uintptr(0))
+
 	// Make sure we aren't passing invalid arguments for Akaros (we should
 	// probably support these some day though...)
 	if chroot != nil {
@@ -57,21 +60,41 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
     __cmdlen := uintptr(argv0len)
 	__pi := uintptr(unsafe.Pointer(&pi))
 
+	// Buffer below is of objects mathcing this ptototype
+	// type cfdmap struct {
+	//      parentfd int32
+	//      childfd int32
+	//      ok int32
+	// }
+	cfdm := new(bytes.Buffer)
+	for i,f := range(attr.Files) {
+		binary.Write(cfdm, binary.LittleEndian, int32(f))
+		binary.Write(cfdm, binary.LittleEndian, int32(i))
+		binary.Write(cfdm, binary.LittleEndian, int32(-1))
+	}
+	__cfdm := uintptr(unsafe.Pointer(&(cfdm.Bytes()[0])))
+
 	// Call proc create.
-	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, parlib.PROC_DUP_FGRP, 0, 0)
+	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, 0, 0, 0)
 	if err1 != nil {
 		return 0, err1
 	}
-	child := int(r1)
+	child := r1
+
+	r1, _, err1 = RawSyscall(SYS_DUP_FDS_TO, uintptr(child),
+	                         __cfdm, uintptr(len(attr.Files)))
+	if err1 != nil {
+		return 0, err1
+	}
 
 	// Proc create succeeded, now run it!
-	r1, _, err1 = RawSyscall(SYS_PROC_RUN, r1, 0, 0)
+	r1, _, err1 = RawSyscall(SYS_PROC_RUN, child, 0, 0)
 	if err1 != nil {
 		return 0, err1
 	}
 
 	// Return the child pid
-	return child, nil
+	return int(child), nil
 }
 
 // Try to open a pipe with O_CLOEXEC set on both file descriptors.
