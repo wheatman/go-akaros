@@ -266,6 +266,14 @@ func basefds() uintptr {
 	if runtime.GOOS == "plan9" && runtime.GOARCH == "386" {
 		n++
 	}
+	// Go runtime for akaros requires the alarm service to be open, which has 2
+	// open files, one for the timerfd, and one for its ctl.  Don't close them!
+	// Before these are open though, another file (which is subsequently
+	// properly closed) comes along and claims fd 3, giving the alarm service
+	// fds 4 and 5, so we need to bump n up by 3 instead of just 2. Doh!
+	if runtime.GOOS == "akaros" {
+		n += 3
+	}
 	return n
 }
 
@@ -606,6 +614,11 @@ func TestHelperProcess(*testing.T) {
 			os.Exit(1)
 		}
 		switch runtime.GOOS {
+		case "akaros":
+			// TODO(klueska): Akaros has holes in the basefd() because of the
+			// way it is generated. It is also against the OS philosophy to
+			// force fds to be returned contiguously.  We will probably never
+			// pass this test as it is currently written.
 		case "dragonfly":
 			// TODO(jsing): Determine why DragonFly is leaking
 			// file descriptors...
