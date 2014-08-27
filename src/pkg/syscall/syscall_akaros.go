@@ -219,7 +219,6 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	fcntl(fd int, cmd int, arg int) (val int, err error)
 //sys	AbortSyscFd(fd int) (val int, err error)
 //sys	Getcwd(buf []byte, length int) (n int, err error)
-//sys	Fchdir(fd int) (err error)
 //sys	Wstat(path string, pathlen int, stat_m []byte, flags int) (err error)
 //sys	Fwstat(fd int, stat_m []byte, flags int) (err error)
 
@@ -232,12 +231,17 @@ func Open(path string, flags int, mode ...uint32) (fd int, err error) {
 	return open(path, len(path), flags, mode[0])
 }
 
-//sys	chdir(path string, pathlen int) (err error)
+//sys	chdir(pid int, path string, pathlen int) (err error)
 func Chdir(path string) (err error) {
 	if len(path) == 0 {
 		return NewAkaError(Errno(EINVAL), "Path length 0")
 	}
-	return chdir(path, len(path))
+	return chdir(int(parlib.Procinfo.Pid), path, len(path))
+}
+
+//sys	fchdir(pid int, fd int) (err error)
+func Fchdir(fd int) (err error) {
+	return fchdir(int(parlib.Procinfo.Pid), fd)
 }
 
 //sys	llseek(fd int, offset_hi int32, offset_lo int32, result *int64, whence int) (err error)
