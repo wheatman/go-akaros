@@ -12,32 +12,32 @@ package parlib
 
 void printChar(char c)
 {
-	printf("%c\n", c);
+	fprintf(stderr, "%c\n", c);
 }
 void printInt(int d)
 {
-	printf("%d", d);
+	fprintf(stderr, "%d", d);
 }
 void printString(char *s)
 {
-	printf("%s", s);
+	fprintf(stderr, "%s", s);
 }
 void printChars(char *s, int len)
 {
 	int i = 0;
 	for (i=0; i<len; i++)
-		printf("%c", *(s+i));
+		fprintf(stderr, "%c", *(s+i));
 }
 void checkpoint(long long unsigned arg, char c)
 {
 	if (c == 'x')
-		printf("checkpoint: 0x%llx\n", arg);
+		fprintf(stderr, "checkpoint: 0x%llx\n", arg);
 	else
-		printf("checkpoint: %llu\n", arg);
+		fprintf(stderr, "checkpoint: %llu\n", arg);
 }
 void syscallError(long num)
 {
-	printf("Error: Syscall %ld not yet supported!\n", num);
+	fprintf(stderr, "Error: Syscall %ld not yet supported!\n", num);
 }
 */
 import "C"
