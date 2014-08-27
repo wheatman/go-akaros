@@ -23,12 +23,6 @@ type SysProcAttr struct {
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 }
 
-type cfdmap struct {
-     parentfd int32
-     childfd int32
-     ok int32
-}
-
 // Fork, dup fd onto 0..len(fd), and exec(argv0, argvv, envv) in child.
 // If a dup or exec fails, write the errno error to pipe.
 // (Pipe is close-on-exec so if exec succeeds, it will be closed.)
@@ -74,15 +68,15 @@ func forkAndExecInChild(argv0 []byte, argv, envv []*byte, chroot, dir []byte, at
 	child := r1
 
 	// Dup the fd map properly into the child
-	__cfdm := make([]cfdmap, len(attr.Files))
+	__cfdm := make([]Childfdmap_t, len(attr.Files))
 	for i, f := range(attr.Files) {
-		__cfdm[i].parentfd = int32(f)
-		__cfdm[i].childfd = int32(i)
-		__cfdm[i].ok = int32(-1)
+		__cfdm[i].Parentfd = uint32(f)
+		__cfdm[i].Childfd = uint32(i)
+		__cfdm[i].Ok = int32(-1)
 	}
 	cfdm := uintptr(unsafe.Pointer(&__cfdm[0]))
-	r1, _, err1 = RawSyscall(SYS_DUP_FDS_TO, uintptr(child),
-	                         cfdm, uintptr(len(attr.Files)))
+	cfdmlen := uintptr(len(__cfdm))
+	r1, _, err1 = RawSyscall(SYS_DUP_FDS_TO, child, cfdm, cfdmlen)
 	if err1 != nil {
 		return 0, err1
 	}

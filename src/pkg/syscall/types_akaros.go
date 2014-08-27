@@ -37,7 +37,7 @@ package syscall
 #include <bits/sockaddr.h>
 #include <ros/glibc-asm/ioctls.h>
 #include <ros/event.h>
-#include <ros/bits/syscall.h>
+#include <ros/syscall.h>
 
 #define BIT8SZ      1
 #define BIT16SZ     2
@@ -126,6 +126,10 @@ const (
 	SEEK_CUR = C.SEEK_CUR
 	SEEK_END = C.SEEK_END
 )
+
+// Syscall interface stuff
+
+type Childfdmap_t C.struct_childfdmap
 
 // 9p stuff
 
