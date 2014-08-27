@@ -33,7 +33,7 @@ type SysProcAttr struct {
 // no rescheduling, no malloc calls, and no new stack segments.
 // The calls to RawSyscall are okay because they are assembly
 // functions that do not grow the stack.
-func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
+func forkAndExecInChild(argv0 []byte, argv, envv []*byte, chroot, dir []byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
 	// Declare all variables at top in case any
 	// declarations require heap allocation (e.g., err1).
 	var (
@@ -47,47 +47,59 @@ func forkAndExecInChild(argv0 *byte, argv0len int, argv, envv []*byte, chroot, d
 
 	// Make sure we aren't passing invalid arguments for Akaros (we should
 	// probably support these some day though...)
-	if chroot != nil {
+	if len(chroot) > 0 {
 		return 0, NewAkaError(EMORON, "Akaros does not support passing 'chroot' to forkAndExecInChild")
 	}
-	if dir != nil {
-		return 0, NewAkaError(EMORON, "Akaros does not support passing 'dir' to forkAndExecInChild")
+
+	// Adjust argv0 to prepend 'dir' if argv0 is a relative path
+	if argv0[0] != '/' {
+		if len(dir) > 0 {
+			argv0 = append(dir[:len(dir)-1], append([]byte{'/'}, argv0...)...)
+		}
 	}
 
-	// Set up arguments for proc_create
-	__cmd := uintptr(unsafe.Pointer(argv0))
-	pi, _ := parlib.ProcinfoPackArgs(argv, envv)
-    __cmdlen := uintptr(argv0len)
-	__pi := uintptr(unsafe.Pointer(&pi))
-
-	// Buffer below is of objects mathcing this ptototype
-	// type cfdmap struct {
-	//      parentfd int32
-	//      childfd int32
-	//      ok int32
-	// }
-	cfdm := new(bytes.Buffer)
-	for i,f := range(attr.Files) {
-		binary.Write(cfdm, binary.LittleEndian, int32(f))
-		binary.Write(cfdm, binary.LittleEndian, int32(i))
-		binary.Write(cfdm, binary.LittleEndian, int32(-1))
-	}
-	__cfdm := uintptr(unsafe.Pointer(&(cfdm.Bytes()[0])))
-
-	// Call proc create.
-	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, __cmd, __cmdlen, __pi, 0, 0, 0)
+	// Call proc create to create a child.
+	cmd := uintptr(unsafe.Pointer(&argv0[0]))
+	cmdlen := uintptr(len(argv0))
+	__pi, _ := parlib.ProcinfoPackArgs(argv, envv)
+	pi := uintptr(unsafe.Pointer(&__pi))
+	r1, _, err1 = RawSyscall6(SYS_PROC_CREATE, cmd, cmdlen, pi, 0, 0, 0)
 	if err1 != nil {
 		return 0, err1
 	}
 	child := r1
 
+	// Dup the fd map properly into the child
+	// Buffer below is of structs matching this prototype
+	// type cfdmap struct {
+	//      parentfd int32
+	//      childfd int32
+	//      ok int32
+	// }
+	__cfdm := new(bytes.Buffer)
+	for i,f := range(attr.Files) {
+		binary.Write(__cfdm, binary.LittleEndian, int32(f))
+		binary.Write(__cfdm, binary.LittleEndian, int32(i))
+		binary.Write(__cfdm, binary.LittleEndian, int32(-1))
+	}
+	cfdm := uintptr(unsafe.Pointer(&(__cfdm.Bytes()[0])))
 	r1, _, err1 = RawSyscall(SYS_DUP_FDS_TO, uintptr(child),
-	                         __cfdm, uintptr(len(attr.Files)))
+	                         cfdm, uintptr(len(attr.Files)))
 	if err1 != nil {
 		return 0, err1
 	}
 
-	// Proc create succeeded, now run it!
+	// If 'dir' passed in, set the pwd of the child
+	if len(dir) > 0 {
+		pwd := uintptr(unsafe.Pointer(&dir[0]))
+		pwdlen := uintptr(len(dir))
+		r1, _, err1 = RawSyscall(SYS_CHDIR, child, pwd, pwdlen)
+		if err1 != nil {
+			return 0, err1
+		}
+	}
+
+	// Now run the child!
 	r1, _, err1 = RawSyscall(SYS_PROC_RUN, child, 0, 0)
 	if err1 != nil {
 		return 0, err1
