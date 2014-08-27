@@ -7,7 +7,6 @@
 package syscall
 
 import (
-	"runtime"
 	"sync"
 	"unsafe"
 )
@@ -143,7 +142,7 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	p[1] = -1
 
 	// Convert args to C form.
-	argv0p, err := BytePtrFromString(argv0)
+	argv0p, err := ByteSliceFromString(argv0)
 	if err != nil {
 		return 0, err
 	}
@@ -156,20 +155,16 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 		return 0, err
 	}
 
-	if runtime.GOOS == "freebsd" && len(argv[0]) > len(argv0) {
-		argvp[0] = argv0p
-	}
-
-	var chroot *byte
+	var chroot []byte
 	if sys.Chroot != "" {
-		chroot, err = BytePtrFromString(sys.Chroot)
+		chroot, err = ByteSliceFromString(sys.Chroot)
 		if err != nil {
 			return 0, err
 		}
 	}
-	var dir *byte
+	var dir []byte
 	if attr.Dir != "" {
-		dir, err = BytePtrFromString(attr.Dir)
+		dir, err = ByteSliceFromString(attr.Dir)
 		if err != nil {
 			return 0, err
 		}
@@ -186,7 +181,7 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	}
 
 	// Kick off child.
-	pid, err1 = forkAndExecInChild(argv0p, len(argv0), argvp, envvp, chroot, dir, attr, sys, p[1])
+	pid, err1 = forkAndExecInChild(argv0p, argvp, envvp, chroot, dir, attr, sys, p[1])
 	if err1 != nil {
 		err = err1
 		goto error
