@@ -7,8 +7,6 @@
 package syscall
 
 import (
-	"bytes"
-	"encoding/binary"
 	"unsafe"
 	"runtime/parlib"
 )
@@ -23,6 +21,12 @@ type SysProcAttr struct {
 	Noctty     bool        // Detach fd 0 from controlling terminal
 	Ctty       int         // Controlling TTY fd (Linux only)
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
+}
+
+type cfdmap struct {
+     parentfd int32
+     childfd int32
+     ok int32
 }
 
 // Fork, dup fd onto 0..len(fd), and exec(argv0, argvv, envv) in child.
@@ -70,19 +74,13 @@ func forkAndExecInChild(argv0 []byte, argv, envv []*byte, chroot, dir []byte, at
 	child := r1
 
 	// Dup the fd map properly into the child
-	// Buffer below is of structs matching this prototype
-	// type cfdmap struct {
-	//      parentfd int32
-	//      childfd int32
-	//      ok int32
-	// }
-	__cfdm := new(bytes.Buffer)
-	for i,f := range(attr.Files) {
-		binary.Write(__cfdm, binary.LittleEndian, int32(f))
-		binary.Write(__cfdm, binary.LittleEndian, int32(i))
-		binary.Write(__cfdm, binary.LittleEndian, int32(-1))
+	__cfdm := make([]cfdmap, len(attr.Files))
+	for i, f := range(attr.Files) {
+		__cfdm[i].parentfd = int32(f)
+		__cfdm[i].childfd = int32(i)
+		__cfdm[i].ok = int32(-1)
 	}
-	cfdm := uintptr(unsafe.Pointer(&(__cfdm.Bytes()[0])))
+	cfdm := uintptr(unsafe.Pointer(&__cfdm[0]))
 	r1, _, err1 = RawSyscall(SYS_DUP_FDS_TO, uintptr(child),
 	                         cfdm, uintptr(len(attr.Files)))
 	if err1 != nil {
