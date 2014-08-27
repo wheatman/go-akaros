@@ -3,7 +3,6 @@ export GOOS=akaros
 export GOARCH=amd64
 export CC_FOR_TARGET=x86_64-ros-gcc
 export CXX_FOR_TARGET=x86_64-ros-g++
-export CGO_ENABLED=1
 export GO_EXTLINK_ENABLED=1
 
 pre_host_build()
@@ -14,6 +13,8 @@ pre_host_build()
 }
 pre_target_build()
 {
+	export CGO_ENABLED=1
+
 	# Regenerate all of the files needed by the runtime package
 	local ROSINC=$(dirname $(which $CC_FOR_TARGET))/../x86_64-ros/sys-include/
 	cd pkg/runtime
@@ -28,8 +29,14 @@ pre_target_build()
 	./mkall.sh > /dev/null 2>&1 
 	cd - > /dev/null
 }
+post_target_build()
+{
+	unset CGO_ENABLED
+}
+
 export -f pre_host_build
 export -f pre_target_build
+export -f post_target_build
 
 # Run the appropriate bash script
 targets="clean make run all"
