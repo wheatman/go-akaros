@@ -13,3 +13,4 @@ func setitimer(mode int32, new, old unsafe.Pointer)
 func sigprocmask(sig int32, new, old unsafe.Pointer) int32
 func getrlimit(kind int32, limit unsafe.Pointer) int32
 
+const stackSystem = 0
