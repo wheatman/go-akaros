@@ -119,7 +119,7 @@ void
 runtime·setsig(int32 i, GoSighandler *fn, bool restart)
 {
 	USED(restart); // Akaros currently only supports the SA_SIGINFO flag
-	Sigaction sa;
+	SigactionT sa;
 	runtime·memclr((byte*)&sa, sizeof sa);
 
 	sa.sa_flags = SA_SIGINFO;
@@ -139,7 +139,7 @@ runtime·setsig(int32 i, GoSighandler *fn, bool restart)
 GoSighandler*
 runtime·getsig(int32 i)
 {
-	Sigaction sa;
+	SigactionT sa;
 	runtime·memclr((byte*)&sa, sizeof sa);
 
 	SigactionArg sarg;

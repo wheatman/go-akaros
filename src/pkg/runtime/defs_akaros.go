@@ -123,7 +123,7 @@ type EventMbox C.struct_event_mbox
 type Timespec C.struct_timespec
 type Timeval C.struct_timeval
 type Itimerval C.struct_itimerval
-type Sigaction C.struct_parlib_sigaction
+type SigactionT C.struct_parlib_sigaction
 type Siginfo C.siginfo_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe

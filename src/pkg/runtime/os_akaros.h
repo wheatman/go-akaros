@@ -12,8 +12,8 @@ int32	runtime·clone(int32, void*, M*, G*, void(*)(void));
 void runtime·enable_profalarm(uint64 usecs);
 void runtime·disable_profalarm(void);
 
-struct Sigaction;
-int32	runtime·sigaction(int32, struct Sigaction*, struct Sigaction*);
+struct SigactionT;
+int32	runtime·sigaction(int32, struct SigactionT*, struct SigactionT*);
 void	runtime·sigpanic(void);
 void runtime·setitimer(int32, Itimerval*, Itimerval*);
 
