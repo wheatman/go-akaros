@@ -1034,7 +1034,7 @@ The value of an uninitialized pointer is <code>nil</code>.
 
 <pre class="ebnf">
 PointerType = "*" BaseType .
-BaseType = Type .
+BaseType    = Type .
 </pre>
 
 <pre>
@@ -2115,9 +2115,9 @@ operand only on the left-hand side of an <a href="#Assignments">assignment</a>.
 </p>
 
 <pre class="ebnf">
-Operand    = Literal | OperandName | MethodExpr | "(" Expression ")" .
-Literal    = BasicLit | CompositeLit | FunctionLit .
-BasicLit   = int_lit | float_lit | imaginary_lit | rune_lit | string_lit .
+Operand     = Literal | OperandName | MethodExpr | "(" Expression ")" .
+Literal     = BasicLit | CompositeLit | FunctionLit .
+BasicLit    = int_lit | float_lit | imaginary_lit | rune_lit | string_lit .
 OperandName = identifier | QualifiedIdent.
 </pre>
 
@@ -3595,7 +3595,7 @@ or an array indexing operation of an addressable array.
 As an exception to the addressability requirement, <code>x</code> may also be a
 (possibly parenthesized)
 <a href="#Composite_literals">composite literal</a>.
-If the evaluation of <code>x</code> would cause a <a href="#Run_time_panics">run-time panic</a>, 
+If the evaluation of <code>x</code> would cause a <a href="#Run_time_panics">run-time panic</a>,
 then the evaluation of <code>&amp;x</code> does too.
 </p>
 
@@ -4049,7 +4049,7 @@ n := map[int]int{a: f()}      // n may be {2: 3} or {3: 3}: evaluation order bet
 <p>
 At package level, initialization dependencies override the left-to-right rule
 for individual initialization expressions, but not for operands within each
-expression: 
+expression:
 </p>
 
 <pre>
@@ -5912,7 +5912,78 @@ The same would also be true after
 var t T
 </pre>
 
-<h3 id="Program_execution">Program execution</h3>
+<h3 id="Package_initialization">Package initialization</h3>
+<p>
+Within a package, package-level variables are initialized according
+to their <i>dependencies</i>: if a variable <code>x</code> depends on
+a variable <code>y</code>, <code>x</code> will be initialized after
+<code>y</code>.
+</p>
+
+<p>
+Dependency analysis does not rely on the actual values of the
+variables, only on lexical <i>references</i> to them in the source,
+analyzed transitively. For instance, a variable <code>x</code>'s
+<a href="#Variable_declarations">initialization expression</a>
+may refer to a function whose body refers to variable <code>y</code>;
+if so, <code>x</code> depends on <code>y</code>.
+Specifically:
+</p>
+
+<ul>
+<li>
+A reference to a variable or function is an identifier denoting that
+variable or function.
+</li>
+
+<li>
+A reference to a method <code>m</code> is a
+<a href="#Method_values">method value</a> or
+<a href="#Method_expressions">method expression</a> of the form
+<code>t.m</code>, where the (static) type of <code>t</code> is
+not an interface type, and the method <code>m</code> is in the
+<a href="#Method_sets">method set</a> of <code>t</code>.
+It is immaterial whether the resulting function value
+<code>t.m</code> is invoked.
+</li>
+
+<li>
+A variable, function, or method <code>x</code> depends on a variable
+<code>y</code> if <code>x</code>'s initialization expression or body
+(for functions and methods) contains a reference to <code>y</code>
+or to a function or method that depends on <code>y</code>.
+</li>
+</ul>
+
+<p>
+Dependency analysis is performed per package; only references referring
+to variables, functions, and methods declared in the current package
+are considered.
+It is an error if variable dependencies form a cycle
+(but dependency cycles containing no variables are permitted).
+If two variables are independent of each other,
+they are initialized in the order they are declared
+in the source, possibly in multiple files, as presented to the compiler.
+</p>
+
+<p>
+For example, given the declarations
+</p>
+
+<pre>
+var (
+	a = c + b
+	b = f()
+	c = f()
+	d = 3
+)
+
+func f() int {
+	d++
+	return d
+}
+</pre>
+
 <p>
 A package with no imports is initialized by assigning initial values to
 all its package-level variables
@@ -5960,6 +6031,18 @@ in a program. In particular, <code>init</code> cannot be called explicitly,
 nor can a pointer to <code>init</code> be assigned to a function variable.
 </p>
 <p>
+Multiple such functions may be defined, even within a single
+source file. The <code>init</code> identifier is not
+<a href="#Declarations_and_scope">declared</a> and thus
+<code>init</code> functions cannot be referred to from anywhere
+in a program.
+</p>
+
+<p>
+A package with no imports is initialized by assigning initial values
+to all its package-level variables followed by calling all <code>init</code>
+functions in the order they appear in the source, possibly in multiple files,
+as presented to the compiler.
 If a package has imports, the imported packages are initialized
 before initializing the package itself. If multiple packages import
 a package <code>P</code>, <code>P</code> will be initialized only once.
