@@ -138,5 +138,5 @@ type SigprocmaskArg C.gcc_sigprocmask_arg_t
 
 type SerializedData struct {
 	Len C.size_t
-	Buf [1]byte
+	Buf [8]byte
 }
