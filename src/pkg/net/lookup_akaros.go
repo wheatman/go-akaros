@@ -5,6 +5,7 @@
 package net
 
 import (
+	"io"
 	"errors"
 	"os"
 )
@@ -30,9 +31,15 @@ func query(filename, query string, bufSize int) (res []string, err error) {
 	}
 	buf := make([]byte, bufSize)
 	for {
-		n, _ := file.Read(buf)
-		if n <= 0 {
-			break
+		n, err := file.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				if len(res) == 0 {
+					return res, errors.New("net: query lookup failed, filename: " + filename + ", query: " + query)
+				}
+				break
+			}
+			return res, err
 		}
 		res = append(res, string(buf[:n]))
 	}
