@@ -1927,6 +1927,14 @@ func TestTLSServerClosesConnection(t *testing.T) {
 			t.Errorf("Got %q, want foo", slurp)
 		}
 
+		// The underlying m-thread scheduler on akaros thread is cooperative,
+		// so we introduce this voluntary yield to make sure that the go
+		// routine reading EOF off the network gets a chance to run before
+		// moving on to the call below.
+		if runtime.GOOS == "akaros" {
+			runtime.Gosched()
+		}
+
 		// Now try again and see if we successfully
 		// pick a new connection.
 		res, err = client.Get(ts.URL + "/")
