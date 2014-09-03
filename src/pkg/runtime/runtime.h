@@ -292,7 +292,7 @@ struct	G
 	bool	preempt;	// preemption signal, duplicates stackguard0 = StackPreempt
 	bool	paniconfault;	// panic (instead of crash) on unexpected fault address
 	bool    preemptscan;    // preempted g does scan for GC
-	bool    scancheck;      // debug: cleared at begining of scan cycle, set by scan, tested at end of cycle
+	bool    gcworkdone;     // debug: cleared at begining of gc work phase cycle, set by gcphasework, tested at end of cycle
 	int8	raceignore;	// ignore race detection events
 	M*	m;		// for debuggers, but offset not hard-coded
 	M*	lockedm;
@@ -582,6 +582,16 @@ struct DebugVars
 	int32	scavenge;
 };
 
+// Indicates to write barrier and sychronization task to preform.
+enum
+{                   // Synchronization            Write barrier
+	GCoff,      // stop and start             nop
+	GCquiesce,  // stop and start             nop
+	GCstw,      // stop the ps                nop
+	GCmark,     // scan the stacks and start  no white to black
+	GCsweep,    // stop and start             nop
+};
+
 struct ForceGCState
 {
 	Mutex	lock;
@@ -589,6 +599,7 @@ struct ForceGCState
 	uint32	idle;
 };
 
+extern uint32 runtime·gcphase;
 extern bool runtime·precisestack;
 extern bool runtime·copystack;
 
@@ -617,8 +628,12 @@ enum {
 	HashRandomBytes = 32
 };
 
-uint32  runtime·readgstatus(G *gp);
+uint32  runtime·readgstatus(G*);
 void    runtime·casgstatus(G*, uint32, uint32);
+void    runtime·quiesce(G*);
+bool    runtime·stopg(G*);
+void    runtime·restartg(G*);
+void    runtime·gcphasework(G*);
 
 /*
  * deferred subroutine calls
