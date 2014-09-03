@@ -12,4 +12,4 @@ TEXT _rt0_386_akaros(SB),NOSPLIT,$0
 
 /* The main function called out to from libc */
 TEXT main(SB),NOSPLIT,$0
-	JMP	_rt0_go(SB)
+	JMP	runtime·rt0_go(SB)

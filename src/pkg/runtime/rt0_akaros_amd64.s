@@ -12,5 +12,5 @@ TEXT _rt0_amd64_akaros(SB),NOSPLIT,$0
 
 /* The main function called out to from libc */
 TEXT main(SB),NOSPLIT,$-8
-	MOVQ	$_rt0_go(SB), AX
+	MOVQ	$runtime·rt0_go(SB), AX
 	JMP	AX
