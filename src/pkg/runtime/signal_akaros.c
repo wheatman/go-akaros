@@ -86,13 +86,6 @@ runtime·resetcpuprofiler(int32 hz)
 }
 
 void
-os·sigpipe(void)
-{
-	runtime·setsig(SIGPIPE, SIG_DFL, false);
-	runtime·raise(SIGPIPE);
-}
-
-void
 runtime·crash(void)
 {
 	runtime·unblocksignals();

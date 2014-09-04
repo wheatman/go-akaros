@@ -14,3 +14,7 @@ func sigprocmask(sig int32, new, old unsafe.Pointer) int32
 func getrlimit(kind int32, limit unsafe.Pointer) int32
 
 const stackSystem = 0
+
+func os_sigpipe() {
+	gothrow("too many writes on closed pipe")
+}
