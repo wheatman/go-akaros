@@ -12,6 +12,10 @@ func sigaction(sig int32, new, old unsafe.Pointer)
 func setitimer(mode int32, new, old unsafe.Pointer)
 func sigprocmask(sig int32, new, old unsafe.Pointer) int32
 func getrlimit(kind int32, limit unsafe.Pointer) int32
+func netpollinit()
+func netpollopen(fd uintptr, pd *pollDesc) int32
+func netpollclose(fd uintptr) int32
+func netpollarm(pd *pollDesc, mode int)
 
 const stackSystem = 0
 
