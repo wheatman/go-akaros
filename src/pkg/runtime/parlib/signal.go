@@ -35,6 +35,9 @@ var (
 	SIG_IGN = *((*C.__sighandler_t)(unsafe.Pointer(&__SIG_IGN)))
 	SIG_DFL = *((*C.__sighandler_t)(unsafe.Pointer(&__SIG_DFL)))
 )
+const (
+	NSIG = C._NSIG
+)
 type SignalHandler func(sig int)
 
 var sighandlers [NSIG-1]SignalHandler

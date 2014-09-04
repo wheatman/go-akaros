@@ -4,7 +4,6 @@
 
 #include "parlib/akaros.h"
 
-#define SS_DISABLE 2
 
 // Akaros-specific system calls
 struct Timespec;
@@ -22,9 +21,13 @@ void runtime·setitimer(int32, struct Itimerval*, struct Itimerval*);
 typedef uint64 Sigset;
 int32	runtime·sigprocmask(int32, Sigset*, Sigset*);
 void	runtime·unblocksignals(void);
-#define SIG_SETMASK 2
 
-#define RLIMIT_AS 9
+enum {
+  NSIG = 42,
+  RLIMIT_AS = 9,
+  SIG_SETMASK = 2,
+  SS_DISABLE = 2,
+};
 typedef struct Rlimit Rlimit;
 struct Rlimit {
 	uintptr	rlim_cur;
