@@ -1063,7 +1063,6 @@ void	runtime·procyield(uint32);
 void	runtime·osyield(void);
 void	runtime·lockOSThread(void);
 void	runtime·unlockOSThread(void);
-bool	runtime·lockedOSThread(void);
 
 bool	runtime·showframe(Func*, G*);
 void	runtime·printcreatedby(G*);
