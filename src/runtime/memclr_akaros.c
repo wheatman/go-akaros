@@ -6,6 +6,7 @@
 #include "../cmd/ld/textflag.h"
 
 // memset aligned words.
+#pragma textflag NOSPLIT
 static inline void *
 memsetw(intgo* _v, intgo c, uintptr n)
 {
@@ -35,6 +36,7 @@ memsetw(intgo* _v, intgo c, uintptr n)
     return start;
 }
 
+#pragma textflag NOSPLIT
 static inline void *
 memset(byte* v, uint8 c, uintptr n)
 {

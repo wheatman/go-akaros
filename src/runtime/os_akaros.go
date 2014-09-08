@@ -22,3 +22,9 @@ const stackSystem = 0
 func os_sigpipe() {
 	gothrow("too many writes on closed pipe")
 }
+
+//TODO(wheatman)this is minimal just to get it compiling
+func sigpanic() {
+        gothrow("fault");
+}
+
