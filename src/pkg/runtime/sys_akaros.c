@@ -11,7 +11,7 @@
 #include "defs_GOOS_GOARCH.h"
 #include "os_GOOS.h"
 #include "zsyscall_akaros.h"
-#include "../../cmd/ld/textflag.h"
+#include "../cmd/ld/textflag.h"
 
 // We extern these libc functions here, so we don't have to reimplement the logic
 // they entails just for compilation in the kenc world.

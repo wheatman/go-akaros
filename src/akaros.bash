@@ -11,7 +11,7 @@ pre_host_build()
 {
 	# The host bootstrap tool needs this file to exist, even though we don't
 	# need it right away and autogenerate it later on.
-	touch pkg/runtime/defs_${GOOS}_${GOARCH}.h
+	touch runtime/defs_${GOOS}_${GOARCH}.h
 }
 pre_target_build()
 {
@@ -19,7 +19,7 @@ pre_target_build()
 
 	# Regenerate all of the files needed by the runtime package
 	local ROSINC=$($CC_FOR_TARGET --print-sysroot)/usr/include
-	cd pkg/runtime
+	cd runtime
 	cp $ROSINC/ros/bits/syscall.h zsyscall_${GOOS}.h
 	$GOTOOLDIR/go_bootstrap tool cgo -cdefs defs_${GOOS}.go defsbogus_${GOOS}.go > defs_${GOOS}_${GOARCH}.h
 	$GOTOOLDIR/go_bootstrap tool cgo -godefs defs_${GOOS}.go > parlib/zdefs_${GOOS}_${GOARCH}.go
@@ -27,7 +27,7 @@ pre_target_build()
 	cd - > /dev/null
 
 	# Regenerate all of the files needed by the syscall package
-	cd pkg/syscall
+	cd syscall
 	./mkall.sh > /dev/null 2>&1 
 	cd - > /dev/null
 }

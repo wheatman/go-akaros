@@ -6,7 +6,7 @@
 #include "defs_GOOS_GOARCH.h"
 #include "os_GOOS.h"
 #include "signal_unix.h"
-#include "../../cmd/ld/textflag.h"
+#include "../cmd/ld/textflag.h"
 
 void runtime·setldt(void)
 {

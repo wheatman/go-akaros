@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 #include "runtime.h"
-#include "../../cmd/ld/textflag.h"
+#include "../cmd/ld/textflag.h"
 
 // memset aligned words.
 static inline void *
