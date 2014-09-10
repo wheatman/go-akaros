@@ -55,7 +55,7 @@ unset GOROOT_FINAL
 timeout_scale=1
 [ "$GOARCH" == "arm" ] && timeout_scale=3
 # increase it for akaros by 2
-[ "$GOOS" == "akaros" ] && timeout_scale=2
+[ "$GOARCH" == "akaros" ] && timeout_scale=2
 
 echo '# Testing packages.'
 time go test std -short -timeout=$(expr 120 \* $timeout_scale)s
