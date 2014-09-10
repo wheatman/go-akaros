@@ -5,8 +5,6 @@
 // TODO It would be nice to use a mock DNS server, to eliminate
 // external dependencies.
 
-// +build !akaros
-
 package net
 
 import (
