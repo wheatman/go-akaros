@@ -631,6 +631,7 @@ func (t *test) run() {
 		out, err := runcmd(append([]string{"go", "run", t.goFileName()}, args...)...)
 		if err != nil {
 			t.err = err
+			return
 		}
 		if strings.Replace(string(out), "\r\n", "\n", -1) != t.expectedOutput() {
 			t.err = fmt.Errorf("incorrect output\n%s", out)
@@ -645,6 +646,7 @@ func (t *test) run() {
 		out, err := runcmd(append([]string{"go", "run", t.goFileName()}, args...)...)
 		if err != nil {
 			t.err = err
+			return
 		}
 		tfile := filepath.Join(t.tempDir, "tmp__.go")
 		if err := ioutil.WriteFile(tfile, out, 0666); err != nil {
@@ -654,6 +656,7 @@ func (t *test) run() {
 		out, err = runcmd("go", "run", tfile)
 		if err != nil {
 			t.err = err
+			return
 		}
 		if string(out) != t.expectedOutput() {
 			t.err = fmt.Errorf("incorrect output\n%s", out)
@@ -664,6 +667,7 @@ func (t *test) run() {
 		out, err := runcmd(append([]string{"go", "run", t.goFileName()}, args...)...)
 		if err != nil {
 			t.err = err
+			return
 		}
 		tfile := filepath.Join(t.tempDir, "tmp__.go")
 		err = ioutil.WriteFile(tfile, out, 0666)
