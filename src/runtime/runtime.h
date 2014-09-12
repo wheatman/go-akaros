@@ -669,6 +669,7 @@ struct Panic
  * stack traces
  */
 typedef struct Stkframe Stkframe;
+typedef struct BitVector BitVector;
 struct Stkframe
 {
 	Func*	fn;	// function being run
@@ -680,6 +681,7 @@ struct Stkframe
 	uintptr	varp;	// top of local variables
 	uintptr	argp;	// pointer to function arguments
 	uintptr	arglen;	// number of bytes at argp
+	BitVector*	argmap;	// force use of this argmap
 };
 
 intgo	runtime·gentraceback(uintptr, uintptr, uintptr, G*, intgo, uintptr*, intgo, bool(**)(Stkframe*, void*), void*, bool);
