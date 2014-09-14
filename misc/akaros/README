@@ -69,6 +69,7 @@ The settings in my (klueska's) .bashrc, for example are::
 
 	# Setup for Akaros
 	export ROSROOT=$HOME/projects/akaros
+	export BUSYBOXDIR=$HOME/projects/busybox-1.17.3
 	export QEMU_MONITOR_TTY=/dev/pts/29
 	PATH="$HOME/install/x86_64-ros-gcc/bin:$PATH"
 	export PATH
@@ -78,6 +79,9 @@ described later on to point to the tty device where I run my qemu monitor for
 qemu instances of akaros.  I typically have an instance of 'screen' up and
 running on a particular tty device and just attach and detach from this screen
 as necessary to control my running instances of qemu.
+
+BUSYBOXDIR is exported as a convenience when installing busybox for akaros
+(as described below).
 	
 ------------
 Akaros Setup
@@ -104,10 +108,11 @@ the location of the busybox sources on your machine.
 
 	git clone git@github.com:brho/akaros.git $ROSROOT
 
-- Download busybox-1.17.3 from busybox.net::
+- Download and extract busybox-1.17.3 from busybox.net::
 
 	cd $BUSYBOXDIR/..
 	wget http://www.busybox.net/downloads/busybox-1.17.3.tar.bz2
+	tar -jxvf busybox-1.17.3.tar.bz2
 
 - Configure akaros with its default settings::
 
@@ -121,8 +126,7 @@ the location of the busybox sources on your machine.
 
 - Build and install busybox for akaros::
 
-	cd $BUSYBOXDIR/..
-	tar -jxvf busybox-1.17.3.tar.bz2
+	cd $BUSYBOXDIR
 	cp $ROSROOT/tools/patches/busybox/busybox-1.17.3-config $BUSYBOXDIR/.config
 	for p in $ROSROOT/tools/patches/busybox/*.patch; do \
 		patch -p1 < $p \
