@@ -700,7 +700,6 @@ enum
  * external data
  */
 extern	String	runtime·emptystring;
-extern	uintptr runtime·zerobase;
 extern	G**	runtime·allg;
 extern	Slice	runtime·allgs; // []*G
 extern	uintptr runtime·allglen;
