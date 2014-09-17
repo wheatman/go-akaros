@@ -125,11 +125,6 @@ var zeroProcAttr ProcAttr
 var zeroSysProcAttr SysProcAttr
 
 func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) {
-	var p [2]int
-	var n int
-	var err1 error
-	var wstatus WaitStatus
-
 	if attr == nil {
 		attr = &zeroProcAttr
 	}
@@ -137,9 +132,6 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	if sys == nil {
 		sys = &zeroSysProcAttr
 	}
-
-	p[0] = -1
-	p[1] = -1
 
 	// Convert args to C form.
 	argv0p, err := ByteSliceFromString(argv0)
@@ -175,50 +167,14 @@ func forkExec(argv0 string, argv []string, attr *ProcAttr) (pid int, err error) 
 	// before we fork.
 	ForkLock.Lock()
 
-	// Allocate child status pipe close on exec.
-	if err = forkExecPipe(p[:]); err != nil {
-		goto error
-	}
-
 	// Kick off child.
-	pid, err1 = forkAndExecInChild(argv0p, argvp, envvp, chroot, dir, attr, sys, p[1])
-	if err1 != nil {
-		err = err1
-		goto error
-	}
+	pid, err = forkAndExecInChild(argv0p, argvp, envvp, chroot, dir, attr, sys)
+
+	// Unlock the fork lock
 	ForkLock.Unlock()
 
-	// Read child error status from pipe.
-	Close(p[1])
-	n, err = readlen(p[0], (*byte)(unsafe.Pointer(&err1)), int(unsafe.Sizeof(err1)))
-	Close(p[0])
-	if err != nil || n != 0 {
-		if n == int(unsafe.Sizeof(err1)) {
-			err = err1
-		}
-		if err == nil {
-			err = EPIPE
-		}
-
-		// Child failed; wait for it to exit, to make sure
-		// the zombies don't accumulate.
-		_, err1 := Wait4(pid, &wstatus, 0, nil)
-		for err1 == EINTR {
-			_, err1 = Wait4(pid, &wstatus, 0, nil)
-		}
-		return 0, err
-	}
-
-	// Read got EOF, so pipe closed on exec, so exec succeeded.
-	return pid, nil
-
-error:
-	if p[0] >= 0 {
-		Close(p[0])
-		Close(p[1])
-	}
-	ForkLock.Unlock()
-	return 0, err
+	// Return the pid and the error if there was one
+	return pid, err
 }
 
 // Combination of fork and exec, careful to be thread safe.

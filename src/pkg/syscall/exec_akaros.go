@@ -31,17 +31,13 @@ type SysProcAttr struct {
 // no rescheduling, no malloc calls, and no new stack segments.
 // The calls to RawSyscall are okay because they are assembly
 // functions that do not grow the stack.
-func forkAndExecInChild(argv0 []byte, argv, envv []*byte, chroot, dir []byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err error) {
+func forkAndExecInChild(argv0 []byte, argv, envv []*byte, chroot, dir []byte, attr *ProcAttr, sys *SysProcAttr) (pid int, err error) {
 	// Declare all variables at top in case any
 	// declarations require heap allocation (e.g., err1).
 	var (
 		r1     uintptr
 		err1   error
 	)
-	// The pipe is meant to be used by the child of the fork.
-	// The runtime code checks error return and pipe.
-	// The pipe is not applicable to Akaros. Just close it.
-	RawSyscall(SYS_CLOSE, uintptr(pipe), uintptr(0), uintptr(0))
 
 	// Make sure we aren't passing invalid arguments for Akaros (we should
 	// probably support these some day though...)
