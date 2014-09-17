@@ -60,6 +60,20 @@ enum {
 #ifdef GOOS_windows
 	StackSystem = 512 * sizeof(uintptr),
 #else
+#ifdef GOOS_akaros
+        // Akaros needs it for the redzone and hardware context
+        // The uthread stack could be an M or a G.  the 2LS doesn't know or care.
+        // The following commits in the akaros repo give more information
+
+        // akaros:7d677a664acb ("x86: Support the red-zone for popping HW TFs")
+        // establishing the redzone, talking about gobbling stack below a uthread:
+
+        // akaros:7506964a4e71 ("Check notif_pending early in pop_user_ctx()")
+        // talks about getting a lot of events while trying to leave vcore
+        // context.  too many lost races in a row will result in running off the
+        // end of the stack.  damn.
+	StackSystem = 2048,
+#else
 #ifdef GOOS_plan9
 	// The size of the note handler frame varies among architectures,
 	// but 512 bytes should be enough for every implementation.
@@ -67,18 +81,22 @@ enum {
 #else
 	StackSystem = 0,
 #endif	// Plan 9
+#endif	// Akaros
 #endif	// Windows
 
-	// The amount of extra stack to allocate beyond the size
-	// needed for the single frame that triggered the split.
-	StackExtra = 2048,
+	// The minimum size of stack used by Go code
+	StackMin = 2048,
 
-	// The minimum stack segment size to allocate.
-	// If the amount needed for the splitting frame + StackExtra
-	// is less than this number, the stack will have this size instead.
-	StackMin = 8192,
-	StackSystemRounded = StackSystem + (-StackSystem & (StackMin-1)),
-	FixedStack = StackMin + StackSystemRounded,
+	// The minimum stack size to allocate.
+	// The hackery here rounds FixedStack0 up to a power of 2.
+	FixedStack0 = StackMin + StackSystem,
+	FixedStack1 = FixedStack0 - 1,
+	FixedStack2 = FixedStack1 | (FixedStack1 >> 1),
+	FixedStack3 = FixedStack2 | (FixedStack2 >> 2),
+	FixedStack4 = FixedStack3 | (FixedStack3 >> 4),
+	FixedStack5 = FixedStack4 | (FixedStack4 >> 8),
+	FixedStack6 = FixedStack5 | (FixedStack5 >> 16),
+	FixedStack = FixedStack6 + 1,
 
 	// Functions that need frames bigger than this use an extra
 	// instruction to do the stack split check, to avoid overflow
