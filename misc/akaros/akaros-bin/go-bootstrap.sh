@@ -14,6 +14,8 @@ ash root $2
 
 # Create $AKAROS_GOROOT
 mkdir -p ${AKAROS_GOROOT#/}
+mkdir /usr
+mkdir /tmp
 
 # Extract the $CPIO_FILE into $AKAROS_GOROOT
 cd $AKAROS_GOROOT
