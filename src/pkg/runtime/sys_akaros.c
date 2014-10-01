@@ -30,13 +30,90 @@ extern gcc_call_t gcc_sigprocmask;
 extern gcc_call_t gcc_enable_profalarm;
 extern gcc_call_t gcc_disable_profalarm;
 
-// Helper strlen function
+#pragma textflag NOSPLIT
 static intgo strlen(int8 *string)
 {
 	int8 *temp = string;
 	while(*temp != '\0')
 		temp++;
 	return temp-string;
+}
+
+#pragma textflag NOSPLIT
+static inline bool mult_will_overflow_int64(int64 a, int64 b)
+{
+    if (!a)
+        return false;
+    return ((uint64)(-1) >> 1) / a < b;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 tsc2sec(int64 tsc_time)
+{
+    return tsc_time / __procinfo.tsc_freq;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 tsc2msec(int64 tsc_time)
+{
+    if (mult_will_overflow_int64(tsc_time, 1000LL))
+        return tsc2sec(tsc_time) * 1000LL;
+    else
+        return (tsc_time * 1000LL) / __procinfo.tsc_freq;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 tsc2usec(int64 tsc_time)
+{
+    if (mult_will_overflow_int64(tsc_time, 1000000LL))
+        return tsc2msec(tsc_time) * 1000LL;
+    else
+        return (tsc_time * 1000000LL) / __procinfo.tsc_freq;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 tsc2nsec(int64 tsc_time)
+{
+    if (mult_will_overflow_int64(tsc_time, 1000000000LL))
+        return tsc2usec(tsc_time) * 1000LL;
+    else
+        return (tsc_time * 1000000000LL) / __procinfo.tsc_freq;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 sec2tsc(int64 sec)
+{
+    if (mult_will_overflow_int64(sec, __procinfo.tsc_freq))
+        return (int64)(-1);
+    else
+        return sec * __procinfo.tsc_freq;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 msec2tsc(int64 msec)
+{
+    if (mult_will_overflow_int64(msec, __procinfo.tsc_freq))
+        return sec2tsc(msec / 1000LL);
+    else
+        return (msec * __procinfo.tsc_freq) / 1000LL;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 usec2tsc(int64 usec)
+{
+    if (mult_will_overflow_int64(usec, __procinfo.tsc_freq))
+        return msec2tsc(usec / 1000LL);
+    else
+        return (usec * __procinfo.tsc_freq) / 1000000LL;
+}
+
+#pragma textflag NOSPLIT
+static inline int64 nsec2tsc(int64 nsec)
+{
+    if (mult_will_overflow_int64(nsec, __procinfo.tsc_freq))
+        return usec2tsc(nsec / 1000LL);
+    else
+        return (nsec * __procinfo.tsc_freq) / 1000000000LL;
 }
 
 // Wrapper for making an akaros syscall through gcc
@@ -67,7 +144,6 @@ do { \
 	                 ((intgo)(a4)), ((intgo)(a5)),              \
 	                 ((int32*)(perrno)))
 
-// Runtime functions themselves
 #pragma textflag NOSPLIT
 int32 runtime·getpid(void)
 {
@@ -144,23 +220,25 @@ void runtime·usleep(uint32 usec)
 #pragma textflag NOSPLIT
 int64 runtime·nanotime(void)
 {
-	// TODO: We should think about doing something smarter here to get a more
-	// accurate nonotime e.g. SYS_getnanotime.
-	int64 time;
-	Timeval tv;
-	SyscallArg *sysc = (SyscallArg *)(g->sysc);
-	akaros_syscall(sysc, SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
-	time = ((tv.tv_sec * 1000000LLU) + tv.tv_usec)*1000LLU;
-	return time;
+	return tsc2nsec(runtime·cputicks());
 }
 
 #pragma textflag NOSPLIT
 void time·now(int64 sec, int32 nsec)
 {
-	int64 ns;
-	ns = runtime·nanotime();
-	sec = ns / 1000000000LL;
-	nsec = ns - sec * 1000000000LL;
+	int64 time;
+	static int64 boottime = 0;
+	if (!boottime) {
+		Timeval tv;
+		SyscallArg *sysc = (SyscallArg *)(g->sysc);
+		akaros_syscall(sysc, SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
+		time = ((tv.tv_sec * 1000000LLU) + tv.tv_usec)*1000LLU;
+		boottime = time - tsc2nsec(runtime·cputicks());
+	} else {
+		time = boottime + tsc2nsec(runtime·cputicks());
+	}
+	sec = time / 1000000000LL;
+	nsec = time - sec * 1000000000LL;
 	FLUSH(&sec);
 	FLUSH(&nsec);
 }
