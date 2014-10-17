@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Set things up to build for akaros
 export GOOS=akaros
 export GOARCH=amd64
