@@ -258,23 +258,15 @@ var testedAlreadyLeaked = false
 // basefds returns the number of expected file descriptors
 // to be present in a process at start.
 func basefds() uintptr {
-	n := os.Stderr.Fd() + 1
-
-	// Go runtime for 32-bit Plan 9 requires that /dev/bintime
-	// be kept open.
-	// See ../../runtime/time_plan9_386.c:/^runtime·nanotime
-	if runtime.GOOS == "plan9" && runtime.GOARCH == "386" {
-		n++
-	}
 	// Go runtime for akaros requires the alarm service to be open, which has 2
 	// open files, one for the timerfd, and one for its ctl.  Don't close them!
 	// Before these are open though, another file (which is subsequently
 	// properly closed) comes along and claims fd 3, giving the alarm service
 	// fds 4 and 5, so we need to bump n up by 3 instead of just 2. Doh!
 	if runtime.GOOS == "akaros" {
-		n += 3
+		return os.Stderr.Fd() + 4
 	}
-	return n
+	return os.Stderr.Fd() + 1
 }
 
 func closeUnexpectedFds(t *testing.T, m string) {
