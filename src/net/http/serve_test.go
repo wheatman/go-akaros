@@ -2834,6 +2834,7 @@ func benchmarkClientServerParallel(b *testing.B, parallelism int, useTLS bool) {
 				InsecureSkipVerify: true,
 			},
 		}
+		defer noVerifyTransport.CloseIdleConnections()
 		client := &Client{Transport: noVerifyTransport}
 		for pb.Next() {
 			res, err := client.Get(ts.URL)
