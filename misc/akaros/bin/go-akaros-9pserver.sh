@@ -28,8 +28,8 @@ fi
 if [ $CLEAR_MOUNT = true ]; then
 	echo "Clearing out ${HOST_MNT/$GOROOT/\$GOROOT}"
 	rm -rf $HOST_MNT
-	mkdir -p $HOST_MNT
 fi
+mkdir -p $HOST_MNT
 
 # Leverage the archive script to put an archive of the go tree at $HOST_MNT
 $ARCHIVE_SCRIPT go 2>/dev/null
