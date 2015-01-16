@@ -3,8 +3,8 @@
 # Set things up to build for akaros
 export GOOS=akaros
 export GOARCH=amd64
-export CC_FOR_TARGET=x86_64-ros-gcc
-export CXX_FOR_TARGET=x86_64-ros-g++
+export CC_FOR_TARGET=x86_64-ucb-akaros-gcc
+export CXX_FOR_TARGET=x86_64-ucb-akaros-g++
 export GO_EXTLINK_ENABLED=1
 
 pre_host_build()
@@ -18,7 +18,7 @@ pre_target_build()
 	export CGO_ENABLED=1
 
 	# Regenerate all of the files needed by the runtime package
-	local ROSINC=$(dirname $(which $CC_FOR_TARGET))/../x86_64-ros/sys-include/
+	local ROSINC=$($CC_FOR_TARGET --print-sysroot)/usr/include
 	cd pkg/runtime
 	cp $ROSINC/ros/bits/syscall.h zsyscall_${GOOS}.h
 	$GOTOOLDIR/go_bootstrap tool cgo -cdefs defs_${GOOS}.go defsbogus_${GOOS}.go > defs_${GOOS}_${GOARCH}.h
