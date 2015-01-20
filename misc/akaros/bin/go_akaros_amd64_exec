@@ -72,6 +72,11 @@ cleanup
 # If there was no output from the go program, something went wrong, so error out
 if [ "$(cat $AKAROS_OUT)" = "" ]; then
 	echo "Could not execute binary on Akaros client. Make sure the listen1 program is running."
+	echo "--------------------- Command line -------------------------------------------------"
+	echo $*
+	echo "--------------------- Environment --------------------------------------------------"
+	printenv
+	echo "------------------------------------------------------------------------------------"
 	exit 1
 fi
 
