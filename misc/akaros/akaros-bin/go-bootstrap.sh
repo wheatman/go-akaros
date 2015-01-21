@@ -9,8 +9,8 @@ LISTEN_PORT=5555
 cd /
 
 # Run ifconfig and the root script to get our folder mounted properly
-ash ifconfig $1
-ash root $2
+ash ifconfig
+ash root $1
 
 # Create $AKAROS_GOROOT
 mkdir -p ${AKAROS_GOROOT#/}
