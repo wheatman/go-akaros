@@ -8,6 +8,7 @@ import (
 	"io"
 	"errors"
 	"os"
+	"strconv"
 )
 
 func query(filename, query string, bufSize int) (res []string, err error) {
@@ -46,6 +47,13 @@ func query(filename, query string, bufSize int) (res []string, err error) {
 	return
 }
 
+/* If host and service are numeric, bypass cs.. */
+func bypassCS(host, service string) bool {
+	ip := ParseIP(host);
+	_, err := strconv.Atoi(service);
+	return (ip != nil && err == nil)
+}
+
 func queryCS(net, host, service string) (res []string, err error) {
 	switch net {
 	case "tcp4", "tcp6":
@@ -55,6 +63,9 @@ func queryCS(net, host, service string) (res []string, err error) {
 	}
 	if host == "" {
 		host = "*"
+	}
+	if bypassCS(host, service) {
+		return []string{"/net/"+net+"/clone "+host+"!"+service}, nil
 	}
 	return query(os.Nsprefix+netdir+"/cs", net+"!"+host+"!"+service, 128)
 }
