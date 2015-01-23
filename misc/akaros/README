@@ -39,7 +39,7 @@ some extra paths added to your PATH before invoking any of the scripts
 described later on.
 
 The required environment variables are::
-  
+
 	GOROOT  -- the path to your go installation
 	GOPATH  -- The path to your external go workspace
 	ROSROOT -- the path to your akaros installation
@@ -48,11 +48,11 @@ The required path elements are::
 
 	PATH=$GOROOT/bin -- the path to where your go binaries exist
 	                    (may be different if $GOBIN is set)
-	PATH=$GOPATH/bin -- the bin path for your go workspace 
+	PATH=$GOPATH/bin -- the bin path for your go workspace
 	                    (may be different if $GOBIN is set)
 	PATH=$GOROOT/misc/akaros/bin -- the path where the go_${GOOS}_${GOARCH}_exec
 	                                exists. (Other scripts exist here too)
-	PATH=/path/to/x86_64-ros-gcc/bin -- the path to the akaros x86_64 cross 
+	PATH=/path/to/x86_64-ros-gcc/bin -- the path to the akaros x86_64 cross
 	                                    compiler's bin directory as installed
 	                                    as part of the akaros setup described
 	                                    below
@@ -69,7 +69,6 @@ The settings in my (klueska's) .bashrc, for example are::
 
 	# Setup for Akaros
 	export ROSROOT=$HOME/projects/akaros
-	export BUSYBOXDIR=$HOME/projects/busybox-1.17.3
 	export QEMU_MONITOR_TTY=/dev/pts/29
 	PATH="$HOME/install/x86_64-ros-gcc/bin:$PATH"
 	export PATH
@@ -80,9 +79,6 @@ qemu instances of akaros.  I typically have an instance of 'screen' up and
 running on a particular tty device and just attach and detach from this screen
 as necessary to control my running instances of qemu.
 
-BUSYBOXDIR is exported as a convenience when installing busybox for akaros
-(as described below).
-	
 ------------
 Akaros Setup
 ------------
@@ -95,24 +91,9 @@ that will walk you through the basic setup.  Following these steps will get you
 set up with a Go-capable installation of akaros that you can run inside of qemu
 on your host machine.
 
-Currently, the Go setup for akaros depends on several tools contained in the
-busybox pacakge from busybox.net.  In addition to the environment variables
-listed in the previous sections, these steps require you to have a location
-defined for the busybox sources.  In the instructions below this location is
-referred to as $BUSYBOXDIR, but it need not necessarily be setup as an
-environment variable (though it may be convenient to do so, so you can just
-copy and paste the commands verbatim).  Its just a convenient name to refer to
-the location of the busybox sources on your machine.
-
 - Download akaros from github::
 
 	git clone git@github.com:brho/akaros.git $ROSROOT
-
-- Download and extract busybox-1.17.3 from busybox.net::
-
-	cd $BUSYBOXDIR/..
-	wget http://www.busybox.net/downloads/busybox-1.17.3.tar.bz2
-	tar -jxvf busybox-1.17.3.tar.bz2
 
 - Configure akaros with its default settings::
 
@@ -124,16 +105,10 @@ the location of the busybox sources on your machine.
 	cd $ROSROOT/tools/compilers/gcc-glibc
 	X86_64_INSTDIR=/path/to/x86_64-ros-gcc make x86_64
 
-- Build and install busybox for akaros::
+- Build busybox for akaros::
 
-	cd $BUSYBOXDIR
-	cp $ROSROOT/tools/patches/busybox/busybox-1.17.3-config $BUSYBOXDIR/.config
-	for p in $ROSROOT/tools/patches/busybox/*.patch; do \
-		patch -p1 < $p \
-	done
-	make oldconfig
-	make
-	cp $BUSYBOXDIR/busybox_unstripped $ROSROOT/kern/kfs/bin/busybox
+	cd $ROSROOT/tools/apps/busybox
+	make x86_64
 
 You should now have a working akaros installation on your host machine.  You
 can test that everything is set up correctly by making sure the kernel compiles
@@ -191,7 +166,7 @@ akaros.
 
 	cd $GOROOT/test
 	go build 64bit.go
-	./64bit 
+	./64bit
 		-bash: ./64bit: No such file or directory
 
 And that's it!
