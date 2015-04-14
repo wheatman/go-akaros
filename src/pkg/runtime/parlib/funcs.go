@@ -7,7 +7,8 @@
 package parlib
 
 /*
-#cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
+#cgo akaros LDFLAGS: -lbenchutil -lm
+#cgo akaros CFLAGS: -fomit-frame-pointer -O2 -std=gnu99 -fno-stack-protector -fgnu89-inline
 
 #define _LARGEFILE64_SOURCE
 #include <sys/stat.h>
