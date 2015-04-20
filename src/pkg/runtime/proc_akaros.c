@@ -1,8 +1,6 @@
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-//
-// +build !akaros
 
 #include "runtime.h"
 #include "arch_GOARCH.h"
@@ -12,6 +10,12 @@
 #include "race.h"
 #include "type.h"
 #include "../../cmd/ld/textflag.h"
+
+static inline void ghetto_panic(int8 *s)
+{
+	USED(s);
+	while(1);
+}
 
 // Goroutine scheduler
 // The scheduler's job is to distribute ready-to-run goroutines over worker threads.
@@ -166,6 +170,7 @@ runtime·schedinit(void)
 	runtime·goenvs();
 	runtime·parsedebugvars();
 
+#ifndef GOOS_akaros // AKAROS_PORT 
 	runtime·sched.lastpoll = runtime·nanotime();
 	procs = 1;
 	p = runtime·getenv("GOMAXPROCS");
@@ -174,6 +179,10 @@ runtime·schedinit(void)
 			n = MaxGomaxprocs;
 		procs = n;
 	}
+#else
+	/* max_vcores */
+	procs = runtime·ncpu;
+#endif
 	runtime·allp = runtime·malloc((MaxGomaxprocs+1)*sizeof(runtime·allp[0]));
 	procresize(procs);
 
@@ -608,6 +617,7 @@ runtime·mstart(void)
 	if(g != m->g0)
 		runtime·throw("bad runtime·mstart");
 
+// TODO AKAROS_PORT (remove g0 stuff)
 	// Record top of stack for use by mcall.
 	// Once we call schedule we're never coming back,
 	// so other calls can reuse this stack space.
@@ -622,17 +632,25 @@ runtime·mstart(void)
 	if(m == &runtime·m0)
 		runtime·initsig();
 	
+	/* TODO AKAROS_PORT free the g0 (for non-m0)? or unlink it? */
+
+	//g = runtime·malg(StackMin);
+	setmg_ken(m, runtime·malg(StackMin));
+	m->curg = g;
+
 	if(m->mstartfn)
 		m->mstartfn();
 
 	if(m->helpgc) {
 		m->helpgc = 0;
 		stopm();
-	} else if(m != &runtime·m0) {
-		acquirep(m->nextp);
-		m->nextp = nil;
+//	AKAROS_PORT
+//	} else if(m != &runtime·m0) {
+//		acquirep(m->nextp);
+//		m->nextp = nil;
 	}
-	schedule();
+	// AKAROS_PORT
+	//schedule();
 
 	// TODO(brainman): This point is never reached, because scheduler
 	// does not release os threads at the moment. But once this path

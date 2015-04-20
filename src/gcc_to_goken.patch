@@ -1,0 +1,123 @@
+diff --git a/examples/tlstest.go b/examples/tlstest.go
+index 32a8187..0fa86b8 100644
+--- a/examples/tlstest.go
++++ b/examples/tlstest.go
+@@ -20,10 +20,24 @@ void print_tls_info() {
+ 	printf("g_offset: %p\n", (void*)(0 - ((uintptr_t)tls_base - (uintptr_t)&tls_var1)));
+ 	printf("m_offset: %p\n", (void*)(0 - ((uintptr_t)tls_base - (uintptr_t)&tls_var2)));
+ }
++
++static void __weak_GoFunc(int64_t x)
++{
++	
++}
++
++void GoFunc(int64_t x) __attribute__ ((weak, alias ("__weak_GoFunc")));
++
++void reflect()
++{
++	extern void GoFunc(int64_t x);
++	GoFunc(3);
++}
+ */
+ import "C"
+ 
+ func main() {
+     C.print_tls_info()
++	C.reflect()
+ }
+ 
+diff --git a/src/pkg/runtime/debug.go b/src/pkg/runtime/debug.go
+index d82afb0..4d5fc26 100644
+--- a/src/pkg/runtime/debug.go
++++ b/src/pkg/runtime/debug.go
+@@ -170,3 +170,5 @@ func BlockProfile(p []BlockProfileRecord) (n int, ok bool)
+ // If all is true, Stack formats stack traces of all other goroutines
+ // into buf after the trace for the current goroutine.
+ func Stack(buf []byte, all bool) int
++
++func Printint(x int64)
+diff --git a/src/pkg/runtime/parlib/debug.go b/src/pkg/runtime/parlib/debug.go
+index b6746e1..ba200ab 100644
+--- a/src/pkg/runtime/parlib/debug.go
++++ b/src/pkg/runtime/parlib/debug.go
+@@ -10,38 +10,39 @@ package parlib
+ #include <stdint.h>
+ #include <stdio.h>
+ 
+-void printChar(char c)
++static void printChar(char c)
+ {
+ 	fprintf(stderr, "%c\n", c);
+ }
+-void printInt(int d)
++static void printInt(int d)
+ {
+ 	fprintf(stderr, "%d", d);
+ }
+-void printString(char *s)
++static void printString(char *s)
+ {
+ 	fprintf(stderr, "%s", s);
+ }
+-void printChars(char *s, int len)
++static void printChars(char *s, int len)
+ {
+ 	int i = 0;
+ 	for (i=0; i<len; i++)
+ 		fprintf(stderr, "%c", *(s+i));
+ }
+-void checkpoint(long long unsigned arg, char c)
++static void checkpoint(long long unsigned arg, char c)
+ {
+ 	if (c == 'x')
+ 		fprintf(stderr, "checkpoint: 0x%llx\n", arg);
+ 	else
+ 		fprintf(stderr, "checkpoint: %llu\n", arg);
+ }
+-void syscallError(long num)
++static void syscallError(long num)
+ {
+ 	fprintf(stderr, "Error: Syscall %ld not yet supported!\n", num);
+ }
+ */
+ import "C"
+ import "unsafe"
++import "runtime"
+ 
+ // Checkpoint function that I can sprinkle into the code to mark checkpoints
+ // during my porting effort
+@@ -74,3 +75,8 @@ func SyscallError(num uintptr) {
+ 	C.syscallError(C.long(num))
+ }
+ 
++//export GoFunc
++func GoFunc(x uint64) {
++	runtime.Printint(int64(x))
++	Checkpoint(x, 0)
++}
+diff --git a/src/pkg/runtime/parlib/utils.go b/src/pkg/runtime/parlib/utils.go
+index 0ca4333..d773f95 100644
+--- a/src/pkg/runtime/parlib/utils.go
++++ b/src/pkg/runtime/parlib/utils.go
+@@ -85,4 +85,3 @@ func SlicePtrFromStrings(ss []string) ([]*byte, error) {
+     bb[len(ss)] = nil
+     return bb, nil
+ }
+-
+diff --git a/src/pkg/runtime/print.c b/src/pkg/runtime/print.c
+index a04708f..421faa5 100644
+--- a/src/pkg/runtime/print.c
++++ b/src/pkg/runtime/print.c
+@@ -391,3 +391,11 @@ runtime·printnl(void)
+ {
+ 	gwrite("\n", 1);
+ }
++
++void
++runtime·Printint(int64 v)
++{
++	runtime·printf("DICKS: ");
++	runtime·printint(v);
++	runtime·printf(" :\n");
++}
