@@ -38,7 +38,7 @@ var (
 type SignalHandler func(sig int)
 
 var sighandlers [NSIG-1]SignalHandler
-var sigact = Sigaction{(C.__sighandler_t)(C.sig_hand), 0, 0, 0, nil};
+var sigact = Sigaction{Handler: (C.__sighandler_t)(C.sig_hand)};
 
 // Implemented in runtime/sys_{GOOS}_{GOARCH}.s 
 func defaultSighandler(sig int)
