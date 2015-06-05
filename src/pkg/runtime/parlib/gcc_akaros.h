@@ -22,7 +22,7 @@ typedef struct gcc_futex_arg {
 #undef sa_handler
 struct parlib_sigaction {
     __sighandler_t sa_handler;
-    unsigned long long sa_mask;
+    sigset_t sa_mask;
     unsigned int sa_flags;
 	unsigned int padding;
     void (*sa_restorer) (void);

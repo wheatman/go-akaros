@@ -110,6 +110,7 @@ const (
 	SEGV_ACCERR = C.SEGV_ACCERR
 )
 
+type Sigset C.sigset_t
 type Vcore C.struct_vcore
 type Pcore C.struct_pcore
 type ProcinfoType C.procinfo_t
@@ -121,7 +122,6 @@ type Timeval C.struct_timeval
 type Itimerval C.struct_itimerval
 type Sigaction C.struct_parlib_sigaction
 type Siginfo C.siginfo_t
-type Sigset C.sigset_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe
 type UserContext C.struct_user_context
