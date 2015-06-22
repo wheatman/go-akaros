@@ -10,15 +10,15 @@ package parlib
 #cgo akaros LDFLAGS: -lpthread -lbenchutil -lm
 
 #define _LARGEFILE64_SOURCE
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/types.h>
 
-#include <parlib.h>
-#include <uthread.h>
-#include <vcore.h>
-#include <mcs.h>
 #include <futex.h>
+#include <unistd.h>
+#include <parlib/parlib.h>
+#include <parlib/uthread.h>
+#include <parlib/vcore.h>
+#include <parlib/mcs.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int go_parlib_errno(void)
 {

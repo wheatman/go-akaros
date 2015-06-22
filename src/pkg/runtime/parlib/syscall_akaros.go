@@ -5,9 +5,9 @@
 package parlib
 
 /*
+#include <benchutil/alarm.h>
+#include <parlib/uthread.h>
 #include <sys/syscall.h>
-#include <alarm.h>
-#include <uthread.h>
 
 void abort_syscall_at(struct alarm_waiter *waiter, uint64_t deadline)
 {

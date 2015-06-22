@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <sys/syscall.h>
 #include <signal.h>
 #include <time.h>
-#include <alarm.h>
+#include <benchutil/alarm.h>
+#include <sys/syscall.h>
 
 typedef struct syscall gcc_syscall_arg_t;
 
