@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <sys/syscall.h>
 #include <futex.h>
 #include <pthread.h>
-#include <profalarm.h>
+#include <sys/syscall.h>
 #include "gcc_akaros.h"
 
 // Akaros syscalls

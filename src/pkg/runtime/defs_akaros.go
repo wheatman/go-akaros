@@ -14,19 +14,19 @@ go-akaros-amd64 tool cgo -cdefs defs_akaros.go > defs_akaros_amd64.h
 package parlib
 
 /*
-#include <stdint.h>
-#include <parlib.h>
-#include <uthread.h>
-#include <vcore.h>
-#include <mcs.h>
 #include <futex.h>
 #include <signal.h>
-#include <alarm.h>
-#include <ros/mman.h>
-#include <ros/memlayout.h>
+#include <stdint.h>
+#include <benchutil/alarm.h>
+#include <parlib/mcs.h>
+#include <parlib/parlib.h>
+#include <parlib/uthread.h>
+#include <parlib/vcore.h>
 #include <ros/errno.h>
-#include <ros/trapframe.h>
+#include <ros/memlayout.h>
+#include <ros/mman.h>
 #include <ros/procinfo.h>
+#include <ros/trapframe.h>
 #include "parlib/gcc_akaros.h"
 */
 import "C"
