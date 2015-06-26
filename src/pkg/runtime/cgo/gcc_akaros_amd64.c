@@ -13,8 +13,6 @@ static void (*setmg_gcc)(void*, void*);
 void
 x_cgo_init(G* g, void (*setmg)(void*, void*))
 {
-	pthread_lib_init();
-
 	int dummy;
 	// The system stack is set to a fixed size of 256 pages
 	g->stackguard = (uintptr)&dummy - 256*4096 + 4096;
