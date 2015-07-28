@@ -528,15 +528,17 @@ func Getwd() (wd string, err error) {
 	if err != nil {
 		return "", err
 	}
-	// Getcwd returns the number of bytes written to buf, including the NUL.
 	if n < 0 {
 		return "", ENOTDIR
 	}
+	wd = cstring(buf[:])
+	n = len(wd)
+
 	// Remove the trailing slash if it's not just root '/'
-	if buf[n-1] == '/' && n > 1 {
+	if n > 1 && wd[n-1] == '/' {
 		n -= 1
 	}
-	return string(buf[0:n]), err
+	return wd[0:n], err
 }
 
 func Getpid() (pid int) {
