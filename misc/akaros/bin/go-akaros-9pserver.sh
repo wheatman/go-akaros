@@ -36,6 +36,6 @@ $ARCHIVE_SCRIPT go 2>/dev/null
 
 # Kill any old instances of the ufs server and start a new one
 echo "Starting the 9p server port=$UFS_PORT root=${HOST_MNT/$GOROOT/\$GOROOT}"
-ps aux | grep "ufs -addr=:$UFS_PORT" | head -1 | awk '{print $2}' | xargs kill >/dev/null 2>&1
-nohup $GOPATH/bin/ufs -addr=:$UFS_PORT -root=$HOST_MNT >/dev/null 2>&1 &
+ps aux | grep "ufs -akaros=true" | head -1 | awk '{print $2}' | xargs kill >/dev/null 2>&1
+nohup $GOPATH/bin/ufs -akaros=true -addr=:$UFS_PORT -root=$HOST_MNT >/dev/null 2>&1 &
 
