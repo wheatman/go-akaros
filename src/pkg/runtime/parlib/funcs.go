@@ -17,6 +17,7 @@ package parlib
 #include <parlib/uthread.h>
 #include <parlib/vcore.h>
 #include <parlib/mcs.h>
+#include <parlib/serialize.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -59,18 +60,21 @@ func Futex(uaddr *int32, op int32, val int32,
 	                     (*C.int)(unsafe.Pointer(uaddr2)), C.int(val3)))
 }
 
-func ProcinfoPackArgs(argv []*byte, envp []*byte) (pi ProcinfoType, err error) {
-	p_pi := (*_Ctype_struct_procinfo)(unsafe.Pointer(&pi))
+func SerializeArgvEnvp(argv []*byte, envp []*byte) (sd *SerializedData, err error) {
     p_argv := (**_Ctype_char)(unsafe.Pointer(&argv[0]))
     p_envp := (**_Ctype_char)(unsafe.Pointer(&envp[0]))
 
-	__err := C.procinfo_pack_args(p_pi, p_argv, p_envp)
-	if __err == -1 {
-		err = nil
+	__sd := C.serialize_argv_envp(p_argv, p_envp)
+	if __sd == nil {
+		err = errors.New("SerializeArgvEnvp: error packing argv and envp")
 	} else {
-		err = errors.New("ProcinfoPackArgs: error packing argv and envp")
+		sd = (*SerializedData)(unsafe.Pointer(__sd))
 	}
-	return pi, err
+	return sd, err
+}
+
+func FreeSerializedData(sd *SerializedData) {
+	C.free(unsafe.Pointer(sd))
 }
 
 func Errno() (int) {

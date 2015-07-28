@@ -22,6 +22,7 @@ package parlib
 #include <parlib/parlib.h>
 #include <parlib/uthread.h>
 #include <parlib/vcore.h>
+#include <parlib/serialize.h>
 #include <ros/errno.h>
 #include <ros/memlayout.h>
 #include <ros/mman.h>
@@ -133,3 +134,7 @@ type FutexArg C.gcc_futex_arg_t
 type SigactionArg C.gcc_sigaction_arg_t
 type SigprocmaskArg C.gcc_sigprocmask_arg_t
 
+type SerializedData struct {
+	Len C.size_t
+	Buf [1]byte
+}
