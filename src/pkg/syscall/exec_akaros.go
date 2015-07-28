@@ -92,9 +92,14 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 	// Call proc create to create a child.
 	cmd := uintptr(unsafe.Pointer(&argv0[0]))
 	cmdlen := uintptr(len(argv0))
-	__pi, _ := parlib.ProcinfoPackArgs(argv, envv)
-	pi := uintptr(unsafe.Pointer(&__pi))
-	r1, _, err = RawSyscall6(SYS_PROC_CREATE, cmd, cmdlen, pi, 0, 0, 0)
+	sd, err := parlib.SerializeArgvEnvp(argv, envv)
+	if err != nil {
+		return 0, err
+	}
+	sdbuf := uintptr(unsafe.Pointer(&sd.Buf[0]))
+	sdlen := uintptr(sd.Len)
+	r1, _, err = RawSyscall6(SYS_PROC_CREATE, cmd, cmdlen, sdbuf, sdlen, 0, 0)
+	parlib.FreeSerializedData(sd)
 	if err != nil {
 		return 0, err
 	}
@@ -153,9 +158,14 @@ func Exec(argv0 string, argv []string, envv []string) (err error) {
 	// exec to new cmd
 	cmd := uintptr(unsafe.Pointer(&argv0p[0]))
 	cmdlen := uintptr(len(argv0))
-	__pi, _ := parlib.ProcinfoPackArgs(argvp, envvp)
-	pi := uintptr(unsafe.Pointer(&__pi))
-	_, _, err = RawSyscall(SYS_EXEC, cmd, cmdlen, pi)
+	sd, err := parlib.SerializeArgvEnvp(argvp, envvp)
+	if err != nil {
+		return err
+	}
+	sdbuf := uintptr(unsafe.Pointer(&sd.Buf[0]))
+	sdlen := uintptr(sd.Len)
+	_, _, err = RawSyscall6(SYS_EXEC, cmd, cmdlen, sdbuf, sdlen, 0, 0)
+	parlib.FreeSerializedData(sd)
 	return err
 }
 
