@@ -38,9 +38,10 @@ described later on.
 
 The required environment variables are:
 
-	GOROOT  -- the path to your go installation
-	GOPATH  -- The path to your external go workspace
-	ROSROOT -- the path to your akaros installation
+	GOROOT      -- The path to your go installation
+	GOPATH      -- The path to your external go workspace
+	ROSROOT     -- The path to your akaros installation
+	ROSXCCROOT  -- The path to your akaros cross-compiler installation
 
 The required path elements are:
 
@@ -50,10 +51,9 @@ The required path elements are:
 	                    (may be different if $GOBIN is set)
 	PATH=$GOROOT/misc/akaros/bin -- the path where the go_${GOOS}_${GOARCH}_exec
 	                                exists. (Other scripts exist here too)
-	PATH=/path/to/x86_64-ros-gcc/bin -- the path to the akaros x86_64 cross
-	                                    compiler's bin directory as installed
-	                                    as part of the akaros setup described
-	                                    below
+	PATH=$ROSXCCROOT/bin -- the path to the akaros x86_64 cross
+	                        compiler's bin directory as installed as
+	                        part of the akaros setup described below
 
 The settings in my (klueska's) `.bashrc`, for example are:
 
@@ -67,8 +67,9 @@ The settings in my (klueska's) `.bashrc`, for example are:
 
 	# Setup for Akaros
 	export ROSROOT=$HOME/projects/akaros
+	export ROSXCCROOT=$HOME/install/x86_64-ucb-akaros-gcc
 	export QEMU_MONITOR_TTY=/dev/pts/29
-	PATH="$HOME/install/x86_64-ros-gcc/bin:$PATH"
+	PATH="$ROSXCCROOT/bin:$PATH"
 	export PATH
 
 The extra `QEMU_MONITOR_TTY` environment variable is used by one of the scripts
@@ -91,7 +92,7 @@ on your host machine.
 
 - Download akaros from github:
 
-		git clone git@github.com:brho/akaros.git $ROSROOT
+		git clone https://github.com/brho/akaros.git $ROSROOT
 
 - Configure akaros with its default settings:
 
@@ -100,8 +101,7 @@ on your host machine.
 
 - Build and install the `x86_64` cross compiler for akaros:
 
-		cd $ROSROOT/tools/compilers/gcc-glibc
-		X86_64_INSTDIR=/path/to/x86_64-ros-gcc make x86_64
+		X86_64_INSTDIR=$ROSXCCROOT make xcc-upgrade-from-scratch
 
 - Build busybox for akaros:
 

@@ -47,6 +47,8 @@ cp $GO_SCRIPTS_DIR/* $AKAROS_BIN
 echo "Rebuilding akaros"
 cd $ROSROOT
 make
+make install-libs
+make tests
 make fill-kfs
 
 # Launching qemu
