@@ -174,7 +174,7 @@ int32 runtime·open(int8* pathname, int32 flags, int32 mode)
 	int32 errno;
 	intgo len = strlen(pathname);
 	SyscallArg *sysc = (SyscallArg *)(g->sysc);
-	akaros_syscall(sysc, SYS_open, pathname, len, flags, mode, 0, 0, &errno);
+	akaros_syscall(sysc, SYS_openat, AT_FDCWD, pathname, len, flags, mode, 0, &errno);
 	return sysc->retval;
 }
 

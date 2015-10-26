@@ -13,6 +13,7 @@ package parlib
 
 #include <futex.h>
 #include <unistd.h>
+#include <malloc.h>
 #include <parlib/parlib.h>
 #include <parlib/uthread.h>
 #include <parlib/vcore.h>

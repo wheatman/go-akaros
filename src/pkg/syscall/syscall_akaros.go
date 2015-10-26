@@ -223,12 +223,16 @@ func RawSyscall6(trap, a1, a2, a3, a4, a5, a6 uintptr) (r1, r2 uintptr, err erro
 //sys	Fwstat(fd int, stat_m []byte, flags int) (err error)
 
 // Locally wrapped syscalls
-//sys	open(path string, pathlen int, flags int, mode uint32) (fd int, err error)
-func Open(path string, flags int, mode ...uint32) (fd int, err error) {
+//sys	openat(fromfd int, path string, pathlen int, flags int, mode uint32) (fd int, err error)
+func Openat(dirfd int, path string, flags int, mode uint32) (fd int, err error) {
 	if len(path) == 0 {
 		return -1, NewAkaError(Errno(EINVAL), "Path length 0")
 	}
-	return open(path, len(path), flags, mode[0])
+	return openat(dirfd, path, len(path), flags, mode)
+}
+
+func Open(path string, flags int, mode ...uint32) (fd int, err error) {
+	return Openat(_AT_FDCWD, path, flags, mode[0])
 }
 
 //sys	chdir(pid int, path string, pathlen int) (err error)
@@ -573,12 +577,6 @@ func Getgroups() (gids []int, err error) {
 
 func socketcall(call int, a0, a1, a2, a3, a4, a5 uintptr) (n int, err AkaError) { return n, err }
 func rawsocketcall(call int, a0, a1, a2, a3, a4, a5 uintptr) (n int, err AkaError) { return n, err }
-
-//sys	openat(dirfd int, path string, flags int, mode uint32) (fd int, err error)
-
-func Openat(dirfd int, path string, flags int, mode uint32) (fd int, err error) {
-	return openat(dirfd, path, flags|O_LARGEFILE, mode)
-}
 
 //sys	utimes(path string, times *[2]Timeval) (err error)
 

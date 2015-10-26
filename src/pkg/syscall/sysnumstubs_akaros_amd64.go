@@ -19,7 +19,6 @@ const (
 	SYS_IOCTL                        = 309
 	SYS_EXECVE                       = 310
 	SYS_EXIT                         = 311
-	SYS_OPENAT                       = 312
 	SYS_UTIMES                       = 315
 	SYS_UTIMENSAT                    = 316
 	SYS_FUTIMESAT                    = 317
