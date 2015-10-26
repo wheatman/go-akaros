@@ -24,6 +24,7 @@ package parlib
 #include <parlib/vcore.h>
 #include <parlib/serialize.h>
 #include <ros/errno.h>
+#include <ros/fs.h>
 #include <ros/memlayout.h>
 #include <ros/mman.h>
 #include <ros/procinfo.h>
@@ -109,6 +110,8 @@ const (
 	SI_USER     = C.SI_USER
 	SEGV_MAPERR = C.SEGV_MAPERR
 	SEGV_ACCERR = C.SEGV_ACCERR
+
+	AT_FDCWD = C.AT_FDCWD
 )
 
 type Sigset C.sigset_t
