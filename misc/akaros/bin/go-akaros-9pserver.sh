@@ -5,7 +5,7 @@ eval $(go env)
 : ${REBUILD_SERVER:=true}
 : ${UFS_PORT:="1025"}
 
-HOST_MNT=$GOROOT/misc/akaros/mnt
+HOST_MNT=$AKAROS_ROOT/mnt
 ARCHIVE_SCRIPT=$GOROOT/misc/akaros/bin/go-akaros-archive.sh
 
 if [ "$GOPATH" = "" ]; then
@@ -18,10 +18,9 @@ if [ $REBUILD_SERVER = true ]; then
 	echo "Downloading and installing the latest supported 9p server"
 	export GOOS=$GOHOSTOS
 	export GOARCH=$GOHOSTARCH
-	export CGO_ENABLED=0
 	go get -d -u github.com/rminnich/go9p
 	go get -d -u github.com/rminnich/go9p/ufs
-	go install -a github.com/rminnich/go9p/ufs
+	go install github.com/rminnich/go9p/ufs
 fi
 
 # Clear out the $HOST_MNT directory

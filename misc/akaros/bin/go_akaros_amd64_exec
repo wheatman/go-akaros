@@ -7,7 +7,7 @@ eval $(go env)
 
 AKAROS_GOROOT=/go
 AKAROS_MNT=/mnt
-HOST_MNT=$GOROOT/misc/akaros/mnt
+HOST_MNT=$AKAROS_ROOT/mnt
 AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
 
 EXEC=$1

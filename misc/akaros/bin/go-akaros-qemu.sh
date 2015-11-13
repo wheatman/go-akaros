@@ -11,7 +11,7 @@ eval $(go env)
 : ${QEMU_KVM:="-enable-kvm"}
 : ${QEMU_MONITOR_TTY:=""}
 
-AKAROS_BIN=$ROSROOT/kern/kfs/bin
+AKAROS_BIN=$AKAROS_ROOT/kern/kfs/bin
 GO_SCRIPTS_DIR=$GOROOT/misc/akaros/akaros-bin
 
 #QEMU_NETWORK="-net nic,model=$NETWORK_CARD -net tap,ifname=tap0,script=no"
@@ -20,8 +20,8 @@ if [ "$QEMU_MONITOR_TTY" != "" ]; then
 	QEMU_MONITOR="-monitor $QEMU_MONITOR_TTY"
 fi
 
-if [ "$ROSROOT" = "" ]; then
-	echo "You must have \$ROSROOT set in order to run this script!"
+if [ "$AKAROS_ROOT" = "" ]; then
+	echo "You must have \$AKAROS_ROOT set in order to run this script!"
 	exit 1
 fi
 
@@ -40,12 +40,12 @@ if [ "$QEMU_KVM" == "-enable-kvm" ]; then
 fi
 
 # Copy the go scripts into $AKAROS_BIN
-echo "Copying scripts from ${GO_SCRIPTS_DIR/$GOROOT/\$GOROOT} into ${AKAROS_BIN/$ROSROOT/\$ROSROOT}"
+echo "Copying scripts from ${GO_SCRIPTS_DIR/$GOROOT/\$GOROOT} into ${AKAROS_BIN/$AKAROS_ROOT/\$AKAROS_ROOT}"
 cp $GO_SCRIPTS_DIR/* $AKAROS_BIN
 
 # Rebuilding akaros
 echo "Rebuilding akaros"
-cd $ROSROOT
+cd $AKAROS_ROOT
 make
 make install-libs
 make tests
@@ -54,5 +54,5 @@ make fill-kfs
 # Launching qemu
 echo "Launching qemu"
 $QEMU -s $QEMU_KVM $QEMU_NETWORK $QEMU_MONITOR -cpu $CPU_TYPE -smp $NUM_CPUS \
-      -m $MEMORY -kernel $ROSROOT/obj/kern/akaros-kernel -nographic
+      -m $MEMORY -kernel $AKAROS_ROOT/obj/kern/akaros-kernel -nographic
 
