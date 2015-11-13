@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 eval $(go env)
 
-HOST_MNT=$GOROOT/misc/akaros/mnt
+HOST_MNT=$AKAROS_ROOT/mnt
 HOST_GO_DIR=$GOROOT
 HOST_BIN_DIR=$GOROOT/misc/akaros/akaros-bin
 GO_CPIO_FILE=$HOST_MNT/go.cpio
