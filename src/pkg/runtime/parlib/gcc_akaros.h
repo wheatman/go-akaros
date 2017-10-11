@@ -4,7 +4,7 @@
 
 #include <signal.h>
 #include <time.h>
-#include <benchutil/alarm.h>
+#include <parlib/alarm.h>
 #include <sys/syscall.h>
 
 typedef struct syscall gcc_syscall_arg_t;

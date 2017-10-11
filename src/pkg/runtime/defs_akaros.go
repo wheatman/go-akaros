@@ -17,7 +17,7 @@ package parlib
 #include <futex.h>
 #include <signal.h>
 #include <stdint.h>
-#include <benchutil/alarm.h>
+#include <parlib/alarm.h>
 #include <parlib/mcs.h>
 #include <parlib/parlib.h>
 #include <parlib/uthread.h>
@@ -34,8 +34,6 @@ package parlib
 import "C"
 
 const (
-	MAX_VCORES = C.MAX_VCORES
-
 	PROC_DUP_FGRP = C.PROC_DUP_FGRP
 
 	FUTEX_WAIT = C.FUTEX_WAIT

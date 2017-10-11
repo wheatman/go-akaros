@@ -54,7 +54,7 @@ runtime·newosproc(M *mp, void *stk)
 void
 runtime·osinit(void)
 {
-	runtime·ncpu = MIN(__procinfo.max_vcores, MAX_VCORES);
+	runtime·ncpu = MAX(__procinfo.max_vcores, 1);
 }
 
 void
