@@ -226,17 +226,9 @@ int64 runtime·nanotime(void)
 #pragma textflag NOSPLIT
 void time·now(int64 sec, int32 nsec)
 {
-	int64 time;
-	static int64 boottime = 0;
-	if (!boottime) {
-		Timeval tv;
-		SyscallArg *sysc = (SyscallArg *)(g->sysc);
-		akaros_syscall(sysc, SYS_gettimeofday, &tv, 0, 0, 0, 0, 0, nil);
-		time = ((tv.tv_sec * 1000000LLU) + tv.tv_usec)*1000LLU;
-		boottime = time - tsc2nsec(runtime·cputicks());
-	} else {
-		time = boottime + tsc2nsec(runtime·cputicks());
-	}
+	// NOTE: we should add real time base to the nsec since start,
+	// but gettimeofday syscall is missing on akaros.
+	int64 time = tsc2nsec(runtime·cputicks());
 	sec = time / 1000000000LL;
 	nsec = time - sec * 1000000000LL;
 	FLUSH(&sec);

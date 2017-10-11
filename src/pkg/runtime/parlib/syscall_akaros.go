@@ -5,7 +5,7 @@
 package parlib
 
 /*
-#include <benchutil/alarm.h>
+#include <parlib/alarm.h>
 #include <parlib/uthread.h>
 #include <sys/syscall.h>
 
