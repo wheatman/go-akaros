@@ -56,7 +56,6 @@ const (
 	SYS_MKDIRAT                      = 351
 	SYS_MKNOD                        = 352
 	SYS_MKNODAT                      = 353
-	SYS_NANOSLEEP                    = 354
 	SYS_PAUSE                        = 355
 	SYS_PIVOT_ROOT                   = 356
 	SYS_PRLIMIT64                    = 357
@@ -117,4 +116,5 @@ const (
 	SYS_GETSOCKNAME                  = 415
 	SYS_RECVMSG                      = 416
 	SYS_SENDMSG                      = 417
+	SYS_PIPE                         = 1000
 )
