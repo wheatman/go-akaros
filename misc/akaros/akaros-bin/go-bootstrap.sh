@@ -10,7 +10,7 @@ cd /
 
 # Run ifconfig and the root script to get our folder mounted properly
 ash ifconfig
-ash root $1
+ash mountroot $1
 
 # Create $AKAROS_GOROOT
 mkdir -p ${AKAROS_GOROOT#/}

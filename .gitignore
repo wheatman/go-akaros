@@ -60,7 +60,7 @@ test/64bit
 goinstall.log
 last-change
 VERSION.cache
-
+*.test
 /bin
 /pkg
 /src/cmd/(.*)/6?\1$

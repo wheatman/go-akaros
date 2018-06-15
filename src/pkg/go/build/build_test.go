@@ -90,7 +90,7 @@ func TestLocalDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	println(cwd)
 	p, err := ImportDir(cwd, 0)
 	if err != nil {
 		t.Fatal(err)
