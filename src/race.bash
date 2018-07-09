@@ -25,13 +25,13 @@ case $(uname) in
 		usage
 	fi
 	;;
-<<<<<<< HEAD
 "Akaros")
 	if [ $(uname -m) != "x86_64" ]; then
-=======
+		usage
+	fi
+	;;
 "FreeBSD")
 	if [ $(uname -m) != "amd64" ]; then
->>>>>>> race.bash: support freebsd
 		usage
 	fi
 	;;

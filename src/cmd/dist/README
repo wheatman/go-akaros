@@ -5,11 +5,11 @@ to replace odd jobs previously done with shell scripts.
 
 Dist is itself written in very simple C.  All interaction with C libraries,
 even standard C libraries, is confined to a single system-specific file
-(plan9.c, unix.c, windows.c), to aid portability.  Functionality needed by
-other files should be exposed via the portability layer.  Functions in the
-portability layer begin with an x prefix when they would otherwise use the same
-name as or be confused for an existing function.  For example, xprintf is the
-portable printf.
+(plan9.c, unix.c, windows.c), to aid portability.  Functionality needed
+by other files should be exposed via the portability layer.  Functions
+in the portability layer begin with an x prefix when they would otherwise
+use the same name as or be confused for an existing function.
+For example, xprintf is the portable printf.
 
 By far the most common data types in dist are strings and arrays of
 strings.  Instead of using char* and char**, though, dist uses two named

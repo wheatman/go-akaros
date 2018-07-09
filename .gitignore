@@ -1,5 +1,3 @@
-.gitreview
-.hg
 .DS_Store
 *.[5689ao]
 *.a[5689o]
@@ -22,20 +20,12 @@ _test
 _testmain.go
 build.out
 test.out
-doc/tmpltohtml
-doc/articles/wiki/*.bin
-misc/akaros/mnt
 doc/articles/wiki/*.bin
 include/plan9/libc_plan9.h
 misc/cgo/life/run.out
 misc/cgo/stdio/run.out
 misc/cgo/testso/main
 misc/dashboard/builder/builder
-misc/goplay/goplay
-misc/osx/*.pkg
-misc/osx/*.dmg
-src/cmd/?a/y.output
-src/cmd/?l/enam.c
 src/cmd/?a/y.output
 src/liblink/anames?.c
 src/cmd/cc/y.output
@@ -44,19 +34,15 @@ src/cmd/dist/dist.dSYM
 src/cmd/gc/mkbuiltin1
 src/cmd/gc/opnames.h
 src/cmd/gc/y.output
-src/liblink/anames?.c
 src/cmd/go/zdefaultcc.go
 src/go/doc/headscan
-src/runtime/goc2c
 src/runtime/mkversion
-src/runtime/z*
+src/runtime/zaexperiment.h
+src/runtime/zversion.go
 src/runtime/defs_akaros_*.h
 src/runtime/parlib/z*
 src/syscall/z*akaros*
 !src/syscall/zerrorstrings_akaros_*.go
-src/unicode/maketables
-src/*.*/
-src/cmd/go/zdefaultcc.go
 src/unicode/maketables
 src/*.*/
 test/pass.out
@@ -67,7 +53,5 @@ goinstall.log
 last-change
 VERSION.cache
 
-/src/cmd/(.*)/6?\1$
-/.*/core.[0-9]*$
 bin/
 pkg/

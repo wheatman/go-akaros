@@ -39,7 +39,6 @@ extern "C" {
 #	endif
 #endif
 #define _DEFAULT_SOURCE 1	/* glibc > 2.19 */
-#define _NETBSD_SOURCE 1	/* NetBSD */
 #if !defined(__APPLE__) && !defined(__OpenBSD__)
 #	define _XOPEN_SOURCE 1000
 #	define _XOPEN_SOURCE_EXTENDED 1

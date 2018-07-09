@@ -207,12 +207,7 @@ func compileInDir(runcmd runCmd, dir string, names ...string) (out []byte, err e
 
 func linkFile(runcmd runCmd, goname string) (err error) {
 	pfile := strings.Replace(goname, ".go", "."+letter, -1)
-	args := []string{"go", "tool", ld, "-w", "-o", "a.exe", "-L", "."}
-	if goextlinkenabled == "1" && ccfortarget != "" {
-		args = append(args, []string{"-extld", ccfortarget}...)
-	}
-	args = append(args, pfile)
-	_, err = runcmd(args...)
+	_, err = runcmd("go", "tool", ld, "-w", "-o", "a.exe", "-L", ".", pfile)
 	return
 }
 
