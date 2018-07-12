@@ -13,13 +13,32 @@ package parlib
 #include <futex.h>
 #include <limits.h>
 #include <signal.h>
+#include <pthread.h>
 
 uint64_t __sigmap = 0;
 int __sigpending = 0;
-void sig_hand(int signr) {
-	__sigmap |= ((uint64_t)(1)) << (signr-1);
-	__sigpending = 1;
-	futex(&__sigpending, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+//void (*wtf)(int);
+uint64_t wtf = 0;
+
+// must match the one in gcc_akaros.h
+typedef void (*__sigaction_t) (int, siginfo_t *, void *);
+
+
+void sig_hand(int signr, void *info, void *ctxt) {
+        if (in_vcore_context()) {
+          __sigmap |= ((uint64_t)(1)) << (signr-1);
+          __sigpending = 1;
+          futex(&__sigpending, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        } else {
+          ((__sigaction_t)wtf)(signr, info, ctxt);
+
+        }
+
+}
+
+void pthread_wake(int signr) {
+        pthread_kill(pthread_self(), signr);
+        pthread_yield();
 }
 */
 import "C"
@@ -31,9 +50,9 @@ var (
 	__SIG_ERR = -1
 	__SIG_IGN = 1
 	__SIG_DFL = 0
-	SIG_ERR = *((*C.__sighandler_t)(unsafe.Pointer(&__SIG_ERR)))
-	SIG_IGN = *((*C.__sighandler_t)(unsafe.Pointer(&__SIG_IGN)))
-	SIG_DFL = *((*C.__sighandler_t)(unsafe.Pointer(&__SIG_DFL)))
+	SIG_ERR = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_ERR)))
+	SIG_IGN = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_IGN)))
+	SIG_DFL = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_DFL)))
 )
 const (
 	NSIG = C._NSIG
@@ -41,15 +60,27 @@ const (
 type SignalHandler func(sig int)
 
 var sighandlers [NSIG-1]SignalHandler
-var sigact = SigactionT{Handler: (C.__sighandler_t)(C.sig_hand)};
+var sigact = SigactionT{Sigact: (C.__sigaction_t)(C.sig_hand), Flags: C.SA_SIGINFO};
 
 // Implemented in runtime/sys_{GOOS}_{GOARCH}.s 
 func defaultSighandler(sig int)
+func defaultSighandler_for_c(sig int)
+
+const ptrSize = 4 << (^uintptr(0) >> 63)
+//go:nosplit
+func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
+        return unsafe.Pointer(uintptr(p) + x)
+}
+func get_value(f interface{}) (uint64) {
+	return uint64(**(**uintptr)(unsafe.Pointer((add(unsafe.Pointer(&f), ptrSize)))))
+}
+
 
 func init() {
 	for i := 0; i < (NSIG-1); i++ {
-		sighandlers[i] = defaultSighandler
+		Signal(i, defaultSighandler)
 	}
+	C.wtf = C.uint64_t(get_value(defaultSighandler_for_c))
 	go process_signals()
 }
 
@@ -70,7 +101,13 @@ func process_signals() {
 					break
 				}
 			}
-			sighandlers[signr-1](signr)
+			// if somebody has updated the signal handler call the new one
+			// else convert to internal signal and loop back around
+			if (get_value(sighandlers[signr-1]) == get_value(defaultSighandler)) {
+				C.pthread_wake(C.int(signr))
+			} else {
+				sighandlers[signr-1](signr)
+			}
 		}
 	}
 }
@@ -85,7 +122,7 @@ func Signal(signr int, newh SignalHandler) (SignalHandler, int) {
 
 	__sigact := sigact
 	if newh == nil {
-		__sigact.Handler = SIG_DFL
+		__sigact.Sigact = SIG_DFL
 	}
 	ret := int(C.sigaction(C.int(signr), (*C.struct_sigaction)(unsafe.Pointer(&__sigact)), nil))
 	if ret != 0 {

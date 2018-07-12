@@ -88,13 +88,14 @@ runtime·minit(void)
 {
 	// Initialize signal handling.
 	runtime·unblocksignals();
+        runtime·signalstack((byte*)g->m->gsignal->stack.lo, 32*1024);
 }
 
 // Called from dropm to undo the effect of an minit.
 void
 runtime·unminit(void)
 {
-	// Do nothing for now.
+        runtime·signalstack(nil, 0);
 }
 
 uintptr
@@ -126,7 +127,7 @@ runtime·setsig(int32 i, GoSighandler *fn, bool restart)
 	sa.sa_flags = SA_SIGINFO;
 	if(fn == runtime·sighandler)
 		fn = (void*)runtime·sigtramp;
-	sa.sa_handler = fn;
+	sa.sa_sigact = fn;
 
 	SigactionArg sarg;
 	sarg.sig = i;
@@ -151,13 +152,38 @@ runtime·getsig(int32 i)
 	if (sarg.ret)
 		runtime·throw("rt_sigaction read failure");
 
-	if((void*)sa.sa_handler == runtime·sigtramp)
+	if((void*)sa.sa_sigact == runtime·sigtramp)
 		return runtime·sighandler;
-	return (void*)sa.sa_handler;
+	return (void*)sa.sa_sigact;
 }
+
+#pragma cgo_import_static gcc_sigaltstack
+extern gcc_call_t gcc_sigaltstack;
+#pragma textflag NOSPLIT
+void
+runtime·signalstack(byte *p, int32 n)
+{
+        StackT st;
+
+        st.ss_sp = (void*)p;
+        st.ss_size = n;
+        st.ss_flags = 0;
+        if(p == nil)
+                st.ss_flags = SS_DISABLE;
+        runtime·asmcgocall(gcc_sigaltstack, &st);
+}
+
 
 void
 runtime·unblocksignals(void)
 {
 	runtime·sigprocmask(SIG_SETMASK, &sigset_none, nil);
 }
+
+#pragma textflag NOSPLIT
+int8*
+runtime·signame(int32 sig)
+{
+        return runtime·sigtab[sig].name;
+}
+

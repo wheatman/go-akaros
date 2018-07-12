@@ -20,13 +20,16 @@ typedef struct gcc_futex_arg {
 } gcc_futex_arg_t;
 
 #undef sa_handler
+typedef void (*__sigaction_t) (int, siginfo_t *, void *);
+
 struct parlib_sigaction {
-    __sighandler_t sa_handler;
+    __sigaction_t sa_sigact;
     sigset_t sa_mask;
     unsigned int sa_flags;
 	unsigned int padding;
     void (*sa_restorer) (void);
 };
+
 
 typedef struct gcc_sigaction_arg {
 	int sig;
@@ -34,6 +37,12 @@ typedef struct gcc_sigaction_arg {
 	struct parlib_sigaction *oact;
 	int ret;
 } gcc_sigaction_arg_t;
+
+typedef struct gcc_sigaltstack_arg {
+        void *ss_sp;
+        int ss_size;
+        int ss_flags;
+} gcc_sigaltstack_arg_t;
 
 typedef struct gcc_sigprocmask_arg {
 	int how;

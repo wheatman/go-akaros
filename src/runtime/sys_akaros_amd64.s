@@ -49,6 +49,7 @@ TEXT sigtramp_real(SB),NOSPLIT,$40
     MOVQ    R10, g(BX)
 	RET
 
+TEXT runtime∕parlib·defaultSighandler_for_c(SB),NOSPLIT,$0
 TEXT runtime·sigtramp(SB),NOSPLIT,$0
 	// Follow the fucking calling convention!
 	PUSHQ	BX

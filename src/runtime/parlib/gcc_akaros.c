@@ -46,6 +46,13 @@ static void __gcc_sigaction(void *__arg)
 }
 const gcc_call_t gcc_sigaction = __gcc_sigaction;
 
+static void __gcc_sigaltstack(void *__arg)
+{
+        gcc_sigaltstack_arg_t *a = (gcc_sigaltstack_arg_t*)__arg;
+        sigaltstack((struct sigaltstack * __restrict__)a, (struct sigaltstack * __restrict__) NULL);
+}
+const gcc_call_t gcc_sigaltstack = __gcc_sigaltstack;
+
 // Akaros sigprocmask
 static void __gcc_sigprocmask(void *__arg)
 {
