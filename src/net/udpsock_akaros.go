@@ -31,7 +31,7 @@ func (c *UDPConn) ReadFromUDP(b []byte) (n int, addr *UDPAddr, err error) {
 		return 0, nil, syscall.EINVAL
 	}
 	buf := make([]byte, udpHeaderSize+len(b))
-	m, err := c.fd.data.Read(buf)
+	m, err := c.fd.Read(buf)
 	if err != nil {
 		return
 	}

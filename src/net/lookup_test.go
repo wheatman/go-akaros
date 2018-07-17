@@ -55,7 +55,7 @@ func TestLookupGoogleSRV(t *testing.T) {
 }
 
 func TestLookupGmailMX(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 
@@ -122,7 +122,7 @@ var lookupGooglePublicDNSAddrs = []struct {
 }
 
 func TestLookupGooglePublicDNSAddr(t *testing.T) {
-	if testing.Short() || !*testExternal {
+	if testing.Short() || !*testExternal || runtime.GOOS == "akaros" {
 		t.Skip("skipping test to avoid external network")
 	}
 
