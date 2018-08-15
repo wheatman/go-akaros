@@ -1,24 +1,24 @@
 #!/bin/bash
 eval $(go env)
 
-: ${AKAROS_SERVER:="localhost"}
-: ${AKAROS_PORT:="5555"}
+echo "$@"
+
+: ${AKAROS_SERVER:="qemu"}
 : ${TIMEOUT:="300"}
 
-AKAROS_GOROOT=/go
-AKAROS_MNT=/mnt
-HOST_MNT=$AKAROS_ROOT/mnt
+AKAROS_GOROOT=/mnt
 AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
-
 EXEC=$1
+EXEC_AKAROS="$(echo $EXEC | sed 's=.*/==')"
 ARGS=${@:2}
 EXEC_DIR=$(dirname $EXEC)
 AKAROS_OUT=$EXEC_DIR/akaros.out
+UFS_ROOT=/srv/qemu-ufs
 
 # Execute a set of commands remotely on akaros
 rpc()
 {
-	echo "$@; exit;" | netcat -w $TIMEOUT $AKAROS_SERVER $AKAROS_PORT
+	ssh $AKAROS_SERVER "$@"
 }
 
 # Whenever the go program is done executing, remove the $EXEC on both the host
@@ -26,7 +26,7 @@ rpc()
 # happen upon pressing Ctrl-C, or otherwise exiting.
 cleanup()
 {
-	rpc "rm -rf $EXEC 2>/dev/null"
+	rpc "unmount $AKAROS_GOROOT"
 }
 die()
 {
@@ -38,18 +38,9 @@ trap die SIGINT
 trap die SIGTERM
 trap die SIGKILL
 
-# Create a copy of $EXEC_DIR under $HOST_MNT on the server
-mkdir -p $HOST_MNT/$EXEC_DIR
-
-# Copy the go executable into $HOST_MNT/$EXEC_DIR
-cp $EXEC $HOST_MNT/$EXEC_DIR >/dev/null
-
-# Create $EXEC_DIR on akaros
-rpc "mkdir -p ${EXEC_DIR#/}"
-
-# Copy the go executable into $EXEC_DIR on akaros
-rpc "cp $AKAROS_MNT/$EXEC $EXEC_DIR >/dev/null"
-
+# mnt the go root so that akaros can run the binary and have any dependencies
+cp $EXEC $(pwd)/
+rpc "mount -b -c -C $UFS_ROOT $AKAROS_GOROOT"
 # Execute the go program on akaros, printing its output, followed by its exit
 # code. Pipe this to $AKAROS_OUT. Previously I was storing this output in a
 # bash variable and parsing things from there. The problem, however, is that
@@ -61,11 +52,10 @@ rpc "export GOROOT=$AKAROS_GOROOT; \
               export GOOS=akaros; \
               export GOARCH=amd64; \
               cd $AKAROS_PWD; \
-              $EXEC $ARGS; \
+              ./$EXEC_AKAROS $ARGS; \
               EXIT=\$?; \
               echo ""; \
               echo \$EXIT" > $AKAROS_OUT
-
 # Manually do the cleanup if we reach this point
 cleanup
 

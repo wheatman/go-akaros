@@ -4,10 +4,10 @@ eval $(go env)
 : ${QEMU:="qemu-system-x86_64"}
 : ${CPU_TYPE:="host"}
 : ${NUM_CPUS:="8"}
-: ${MEMORY:="4096"}
+: ${MEMORY:="8192"}
 : ${NETWORK_CARD:="e1000"}
 : ${HOST_PORT:="5555"}
-: ${AKAROS_PORT:="5555"}
+: ${AKAROS_PORT:="22"}
 : ${QEMU_KVM:="-enable-kvm"}
 : ${QEMU_MONITOR_TTY:=""}
 
@@ -46,11 +46,11 @@ cp $GO_SCRIPTS_DIR/* $AKAROS_BIN
 # Rebuilding akaros
 echo "Rebuilding akaros"
 cd $AKAROS_ROOT
-make
-make install-libs
 make tests
 make fill-kfs
+make
 
+stty intr \^q
 # Launching qemu
 echo "Launching qemu"
 $QEMU -s $QEMU_KVM $QEMU_NETWORK $QEMU_MONITOR -cpu $CPU_TYPE -smp $NUM_CPUS \
