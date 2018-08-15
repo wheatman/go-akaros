@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"runtime"
 )
 
 const objdumpPath = "/usr/local/bin/arm-linux-elf-objdump"
@@ -27,6 +28,9 @@ func testObjdumpARM(t *testing.T, generate func(func([]byte))) {
 
 func testObjdumpArch(t *testing.T, generate func(func([]byte)), arch Mode) {
 	if testing.Short() {
+		t.Skip("skipping objdump test in short mode")
+	}
+	if runtime.GOOS == "akaros" {
 		t.Skip("skipping objdump test in short mode")
 	}
 

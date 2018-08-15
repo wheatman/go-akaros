@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"runtime"
 )
 
 // Apologies for the proprietary path, but we need objdump 2.24 + some committed patches that will land in 2.25.
@@ -31,6 +32,9 @@ func testObjdump64(t *testing.T, generate func(func([]byte))) {
 func testObjdumpArch(t *testing.T, generate func(func([]byte)), arch int) {
 	if testing.Short() {
 		t.Skip("skipping objdump test in short mode")
+	}
+	if runtime.GOOS == "akaros" {
+	        t.Skip("skipping objdump test on akaros")
 	}
 
 	if _, err := os.Stat(objdumpPath); err != nil {

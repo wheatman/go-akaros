@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"runtime"
 )
 
 // xed binary from Intel sde-external-6.22.0-2014-03-06.
@@ -17,6 +18,9 @@ const xedPath = "/Users/rsc/bin/xed"
 func testXedArch(t *testing.T, arch int, generate func(func([]byte))) {
 	if testing.Short() {
 		t.Skip("skipping libmach test in short mode")
+	}
+	if runtime.GOOS == "akaros" {
+	        t.Skip("skipping objdump test on akaros")
 	}
 
 	if _, err := os.Stat(xedPath); err != nil {
