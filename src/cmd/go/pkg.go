@@ -443,8 +443,8 @@ var cgoExclude = map[string]bool{
 }
 
 var cgoSyscallExclude = map[string]bool{
-	"runtime/cgo":  true,
-	"runtime/race": true,
+	"runtime/cgo":    true,
+	"runtime/race":   true,
 	"runtime/parlib": true,
 }
 

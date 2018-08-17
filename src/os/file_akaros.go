@@ -297,6 +297,7 @@ func Truncate(name string, size int64) error {
 	}
 	return nil
 }
+
 // Truncate changes the size of the named file.
 // If the file is a symbolic link, it changes the size of the link's target.
 // If there is an error, it will be of type *PathError.
@@ -418,7 +419,7 @@ func Chmod(name string, mode FileMode) error {
 	var d syscall.Dir
 
 	d.Null()
-	d.Mode = syscallMode(mode)&chmodMask
+	d.Mode = syscallMode(mode) & chmodMask
 
 	var buf [syscall.STATFIXLEN]byte
 	n, err := d.Marshal(buf[:])
@@ -440,7 +441,7 @@ func (f *File) Chmod(mode FileMode) error {
 	var d syscall.Dir
 
 	d.Null()
-	d.Mode = syscallMode(mode)&chmodMask
+	d.Mode = syscallMode(mode) & chmodMask
 
 	var buf [syscall.STATFIXLEN]byte
 	n, err := d.Marshal(buf[:])
@@ -516,7 +517,7 @@ func Chtimes(name string, atime time.Time, mtime time.Time) error {
 	if err != nil {
 		return &PathError{"chtimes", name, err}
 	}
-	if err = syscall.Wstat(name, len(name), buf[:n], syscall.WSTAT_MTIME | syscall.WSTAT_ATIME); err != nil {
+	if err = syscall.Wstat(name, len(name), buf[:n], syscall.WSTAT_MTIME|syscall.WSTAT_ATIME); err != nil {
 		return &PathError{"chtimes", name, err}
 	}
 	return nil
@@ -550,9 +551,8 @@ func TempDir() string {
 }
 
 func (file *File) AbortOutstandingSyscalls() {
-	for (file.file.iocount > 0) {
+	for file.file.iocount > 0 {
 		syscall.AbortSyscFd(file.file.fd)
 		time.Sleep(100 * time.Millisecond)
 	}
 }
-

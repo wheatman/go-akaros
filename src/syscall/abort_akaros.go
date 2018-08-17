@@ -10,7 +10,7 @@ import (
 )
 
 func RunWithDeadline(f func(), deadline int64) {
-	if (deadline <= 0) {
+	if deadline <= 0 {
 		f()
 	} else {
 		runtime.LockOSThread()

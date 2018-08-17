@@ -33,7 +33,7 @@ package syscall
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <sys/resource.h> 
+#include <sys/resource.h>
 #include <bits/sockaddr.h>
 #include <ros/glibc-asm/ioctls.h>
 #include <ros/event.h>
@@ -134,23 +134,23 @@ type Childfdmap_t C.struct_childfdmap
 // 9p stuff
 
 const (
-	BIT8SZ = C.BIT8SZ
-	BIT16SZ = C.BIT16SZ
-	BIT32SZ = C.BIT32SZ
-	BIT64SZ = C.BIT64SZ
-	QIDSZ = C.QIDSZ
+	BIT8SZ     = C.BIT8SZ
+	BIT16SZ    = C.BIT16SZ
+	BIT32SZ    = C.BIT32SZ
+	BIT64SZ    = C.BIT64SZ
+	QIDSZ      = C.QIDSZ
 	STATFIXLEN = C.STATFIXLEN
 )
 
 const (
-	WSTAT_MODE = C.WSTAT_MODE
-	WSTAT_ATIME = C.WSTAT_ATIME
-	WSTAT_MTIME = C.WSTAT_MTIME
+	WSTAT_MODE   = C.WSTAT_MODE
+	WSTAT_ATIME  = C.WSTAT_ATIME
+	WSTAT_MTIME  = C.WSTAT_MTIME
 	WSTAT_LENGTH = C.WSTAT_LENGTH
-	WSTAT_NAME = C.WSTAT_NAME
-	WSTAT_UID = C.WSTAT_UID
-	WSTAT_GID = C.WSTAT_GID
-	WSTAT_MUID = C.WSTAT_MUID
+	WSTAT_NAME   = C.WSTAT_NAME
+	WSTAT_UID    = C.WSTAT_UID
+	WSTAT_GID    = C.WSTAT_GID
+	WSTAT_MUID   = C.WSTAT_MUID
 )
 
 // Sockets
@@ -188,19 +188,19 @@ type ICMPv6Filter C.struct_icmp6_filter
 type Ucred C.struct_ucred
 
 const (
-	SizeofSockaddrInet4     = C.sizeof_struct_sockaddr_in
-	SizeofSockaddrInet6     = C.sizeof_struct_sockaddr_in6
-	SizeofSockaddrUnix      = C.sizeof_struct_my_sockaddr_un
-	SizeofSockaddrAny       = C.sizeof_struct_sockaddr_any
-	SizeofLinger            = C.sizeof_struct_linger
-	SizeofIPMreq            = C.sizeof_struct_ip_mreq
-	SizeofIPv6Mreq          = C.sizeof_struct_ipv6_mreq
-	SizeofMsghdr            = C.sizeof_struct_msghdr
-	SizeofCmsghdr           = C.sizeof_struct_cmsghdr
-	SizeofInet6Pktinfo      = C.sizeof_struct_in6_pktinfo
-	SizeofIPv6MTUInfo       = C.sizeof_struct_ip6_mtuinfo
-	SizeofICMPv6Filter      = C.sizeof_struct_icmp6_filter
-	SizeofUcred             = C.sizeof_struct_ucred
+	SizeofSockaddrInet4 = C.sizeof_struct_sockaddr_in
+	SizeofSockaddrInet6 = C.sizeof_struct_sockaddr_in6
+	SizeofSockaddrUnix  = C.sizeof_struct_my_sockaddr_un
+	SizeofSockaddrAny   = C.sizeof_struct_sockaddr_any
+	SizeofLinger        = C.sizeof_struct_linger
+	SizeofIPMreq        = C.sizeof_struct_ip_mreq
+	SizeofIPv6Mreq      = C.sizeof_struct_ipv6_mreq
+	SizeofMsghdr        = C.sizeof_struct_msghdr
+	SizeofCmsghdr       = C.sizeof_struct_cmsghdr
+	SizeofInet6Pktinfo  = C.sizeof_struct_in6_pktinfo
+	SizeofIPv6MTUInfo   = C.sizeof_struct_ip6_mtuinfo
+	SizeofICMPv6Filter  = C.sizeof_struct_icmp6_filter
+	SizeofUcred         = C.sizeof_struct_ucred
 )
 
 // Misc

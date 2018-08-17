@@ -6,8 +6,8 @@ package signal
 
 import (
 	"os"
-	"syscall"
 	"runtime/parlib"
+	"syscall"
 )
 
 const (

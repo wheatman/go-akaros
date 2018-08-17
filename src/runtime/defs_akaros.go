@@ -53,9 +53,9 @@ const (
 	MAP_FIXED    = C.MAP_FIXED
 	MAP_POPULATE = C.MAP_POPULATE
 
-	SA_RESTART  = C.SA_RESTART
-	SA_ONSTACK  = C.SA_ONSTACK
-	SA_SIGINFO  = C.SA_SIGINFO
+	SA_RESTART = C.SA_RESTART
+	SA_ONSTACK = C.SA_ONSTACK
+	SA_SIGINFO = C.SA_SIGINFO
 
 	SIGHUP    = C.SIGHUP
 	SIGINT    = C.SIGINT
@@ -123,7 +123,7 @@ type Timespec C.struct_timespec
 type Timeval C.struct_timeval
 type Itimerval C.struct_itimerval
 type SigactionT C.struct_parlib_sigaction
-type StackT C.stack_t 
+type StackT C.stack_t
 type Siginfo C.siginfo_t
 type HwTrapframe C.struct_hw_trapframe
 type SwTrapframe C.struct_sw_trapframe

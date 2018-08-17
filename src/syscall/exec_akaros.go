@@ -7,23 +7,25 @@
 package syscall
 
 import (
-	"unsafe"
 	"runtime/parlib"
+	"unsafe"
 	"usys"
 )
 
 // ProcAttr holds attributes that will be applied to a new process started
 // by StartProcess.
 type ProcAttr struct {
-	Dir   string    // Current working directory.
-	Env   []string  // Environment.
-	Files []uintptr // File descriptors.
+	Dir   string       // Current working directory.
+	Env   []string     // Environment.
+	Files []uintptr    // File descriptors.
 	Sys   *SysProcAttr // System specific attrs
 }
+
 var zeroProcAttr ProcAttr
 
 // Undefined on Akaros
-type SysProcAttr struct {}
+type SysProcAttr struct{}
+
 var zeroSysProcAttr SysProcAttr
 
 // SlicePtrFromStrings converts a slice of strings to a slice of
@@ -100,17 +102,17 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 	sdbuf := uintptr(unsafe.Pointer(&sd.Buf[0]))
 	sdlen := uintptr(sd.Len)
 	syscall_struct := Syscall_struct{
-                SYS_PROC_CREATE, 0, 0, 0, 0, 0,
-                cmd, cmdlen, sdbuf, sdlen, 0, 0,
-                [128]byte{},
-        }
-        usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
-        r1 = uintptr(syscall_struct.retval)
-        __err_num := syscall_struct.err
-        if __err_num != 0 {
+		SYS_PROC_CREATE, 0, 0, 0, 0, 0,
+		cmd, cmdlen, sdbuf, sdlen, 0, 0,
+		[128]byte{},
+	}
+	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	r1 = uintptr(syscall_struct.retval)
+	__err_num := syscall_struct.err
+	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
-                err = NewAkaError(Errno(__err_num), __errstr)
-        }
+		err = NewAkaError(Errno(__err_num), __errstr)
+	}
 	parlib.FreeSerializedData(sd)
 	if err != nil {
 		return 0, err
@@ -119,7 +121,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 
 	// Dup the fd map properly into the child
 	__cfdm := make([]Childfdmap_t, len(files))
-	for i, f := range(files) {
+	for i, f := range files {
 		__cfdm[i].Parentfd = uint32(f)
 		__cfdm[i].Childfd = uint32(i)
 		__cfdm[i].Ok = int32(-1)
@@ -127,17 +129,17 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 	cfdm := uintptr(unsafe.Pointer(&__cfdm[0]))
 	cfdmlen := uintptr(len(__cfdm))
 	syscall_struct = Syscall_struct{
-                SYS_DUP_FDS_TO, 0, 0, 0, 0, 0,
-                child, cfdm, cfdmlen, 0, 0, 0,
-                [128]byte{},
-        }
-        usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
-        r1 = uintptr(syscall_struct.retval)
-        __err_num = syscall_struct.err
-        if __err_num != 0 {
+		SYS_DUP_FDS_TO, 0, 0, 0, 0, 0,
+		child, cfdm, cfdmlen, 0, 0, 0,
+		[128]byte{},
+	}
+	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	r1 = uintptr(syscall_struct.retval)
+	__err_num = syscall_struct.err
+	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
-                err = NewAkaError(Errno(__err_num), __errstr)
-        }
+		err = NewAkaError(Errno(__err_num), __errstr)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -152,7 +154,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 			[128]byte{},
 		}
 		usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
-                r1 = uintptr(syscall_struct.retval)
+		r1 = uintptr(syscall_struct.retval)
 		__err_num = syscall_struct.err
 		if __err_num != 0 {
 			__errstr := string(syscall_struct.errstr[:])
@@ -165,17 +167,17 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 
 	// Now run the child!
 	syscall_struct = Syscall_struct{
-                SYS_PROC_RUN, 0, 0, 0, 0, 0,
-                child, 0, 0, 0, 0, 0,
-                [128]byte{},
-        }
+		SYS_PROC_RUN, 0, 0, 0, 0, 0,
+		child, 0, 0, 0, 0, 0,
+		[128]byte{},
+	}
 	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
-        r1 = uintptr(syscall_struct.retval)
-        __err_num = syscall_struct.err
-        if __err_num != 0 {
+	r1 = uintptr(syscall_struct.retval)
+	__err_num = syscall_struct.err
+	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
-                err = NewAkaError(Errno(__err_num), __errstr)
-        }
+		err = NewAkaError(Errno(__err_num), __errstr)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -210,16 +212,16 @@ func Exec(argv0 string, argv []string, envv []string) (err error) {
 	sdbuf := uintptr(unsafe.Pointer(&sd.Buf[0]))
 	sdlen := uintptr(sd.Len)
 	syscall_struct := Syscall_struct{
-                SYS_EXEC, 0, 0, 0, 0, 0,
-                cmd, cmdlen, sdbuf, sdlen, 0, 0,
-                [128]byte{},
-        }
-        usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
-        __err_num := syscall_struct.err
-        if __err_num != 0 {
+		SYS_EXEC, 0, 0, 0, 0, 0,
+		cmd, cmdlen, sdbuf, sdlen, 0, 0,
+		[128]byte{},
+	}
+	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	__err_num := syscall_struct.err
+	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
-                err = NewAkaError(Errno(__err_num), __errstr)
-        }
+		err = NewAkaError(Errno(__err_num), __errstr)
+	}
 	parlib.FreeSerializedData(sd)
 	return err
 }

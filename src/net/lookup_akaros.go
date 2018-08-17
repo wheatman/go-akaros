@@ -5,8 +5,8 @@
 package net
 
 import (
-	"io"
 	"errors"
+	"io"
 	"os"
 	"strconv"
 )
@@ -49,8 +49,8 @@ func query(filename, query string, bufSize int) (res []string, err error) {
 
 /* If host and service are numeric, bypass cs.. */
 func bypassCS(host, service string) bool {
-	ip := ParseIP(host);
-	_, err := strconv.Atoi(service);
+	ip := ParseIP(host)
+	_, err := strconv.Atoi(service)
 	return ((host == "*" || ip != nil) && err == nil)
 }
 
@@ -66,9 +66,9 @@ func queryCS(net, host, service string) (res []string, err error) {
 	}
 	if bypassCS(host, service) {
 		if host == "*" {
-			return []string{"/net/"+net+"/clone "+service}, nil
+			return []string{"/net/" + net + "/clone " + service}, nil
 		}
-		return []string{"/net/"+net+"/clone "+host+"!"+service}, nil
+		return []string{"/net/" + net + "/clone " + host + "!" + service}, nil
 	}
 	return query(os.Nsprefix+netdir+"/cs", net+"!"+host+"!"+service, 128)
 }

@@ -14,10 +14,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
-	"runtime"
 )
 
 const objdumpPath = "/usr/local/bin/arm-linux-elf-objdump"

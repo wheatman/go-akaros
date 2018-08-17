@@ -12,9 +12,11 @@ import (
 
 // Get the strlen of a c style byte array
 func Cstrlen(str []byte) int {
-    var i int = 0
-    for (str[i] != 0) { i++ }
-    return i
+	var i int = 0
+	for str[i] != 0 {
+		i++
+	}
+	return i
 }
 
 // StringByteSlice is deprecated. Use ByteSliceFromString instead.
@@ -62,27 +64,26 @@ func BytePtrFromString(s string) (*byte, error) {
 // If any string contains a NUL byte this function panics instead
 // of returning an error.
 func StringSlicePtr(ss []string) []*byte {
-    bb := make([]*byte, len(ss)+1)
-    for i := 0; i < len(ss); i++ {
-        bb[i] = StringBytePtr(ss[i])
-    }
-    bb[len(ss)] = nil
-    return bb
+	bb := make([]*byte, len(ss)+1)
+	for i := 0; i < len(ss); i++ {
+		bb[i] = StringBytePtr(ss[i])
+	}
+	bb[len(ss)] = nil
+	return bb
 }
 
 // SlicePtrFromStrings converts a slice of strings to a slice of
 // pointers to NUL-terminated byte slices. If any string contains
 // a NUL byte, it returns (nil, EINVAL).
 func SlicePtrFromStrings(ss []string) ([]*byte, error) {
-    var err error
-    bb := make([]*byte, len(ss)+1)
-    for i := 0; i < len(ss); i++ {
-        bb[i], err = BytePtrFromString(ss[i])
-        if err != nil {
-            return nil, err
-        }
-    }
-    bb[len(ss)] = nil
-    return bb, nil
+	var err error
+	bb := make([]*byte, len(ss)+1)
+	for i := 0; i < len(ss); i++ {
+		bb[i], err = BytePtrFromString(ss[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	bb[len(ss)] = nil
+	return bb, nil
 }
-

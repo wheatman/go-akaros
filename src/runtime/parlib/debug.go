@@ -64,7 +64,7 @@ func PrintChars(s []byte) {
 	C.printChars((*C.char)(unsafe.Pointer(&s[0])), C.int(len(s)))
 }
 
-// Print a string 
+// Print a string
 func PrintString(s string) {
 	C.printString(C.CString(s))
 }
@@ -73,4 +73,3 @@ func PrintString(s string) {
 func SyscallError(num uintptr) {
 	C.syscallError(C.long(num))
 }
-

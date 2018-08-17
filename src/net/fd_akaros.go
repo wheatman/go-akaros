@@ -24,7 +24,7 @@ type netFD struct {
 	laddr, raddr Addr
 
 	// Deadline stuff
-	readDeadline int64
+	readDeadline  int64
 	writeDeadline int64
 }
 
@@ -242,18 +242,18 @@ func (fd *netFD) file(f *os.File, s string) (*os.File, error) {
 }
 
 func (fd *netFD) setDeadline(t time.Time) error {
-	fd.readDeadline = t.UnixNano()/1000
+	fd.readDeadline = t.UnixNano() / 1000
 	fd.writeDeadline = fd.readDeadline
 	return nil
 }
 
 func (fd *netFD) setReadDeadline(t time.Time) error {
-	fd.readDeadline = t.UnixNano()/1000
+	fd.readDeadline = t.UnixNano() / 1000
 	return nil
 }
 
 func (fd *netFD) setWriteDeadline(t time.Time) error {
-	fd.writeDeadline = t.UnixNano()/1000
+	fd.writeDeadline = t.UnixNano() / 1000
 	return nil
 }
 

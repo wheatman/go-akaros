@@ -10,9 +10,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"testing"
-	"runtime"
 )
 
 const plan9Path = "testdata/libmach8db"
@@ -21,9 +21,9 @@ func testPlan9Arch(t *testing.T, arch int, generate func(func([]byte))) {
 	if testing.Short() {
 		t.Skip("skipping libmach test in short mode")
 	}
-        if runtime.GOOS == "akaros" {
-                t.Skip("skipping objdump test on akaros")
-        }
+	if runtime.GOOS == "akaros" {
+		t.Skip("skipping objdump test on akaros")
+	}
 
 	if _, err := os.Stat(plan9Path); err != nil {
 		t.Fatal(err)

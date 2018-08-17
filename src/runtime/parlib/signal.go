@@ -50,34 +50,36 @@ var (
 	__SIG_ERR = -1
 	__SIG_IGN = 1
 	__SIG_DFL = 0
-	SIG_ERR = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_ERR)))
-	SIG_IGN = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_IGN)))
-	SIG_DFL = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_DFL)))
+	SIG_ERR   = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_ERR)))
+	SIG_IGN   = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_IGN)))
+	SIG_DFL   = *((*C.__sigaction_t)(unsafe.Pointer(&__SIG_DFL)))
 )
+
 const (
 	NSIG = C._NSIG
 )
+
 type SignalHandler func(sig int)
 
-var sighandlers [NSIG-1]SignalHandler
-var sigact = SigactionT{Sigact: (C.__sigaction_t)(C.sig_hand), Flags: C.SA_SIGINFO};
+var sighandlers [NSIG - 1]SignalHandler
+var sigact = SigactionT{Sigact: (C.__sigaction_t)(C.sig_hand), Flags: C.SA_SIGINFO}
 
-// Implemented in runtime/sys_{GOOS}_{GOARCH}.s 
+// Implemented in runtime/sys_{GOOS}_{GOARCH}.s
 func defaultSighandler(sig int)
 func defaultSighandler_for_c(sig int)
 
 const ptrSize = 4 << (^uintptr(0) >> 63)
+
 //go:nosplit
 func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
-        return unsafe.Pointer(uintptr(p) + x)
+	return unsafe.Pointer(uintptr(p) + x)
 }
-func get_value(f interface{}) (uint64) {
+func get_value(f interface{}) uint64 {
 	return uint64(**(**uintptr)(unsafe.Pointer((add(unsafe.Pointer(&f), ptrSize)))))
 }
 
-
 func init() {
-	for i := 0; i < (NSIG-1); i++ {
+	for i := 0; i < (NSIG - 1); i++ {
 		Signal(i, defaultSighandler)
 	}
 	C.wtf = C.uint64_t(get_value(defaultSighandler_for_c))
@@ -103,7 +105,7 @@ func process_signals() {
 			}
 			// if somebody has updated the signal handler call the new one
 			// else convert to internal signal and loop back around
-			if (get_value(sighandlers[signr-1]) == get_value(defaultSighandler)) {
+			if get_value(sighandlers[signr-1]) == get_value(defaultSighandler) {
 				C.pthread_wake(C.int(signr))
 			} else {
 				sighandlers[signr-1](signr)
@@ -130,4 +132,3 @@ func Signal(signr int, newh SignalHandler) (SignalHandler, int) {
 	}
 	return oldh, ret
 }
-

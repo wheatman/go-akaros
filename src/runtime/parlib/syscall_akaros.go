@@ -13,7 +13,7 @@ package parlib
 import "C"
 
 type SyscallType C.struct_syscall
+
 const (
 	MAX_ERRSTR_LEN = C.MAX_ERRSTR_LEN
 )
-

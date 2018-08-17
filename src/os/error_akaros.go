@@ -16,10 +16,10 @@ func isExist(err error) bool {
 		err = pe.Err
 	}
 	switch pe := err.(type) {
-		case *syscall.AkaError:
-			return pe.Errno() == syscall.EEXIST
-		default:
-	       return pe == ErrExist
+	case *syscall.AkaError:
+		return pe.Errno() == syscall.EEXIST
+	default:
+		return pe == ErrExist
 	}
 }
 
@@ -33,10 +33,10 @@ func isNotExist(err error) bool {
 		err = pe.Err
 	}
 	switch pe := err.(type) {
-		case *syscall.AkaError:
-			return pe.Errno() == syscall.ENOENT
-		default:
-	       return pe == ErrNotExist
+	case *syscall.AkaError:
+		return pe.Errno() == syscall.ENOENT
+	default:
+		return pe == ErrNotExist
 	}
 }
 
@@ -50,10 +50,9 @@ func isPermission(err error) bool {
 		err = pe.Err
 	}
 	switch pe := err.(type) {
-		case *syscall.AkaError:
-			return pe.Errno() == syscall.EACCES || pe.Errno() == syscall.EPERM
-		default:
-	       return pe == ErrPermission
+	case *syscall.AkaError:
+		return pe.Errno() == syscall.EACCES || pe.Errno() == syscall.EPERM
+	default:
+		return pe == ErrPermission
 	}
 }
-

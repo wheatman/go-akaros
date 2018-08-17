@@ -7,6 +7,7 @@
 package os
 
 var Nsprefix string = ""
+
 func KernelString(buf []byte) string {
 	return string(buf[:len(buf)-1])
 }
