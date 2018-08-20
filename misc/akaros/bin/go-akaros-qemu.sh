@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-eval $(go env)
+
+#eval $(go env)
 
 : ${QEMU:="qemu-system-x86_64"}
 : ${CPU_TYPE:="host"}
@@ -10,9 +11,6 @@ eval $(go env)
 : ${AKAROS_PORT:="22"}
 : ${QEMU_KVM:="-enable-kvm"}
 : ${QEMU_MONITOR_TTY:=""}
-
-AKAROS_BIN=$AKAROS_ROOT/kern/kfs/bin
-GO_SCRIPTS_DIR=$GOROOT/misc/akaros/akaros-bin
 
 #QEMU_NETWORK="-net nic,model=$NETWORK_CARD -net tap,ifname=tap0,script=no"
 QEMU_NETWORK="-net nic,model=$NETWORK_CARD -net user,hostfwd=tcp::$HOST_PORT-:$AKAROS_PORT"
@@ -39,10 +37,6 @@ if [ "$QEMU_KVM" == "-enable-kvm" ]; then
 	fi
 fi
 
-# Copy the go scripts into $AKAROS_BIN
-echo "Copying scripts from ${GO_SCRIPTS_DIR/$GOROOT/\$GOROOT} into ${AKAROS_BIN/$AKAROS_ROOT/\$AKAROS_ROOT}"
-cp $GO_SCRIPTS_DIR/* $AKAROS_BIN
-
 # Rebuilding akaros
 echo "Rebuilding akaros"
 cd $AKAROS_ROOT
@@ -50,7 +44,9 @@ make tests
 make fill-kfs
 make
 
+# map ctrl-C to ctrl-Q
 stty intr \^q
+
 # Launching qemu
 echo "Launching qemu"
 $QEMU -s $QEMU_KVM $QEMU_NETWORK $QEMU_MONITOR -cpu $CPU_TYPE -smp $NUM_CPUS \

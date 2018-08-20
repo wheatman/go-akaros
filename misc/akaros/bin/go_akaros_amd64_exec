@@ -6,7 +6,7 @@ echo "$@"
 : ${AKAROS_SERVER:="qemu"}
 : ${TIMEOUT:="300"}
 
-AKAROS_GOROOT=/mnt
+AKAROS_GOROOT="/mnt$$/"
 AKAROS_PWD=$(pwd | sed "s;$GOROOT;$AKAROS_GOROOT;")
 EXEC=$1
 EXEC_AKAROS="$(echo $EXEC | sed 's=.*/==')"
@@ -26,7 +26,7 @@ rpc()
 # happen upon pressing Ctrl-C, or otherwise exiting.
 cleanup()
 {
-	rpc "unmount $AKAROS_GOROOT"
+	rpc "unmount $AKAROS_GOROOT; rmdir $AKAROS_GOROOT"
 }
 die()
 {
@@ -40,7 +40,7 @@ trap die SIGKILL
 
 # mnt the go root so that akaros can run the binary and have any dependencies
 cp $EXEC $(pwd)/
-rpc "mount -b -c -C $UFS_ROOT $AKAROS_GOROOT"
+rpc "mkdir $AKAROS_GOROOT; mount -b -c -C $UFS_ROOT $AKAROS_GOROOT"
 # Execute the go program on akaros, printing its output, followed by its exit
 # code. Pipe this to $AKAROS_OUT. Previously I was storing this output in a
 # bash variable and parsing things from there. The problem, however, is that
@@ -61,7 +61,7 @@ cleanup
 
 # If there was no output from the go program, something went wrong, so error out
 if [ "$(cat $AKAROS_OUT)" = "" ]; then
-	echo "Could not execute binary on Akaros client. Make sure the listen1 program is running."
+	echo "Could not execute binary on Akaros client."
 	echo "--------------------- Command line -------------------------------------------------"
 	echo $*
 	echo "--------------------- Environment --------------------------------------------------"

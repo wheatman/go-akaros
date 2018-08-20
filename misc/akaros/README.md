@@ -8,7 +8,7 @@ ability to build native Go binaries itself.  Instead, the entire Go setup is
 hosted on a non-akaros machine, and all binaries are cross compiled. These
 binaries are then shipped over to an akaros machine and executed.
 
-As of Go 1.3, we are able to leverage the use of a `go_${GOOS}_${GOARCH}_exec`
+As of Go 1.4, we are able to leverage the use of a `go_${GOOS}_${GOARCH}_exec`
 script to allow us to invoke Go commands on our host machine but execute any
 resulting Go binaries on a remote akaros machine.  So long as this script is in
 our path, calls to things like "go run arguments..." or "go test arguments..."
@@ -192,24 +192,12 @@ machine, a couple of convenience scripts are provided in
 
 		$GOROOT/misc/akaros/bin/go-akaros-qemu.sh
 
-- From within akaros itself, drop into the monitor, run busybox, and invoke the
-  `go-bootstrap.sh` script:
-
-		<ctrl-G>
-		bb
-		go-bootstrap.sh
-
-This script may take a while, but make sure and wait for it to finish, and
-print the line:
-
-	listen started
-
 Once this is ready, you will be able to invoke go commands on your host machine
 and have them proxied through to the akaros instance for execution. The results
 will be printed out on your host machine.
 
 To test it, open up another terminal, set your `GOOS` and `GOARCH` appropriately
-(or source `$GOROOT/misc/akaros/setup.sh`), and run the following:
+, and run the following:
 
 	go test bufio
 
