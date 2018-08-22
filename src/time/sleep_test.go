@@ -23,6 +23,7 @@ import (
 // after time.Sleep call. This was observed on Windows XP SP3 (windows/386).
 // windowsInaccuracy is to ignore such errors.
 const windowsInaccuracy = 17 * Millisecond
+const akarosInaccuracy = 10 * Millisecond
 
 func TestSleep(t *testing.T) {
 	const delay = 100 * Millisecond
@@ -35,6 +36,9 @@ func TestSleep(t *testing.T) {
 	delayadj := delay
 	if runtime.GOOS == "windows" {
 		delayadj -= windowsInaccuracy
+	}
+	if runtime.GOOS == "akaros" {
+		delayadj -= akarosInaccuracy
 	}
 	duration := Now().Sub(start)
 	if duration < delayadj {

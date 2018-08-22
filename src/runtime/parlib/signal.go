@@ -17,7 +17,6 @@ package parlib
 
 uint64_t __sigmap = 0;
 int __sigpending = 0;
-//void (*wtf)(int);
 uint64_t wtf = 0;
 
 // must match the one in gcc_akaros.h
@@ -74,6 +73,8 @@ const ptrSize = 4 << (^uintptr(0) >> 63)
 func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }
+
+//go:nosplit
 func get_value(f interface{}) uint64 {
 	return uint64(**(**uintptr)(unsafe.Pointer((add(unsafe.Pointer(&f), ptrSize)))))
 }

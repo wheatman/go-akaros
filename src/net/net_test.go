@@ -150,7 +150,7 @@ func TestTCPListenClose(t *testing.T) {
 
 func TestUDPListenClose(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "akaros":
+	case "plan9":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	ln, err := ListenPacket("udp", "127.0.0.1:0")
@@ -182,7 +182,7 @@ func TestUDPListenClose(t *testing.T) {
 
 func TestTCPClose(t *testing.T) {
 	switch runtime.GOOS {
-	case "plan9", "akaros":
+	case "plan9":
 		t.Skipf("skipping test on %q", runtime.GOOS)
 	}
 	l, err := Listen("tcp", "127.0.0.1:0")

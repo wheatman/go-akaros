@@ -12,25 +12,9 @@ package parlib
 #define _LARGEFILE64_SOURCE
 
 #include <futex.h>
-#include <unistd.h>
 #include <malloc.h>
-#include <parlib/parlib.h>
-#include <parlib/uthread.h>
-#include <parlib/vcore.h>
 #include <parlib/mcs.h>
 #include <parlib/serialize.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-int go_parlib_errno(void)
-{
-	return current_uthread->err_no;
-}
-
-char *go_parlib_errstr(void)
-{
-	return current_uthread->err_str;
-}
 
 */
 import "C"
@@ -76,12 +60,4 @@ func SerializeArgvEnvp(argv []*byte, envp []*byte) (sd *SerializedData, err erro
 
 func FreeSerializedData(sd *SerializedData) {
 	C.free(unsafe.Pointer(sd))
-}
-
-func Errno() int {
-	return int(C.go_parlib_errno())
-}
-
-func Errstr() string {
-	return C.GoString(C.go_parlib_errstr())
 }

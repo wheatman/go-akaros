@@ -31,7 +31,7 @@ func testObjdumpArch(t *testing.T, generate func(func([]byte)), arch Mode) {
 		t.Skip("skipping objdump test in short mode")
 	}
 	if runtime.GOOS == "akaros" {
-		t.Skip("skipping objdump test in short mode")
+		t.Skip("skipping objdump test on akaros")
 	}
 
 	if _, err := os.Stat(objdumpPath); err != nil {
