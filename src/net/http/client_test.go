@@ -856,9 +856,9 @@ func TestClientTimeout(t *testing.T) {
 			return
 		}
 		if r.URL.Path == "/slow" {
+			sawSlow <- true
 			w.Write([]byte("Hello"))
 			w.(Flusher).Flush()
-			sawSlow <- true
 			time.Sleep(2 * time.Second)
 			return
 		}
