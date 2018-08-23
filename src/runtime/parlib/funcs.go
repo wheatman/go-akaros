@@ -12,14 +12,11 @@ package parlib
 #define _LARGEFILE64_SOURCE
 
 #include <futex.h>
-#include <malloc.h>
 #include <parlib/mcs.h>
-#include <parlib/serialize.h>
 
 */
 import "C"
 import (
-	"errors"
 	"unsafe"
 )
 
@@ -43,21 +40,4 @@ func Futex(uaddr *int32, op int32, val int32,
 		C.int(op), C.int(val),
 		(*C.struct_timespec)(unsafe.Pointer(timeout)),
 		(*C.int)(unsafe.Pointer(uaddr2)), C.int(val3)))
-}
-
-func SerializeArgvEnvp(argv []*byte, envp []*byte) (sd *SerializedData, err error) {
-	p_argv := (**_Ctype_char)(unsafe.Pointer(&argv[0]))
-	p_envp := (**_Ctype_char)(unsafe.Pointer(&envp[0]))
-
-	__sd := C.serialize_argv_envp(p_argv, p_envp)
-	if __sd == nil {
-		err = errors.New("SerializeArgvEnvp: error packing argv and envp")
-	} else {
-		sd = (*SerializedData)(unsafe.Pointer(__sd))
-	}
-	return sd, err
-}
-
-func FreeSerializedData(sd *SerializedData) {
-	C.free(unsafe.Pointer(sd))
 }

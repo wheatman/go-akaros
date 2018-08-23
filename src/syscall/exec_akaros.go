@@ -7,7 +7,6 @@
 package syscall
 
 import (
-	"runtime/parlib"
 	"unsafe"
 	"usys"
 )
@@ -42,6 +41,28 @@ func SlicePtrFromStrings(ss []string) ([]*byte, error) {
 	}
 	bb[len(ss)] = nil
 	return bb, nil
+}
+
+type SerializedData struct {
+	Len uint64
+	Buf [8]byte
+}
+
+func SerializeArgvEnvp(argv []*byte, envp []*byte) (sd *SerializedData, err error) {
+	p_argv := (unsafe.Pointer(&argv[0]))
+	p_envp := (unsafe.Pointer(&envp[0]))
+
+	__sd := usys.Call(usys.USYS_SERIALIZE_ARGV_ENVP, uintptr(p_argv), uintptr(p_envp))
+	if __sd == 0 {
+		err = NewAkaError(1, "SerializeArgvEnvp: error packing argv and envp")
+	} else {
+		sd = (*SerializedData)(unsafe.Pointer(uintptr(__sd)))
+	}
+	return sd, err
+}
+
+func FreeSerializedData(sd *SerializedData) {
+	usys.Call1(usys.USYS_FREE, uintptr(unsafe.Pointer(sd)))
 }
 
 func StartProcess(argv0 string, argv []string, attr *ProcAttr) (pid int, handle uintptr, err error) {
@@ -95,7 +116,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 	// Call proc create to create a child.
 	cmd := uintptr(unsafe.Pointer(&argv0[0]))
 	cmdlen := uintptr(len(argv0))
-	sd, err := parlib.SerializeArgvEnvp(argv, envv)
+	sd, err := SerializeArgvEnvp(argv, envv)
 	if err != nil {
 		return 0, err
 	}
@@ -106,14 +127,14 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 		cmd, cmdlen, sdbuf, sdlen, 0, 0,
 		[128]byte{},
 	}
-	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	usys.Call1(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
 	r1 = uintptr(syscall_struct.retval)
 	__err_num := syscall_struct.err
 	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
 		err = NewAkaError(Errno(__err_num), __errstr)
 	}
-	parlib.FreeSerializedData(sd)
+	FreeSerializedData(sd)
 	if err != nil {
 		return 0, err
 	}
@@ -133,7 +154,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 		child, cfdm, cfdmlen, 0, 0, 0,
 		[128]byte{},
 	}
-	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	usys.Call1(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
 	r1 = uintptr(syscall_struct.retval)
 	__err_num = syscall_struct.err
 	if __err_num != 0 {
@@ -153,7 +174,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 			child, pwd, pwdlen, 0, 0, 0,
 			[128]byte{},
 		}
-		usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+		usys.Call1(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
 		r1 = uintptr(syscall_struct.retval)
 		__err_num = syscall_struct.err
 		if __err_num != 0 {
@@ -171,7 +192,7 @@ func startProcess(argv0 []byte, argv, envv []*byte, dir []byte, files []uintptr)
 		child, 0, 0, 0, 0, 0,
 		[128]byte{},
 	}
-	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	usys.Call1(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
 	r1 = uintptr(syscall_struct.retval)
 	__err_num = syscall_struct.err
 	if __err_num != 0 {
@@ -205,7 +226,7 @@ func Exec(argv0 string, argv []string, envv []string) (err error) {
 	// exec to new cmd
 	cmd := uintptr(unsafe.Pointer(&argv0p[0]))
 	cmdlen := uintptr(len(argv0))
-	sd, err := parlib.SerializeArgvEnvp(argvp, envvp)
+	sd, err := SerializeArgvEnvp(argvp, envvp)
 	if err != nil {
 		return err
 	}
@@ -216,13 +237,13 @@ func Exec(argv0 string, argv []string, envv []string) (err error) {
 		cmd, cmdlen, sdbuf, sdlen, 0, 0,
 		[128]byte{},
 	}
-	usys.Call(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
+	usys.Call1(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))
 	__err_num := syscall_struct.err
 	if __err_num != 0 {
 		__errstr := string(syscall_struct.errstr[:])
 		err = NewAkaError(Errno(__err_num), __errstr)
 	}
-	parlib.FreeSerializedData(sd)
+	FreeSerializedData(sd)
 	return err
 }
 

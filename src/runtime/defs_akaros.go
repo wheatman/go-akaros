@@ -135,8 +135,3 @@ type SyscallArg C.gcc_syscall_arg_t
 type FutexArg C.gcc_futex_arg_t
 type SigactionArg C.gcc_sigaction_arg_t
 type SigprocmaskArg C.gcc_sigprocmask_arg_t
-
-type SerializedData struct {
-	Len C.size_t
-	Buf [8]byte
-}

@@ -14,9 +14,9 @@ func RunWithDeadline(f func(), deadline int64) {
 		f()
 	} else {
 		runtime.LockOSThread()
-		handle := usys.Call(usys.USYS_ABORT_SYSCALL_AT_ABS_UNIX, uintptr(deadline))
+		handle := usys.Call1(usys.USYS_ABORT_SYSCALL_AT_ABS_UNIX, uintptr(deadline))
 		f()
-		usys.Call(usys.USYS_UNSET_ALARM, uintptr(handle))
+		usys.Call1(usys.USYS_UNSET_ALARM, uintptr(handle))
 		runtime.UnlockOSThread()
 	}
 }

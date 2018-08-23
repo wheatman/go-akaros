@@ -150,26 +150,18 @@ func (w WaitStatus) TrapCause() int {
 }
 
 // Syscalls...
-// Akaros syscalls are all made through the parlib.Syscall() interface.
+// Akaros syscalls are all made through the usys.Call1 interface.
+// usys.Call1 is different from usys.Call by taking exactly one argument
+// this eliminates an alloc and some branches
 // If a syscall follows the general form dictated for syscalls in mksyscall.pl,
-// then we can automatically generate the syscalls using a //sys or //sysnb
+// then we can automatically generate the syscalls //sys
 // directive.  The difference between //sys and //sysnb is whether the
 // generated syscall makes an underlying call to Syscall() or RawSyscall().
 // Traditionally, the RawSyscall version has been used to generate NON-BLOCKING
 // versions of a syscall.  In Akaros, however, ALL syscalls are non-blocking,
-// so we use //sysnb for a different purpose.
-// Regular syscalls check the return value (i.e. __r1 == -1) to determine if
-// they should construct an AkaError and return an error. RawSyscalls check the
-// value of errno (i.e. __err == 0) to determine whether an error has occured.
-// In practice, most syscalls return -1 to signify an error, and may or may not
-// have errno set if the call is successful (in which case, checking errno
-// instead of the return value may indicate an error even if there wasn't
-// one).  However, some calls (like mmap) don't return -1 on error so we need a
-// different way of determining if an error occured.  Syscalls of this type
-// MUST only set errno if there was actually an error, otherwise we may be
-// screwed.  Seems to be fine for now. We plan to standardize how all
-// error handing is doen in Akaros soon, and when that happens, having to make
-// this distinction will be unnecessary.
+// so wedo not use //sysnb.
+
+//this needs to have the same memory layout as a syscall on akaros
 type Syscall_struct struct {
 	num    uint32
 	err    int32

@@ -7,15 +7,19 @@ const (
 	USYS_UNSET_ALARM               = 1
 	USYS_GO_SYSCALL                = 2
 	USYS_FUNC                      = 3
-	num_functions                  = 4
+	USYS_FUTEX                     = 4
+	USYS_SERIALIZE_ARGV_ENVP       = 5
+	USYS_FREE                      = 6
+	num_functions                  = 7
 )
 
-var functions [num_functions]uintptr
+var functions [num_functions + 1]uintptr
 
 func call(f uintptr, opt ...uintptr) int64
 func call1(f, arg0 uintptr) int64
 
 func init() {
+	functions[num_functions] = 0xDEADBEEF
 	call(0xDEAD000000000000 | uintptr(unsafe.Pointer(&functions[0])))
 }
 
