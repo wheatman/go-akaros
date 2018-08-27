@@ -49,7 +49,12 @@ TEXT sigtramp_real(SB),NOSPLIT,$40
     MOVQ    R10, g(BX)
 	RET
 
-TEXT runtime∕parlib·defaultSighandler_for_c(SB),NOSPLIT,$0
+// This is the default handler assigned to our array of signal handlers in
+// runtime/parlib/signal.go.  We want the default handler to be the same
+// whether it is initiated by a user (i.e. a kill call), or by the kernel (i.e.
+// a trap such as SIGSEGV occurred).  Defining this function and assigning as
+// the default function called from go code ensures that this happens.
+TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0
 TEXT runtime·sigtramp(SB),NOSPLIT,$0
 	// Follow the fucking calling convention!
 	PUSHQ	BX
@@ -66,15 +71,4 @@ TEXT runtime·sigtramp(SB),NOSPLIT,$0
 	POPQ	BP
 	POPQ	BX
     RET
-
-// This is the default handler assigned to our array of signal handlers in
-// runtime/parlib/signal.go.  We want the default handler to be the same
-// whether it is initiated by a user (i.e. a kill call), or by the kernel (i.e.
-// a trap such as SIGSEGV occurred).  Defining this function and assigning as
-// the default function called from go code ensures that this happens.
-TEXT runtime∕parlib·defaultSighandler(SB),NOSPLIT,$0-8
-    MOVQ    8(SP), DI
-    CALL    sigtramp_real(SB)
-	RET
-
 

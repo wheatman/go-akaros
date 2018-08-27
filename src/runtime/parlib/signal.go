@@ -22,7 +22,9 @@ uint64_t wtf = 0;
 // must match the one in gcc_akaros.h
 typedef void (*__sigaction_t) (int, siginfo_t *, void *);
 
-
+// TODO(wheatman) There might be a bug here in that if we are not
+// in vcore context we can never call an updated signal handler.
+// I can't trigger it, but it looks posible
 void sig_hand(int signr, void *info, void *ctxt) {
         if (in_vcore_context()) {
           __sigmap |= ((uint64_t)(1)) << (signr-1);
@@ -65,7 +67,6 @@ var sigact = SigactionT{Sigact: (C.__sigaction_t)(C.sig_hand), Flags: C.SA_SIGIN
 
 // Implemented in runtime/sys_{GOOS}_{GOARCH}.s
 func defaultSighandler(sig int)
-func defaultSighandler_for_c(sig int)
 
 const ptrSize = 4 << (^uintptr(0) >> 63)
 
@@ -83,7 +84,7 @@ func init() {
 	for i := 0; i < (NSIG - 1); i++ {
 		Signal(i, defaultSighandler)
 	}
-	C.wtf = C.uint64_t(get_value(defaultSighandler_for_c))
+	C.wtf = C.uint64_t(get_value(defaultSighandler))
 	go process_signals()
 }
 
