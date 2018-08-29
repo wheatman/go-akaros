@@ -94,6 +94,9 @@ sub parseparam($) {
 }
 
 my $text = "";
+if ($akaros) {
+	$text .= "import \"usys\"\n";
+}
 while(<>) {
 	chomp;
 	s/\s+/ /g;
@@ -206,25 +209,32 @@ while(<>) {
 
 	# Determine which form to use; pad args with zeros.
 	my $asm = "Syscall";
-	if ($nonblock) {
-		$asm = "RawSyscall";
-	}
-	if(@args <= 3) {
-		while(@args < 3) {
-			push @args, "0";
-		}
-	} elsif(@args <= 6) {
-		$asm .= "6";
+	if ($akaros) {
+		$asm = "usys.Call1";
 		while(@args < 6) {
 			push @args, "0";
 		}
-	} elsif(@args <= 9) {
-		$asm .= "9";
-		while(@args < 9) {
-			push @args, "0";
-		}
 	} else {
-		print STDERR "$ARGV:$.: too many arguments to system call\n";
+		if ($nonblock) {
+			$asm = "RawSyscall";
+		}
+		if(@args <= 3) {
+			while(@args < 3) {
+				push @args, "0";
+			}
+		} elsif(@args <= 6) {
+			$asm .= "6";
+			while(@args < 6) {
+				push @args, "0";
+			}
+		} elsif(@args <= 9) {
+			$asm .= "9";
+			while(@args < 9) {
+				push @args, "0";
+			}
+		} else {
+			print STDERR "$ARGV:$.: too many arguments to system call\n";
+		}
 	}
 
 	# System call number.
@@ -238,8 +248,9 @@ while(<>) {
 	}
 
 	# Actual call.
-	my $args = join(', ', @args);
-	my $call = "$asm($sysname, $args)";
+	$text .= "\tsyscall_struct := Syscall_struct{\n\t\t$sysname,0,0,0,0,0,\n\t\t".+
+			join(',', @args).+",\n\t\t[128]byte{},\n\t}\n";
+	my $call = "$asm(usys.USYS_GO_SYSCALL, uintptr(unsafe.Pointer(&syscall_struct)))";
 
 	# Assign return values.
 	my $body = "";
@@ -284,7 +295,22 @@ while(<>) {
 	if ($ret[0] eq "_" && $ret[1] eq "_" && $ret[2] eq "_") {
 		$text .= "\t$call\n";
 	} else {
-		$text .= "\t$ret[0], $ret[1], $ret[2] := $call\n";
+		if (!$akaros) {
+			$text .= "\t$ret[0], $ret[1], $ret[2] := $call\n";
+		} else {
+			$text .= "\t$call\n";
+			if ($ret[0] ne "_") {
+				$text .= "\t$ret[0] := syscall_struct.retval\n";
+			}
+			if ($ret[2] ne "_") {
+				$text .= "\t__err_num := syscall_struct.err\n";
+
+				$text .= "\tif __err_num != 0 {\n";
+				$text .= "\t\t__errstr := string(syscall_struct.errstr[:])\n";
+				$text .= "\t\terr = NewAkaError(Errno(__err_num), __errstr)\n";
+				$text .= "\t}\n";
+			}
+		}
 	}
 	foreach my $use (@uses) {
 		$text .= "\t$use\n";
@@ -295,11 +321,7 @@ while(<>) {
 		$text .= "\tif int32(r0) == -1 {\n";
 		$text .= "\t\terr = e1\n";
 		$text .= "\t}\n";
-	} elsif ($akaros && $do_errno) {
-		$text .= "\tif e1 != nil {\n";
-		$text .= "\t\terr = e1\n";
-		$text .= "\t}\n";
-	} elsif ($do_errno) {
+	} elsif (!$akaros && $do_errno) {
 		$text .= "\tif e1 != 0 {\n";
 		$text .= "\t\terr = e1\n";
 		$text .= "\t}\n";

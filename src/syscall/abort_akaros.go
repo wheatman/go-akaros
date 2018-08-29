@@ -6,18 +6,17 @@ package syscall
 
 import (
 	"runtime"
-	"runtime/parlib"
+	"usys"
 )
 
 func RunWithDeadline(f func(), deadline int64) {
 	if (deadline <= 0) {
 		f()
 	} else {
-		var waiter parlib.AlarmWaiter
 		runtime.LockOSThread()
-	    parlib.AbortSyscallAt(&waiter, deadline)
+		handle := usys.Call(usys.USYS_ABORT_SYSCALL_AT_ABS_UNIX, uintptr(deadline))
 		f()
-		parlib.CancelAbortSyscall(&waiter)
+		usys.Call(usys.USYS_UNSET_ALARM, uintptr(handle))
 		runtime.UnlockOSThread()
 	}
 }
